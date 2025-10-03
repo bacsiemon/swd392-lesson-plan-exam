@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using LessonPlanExam.Services.Interfaces;
+using LessonPlanExam.Services.Services;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -12,7 +14,13 @@ namespace LessonPlanExam.Services
     {
         public static IServiceCollection AddServiceConfigurations(this IServiceCollection services, IConfiguration configuration)
         {
+            services.AddDependencyInjection();
             return services;
+        }
+
+        public static void AddDependencyInjection(this IServiceCollection services)
+        {
+            services.AddScoped<IAccountService, AccountService>();
         }
     }
 }

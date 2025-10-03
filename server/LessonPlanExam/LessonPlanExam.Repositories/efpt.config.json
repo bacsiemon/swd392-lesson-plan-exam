@@ -1,0 +1,133 @@
+﻿{
+   "CodeGenerationMode": 4,
+   "ContextClassName": "LessonPlanExamDbContext",
+   "ContextNamespace": null,
+   "FilterSchemas": false,
+   "IncludeConnectionString": false,
+   "ModelNamespace": null,
+   "OutputContextPath": null,
+   "OutputPath": "Models",
+   "PreserveCasingWithRegex": true,
+   "ProjectRootNamespace": "LessonPlanExam.Repositories",
+   "Schemas": null,
+   "SelectedHandlebarsLanguage": 2,
+   "SelectedToBeGenerated": 0,
+   "T4TemplatePath": null,
+   "Tables": [
+      {
+         "Name": "public.accounts",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.admins",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.class_enrollments",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.class_slots",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.classes",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.exam_attempt_answers",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.exam_attempts",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.exam_matrices",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.exam_matrix_items",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.exam_questions",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.exams",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.file_uploads",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.lesson_plans",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.question_banks",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.question_difficulties",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.question_fill_blank_answers",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.question_multiple_choice_answers",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.questions",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.slot_materials",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.slot_plans",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.students",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.teachers",
+         "ObjectType": 0
+      }
+   ],
+   "UiHint": null,
+   "UncountableWords": null,
+   "UseAsyncStoredProcedureCalls": true,
+   "UseBoolPropertiesWithoutDefaultSql": false,
+   "UseDatabaseNames": false,
+   "UseDatabaseNamesForRoutines": true,
+   "UseDateOnlyTimeOnly": true,
+   "UseDbContextSplitting": false,
+   "UseDecimalDataAnnotationForSprocResult": true,
+   "UseFluentApiOnly": true,
+   "UseHandleBars": false,
+   "UseHierarchyId": false,
+   "UseInflector": true,
+   "UseInternalAccessModifiersForSprocsAndFunctions": false,
+   "UseLegacyPluralizer": false,
+   "UseManyToManyEntity": false,
+   "UseNoDefaultConstructor": false,
+   "UseNoNavigations": false,
+   "UseNoObjectFilter": false,
+   "UseNodaTime": false,
+   "UseNullableReferences": false,
+   "UsePrefixNavigationNaming": false,
+   "UseSchemaFolders": false,
+   "UseSchemaNamespaces": false,
+   "UseSpatial": false,
+   "UseT4": false,
+   "UseT4Split": false
+}

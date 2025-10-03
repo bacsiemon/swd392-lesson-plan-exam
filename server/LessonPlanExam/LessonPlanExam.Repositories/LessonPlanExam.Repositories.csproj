@@ -16,6 +16,6 @@
 		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\LessonPlanExam.DTOs\LessonPlanExam.DTOs.csproj" />
+	  <ProjectReference Include="..\App.Infastructure\App.Infrastructure.csproj" />
 	</ItemGroup>
 </Project>

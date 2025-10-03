@@ -9,7 +9,7 @@ namespace App.Infrastructure.BaseClasses
     public class BaseResponse
     {
         public int StatusCode { get; set; } 
-        public bool isSuccess { get => StatusCode < 400 || StatusCode > 599; }
+        public bool IsSuccess { get => StatusCode < 400 || StatusCode > 599; }
         public string Message { get; set; } 
         public object? Data { get; set; } 
         public object? AdditionalData { get; set; } 
@@ -18,7 +18,7 @@ namespace App.Infrastructure.BaseClasses
     public class BaseResponse<TData>
     {
         public int StatusCode { get; set; }
-        public bool isSuccess { get => StatusCode < 400 || StatusCode > 599; }
+        public bool IsSuccess { get => StatusCode < 400 || StatusCode > 599; }
         public string Message { get; set; } 
         public TData? Data { get; set; } = default!;
         public object? AdditionalData { get; set; }
@@ -27,7 +27,7 @@ namespace App.Infrastructure.BaseClasses
     public class BaseResponse<TData, TAdditionalData>
     {
         public int StatusCode { get; set; } 
-        public bool isSuccess { get => StatusCode < 400 || StatusCode > 599; }
+        public bool IsSuccess { get => StatusCode < 400 || StatusCode > 599; }
         public string Message { get; set; } 
         public TData? Data { get; set; }
         public TAdditionalData? AdditionalData { get; set; } 
