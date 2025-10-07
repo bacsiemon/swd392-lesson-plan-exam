@@ -17,7 +17,5 @@ public partial class Student
 
     public virtual Account Account { get; set; }
 
-    public virtual ICollection<ClassEnrollment> ClassEnrollments { get; set; } = new List<ClassEnrollment>();
-
     public virtual ICollection<ExamAttempt> ExamAttempts { get; set; } = new List<ExamAttempt>();
 }

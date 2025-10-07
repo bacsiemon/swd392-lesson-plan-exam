@@ -23,18 +23,6 @@
          "ObjectType": 0
       },
       {
-         "Name": "public.class_enrollments",
-         "ObjectType": 0
-      },
-      {
-         "Name": "public.class_slots",
-         "ObjectType": 0
-      },
-      {
-         "Name": "public.classes",
-         "ObjectType": 0
-      },
-      {
          "Name": "public.exam_attempt_answers",
          "ObjectType": 0
       },
