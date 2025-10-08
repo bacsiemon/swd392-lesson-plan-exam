@@ -68,7 +68,6 @@ CREATE TABLE lesson_plans (
     created_by_teacher INTEGER NOT NULL REFERENCES teachers(account_id) ON DELETE CASCADE,
     objectives TEXT, -- mục tiêu
     description TEXT,
-    status_enum INTEGER DEFAULT 1, -- 1=draft, 2=requested, 3=approved, 4=rejected
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE
@@ -349,3 +348,5 @@ SCHEMA STRUCTURE:
 - All application tables are in the lesson_plan_system schema
 - This provides better organization and avoids conflicts with system tables
 */
+
+ALTER TABLE lesson_plans DELETE COLUMN approval_status_enum;

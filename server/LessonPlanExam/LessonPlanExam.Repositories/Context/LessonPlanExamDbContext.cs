@@ -442,10 +442,6 @@ public partial class LessonPlanExamDbContext : DbContext
             entity.Property(e => e.DeletedAt).HasColumnName("deleted_at");
             entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.Objectives).HasColumnName("objectives");
-            entity.Property(e => e.StatusEnum)
-                .HasConversion<int>()
-                .HasDefaultValue(EApprovalStatus.Draft)
-                .HasColumnName("status_enum");
             entity.Property(e => e.Title)
                 .IsRequired()
                 .HasMaxLength(255)

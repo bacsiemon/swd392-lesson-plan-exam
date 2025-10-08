@@ -2,7 +2,6 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
-using LessonPlanExam.Repositories.Enums;
 
 namespace LessonPlanExam.Repositories.Models;
 
@@ -17,8 +16,6 @@ public partial class LessonPlan
     public string Objectives { get; set; }
 
     public string Description { get; set; }
-
-    public EApprovalStatus? StatusEnum { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 
