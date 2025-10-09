@@ -1,0 +1,111 @@
+/* ================================================= */
+/* GLOBAL DESIGN TOKENS (Biến Màu & Font) */
+/* ================================================= */
+
+:root {
+  /* Màu Sắc Chính */
+  --color-primary: #007bff;     /* Xanh lam: Dùng cho nút chính, liên kết, tiêu đề quan trọng (chuyên nghiệp) */
+  --color-secondary: #28a745;   /* Xanh lá: Dùng cho hành động thành công, nút AI (thông minh, tích cực) */
+  --color-accent: #ffc107;      /* Vàng hổ phách: Dùng cho cảnh báo, điểm nhấn, highlights */
+  --color-danger: #dc3545;      /* Đỏ: Dùng cho lỗi, xóa */
+  
+  /* Màu Nền & Văn bản */
+  --color-background: #f8f9fa;  /* Nền trang (rất nhạt, dễ nhìn) */
+  --color-surface: #ffffff;     /* Nền của các hộp nội dung, card */
+  --color-text: #212529;        /* Màu chữ chính (Đen đậm) */
+  --color-text-secondary: #6c757d; /* Màu chữ phụ, mô tả */
+
+  /* Thiết lập Font */
+  /* Dùng font không chân (sans-serif) dễ đọc trên màn hình */
+  --font-family-sans: 'Roboto', 'Arial', sans-serif; 
+  --font-size-base: 16px;
+}
+
+
+/* ================================================= */
+/* CSS RESET & BASE STYLES */
+/* ================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* 1. Thiết lập cho HTML và BODY */
+html {
+  font-size: var(--font-size-base);
+  font-family: var(--font-family-sans);
+  color: var(--color-text);
+  background-color: var(--color-background);
+  line-height: 1.6; /* Tăng khoảng cách dòng để dễ đọc tài liệu học tập */
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  text-rendering: optimizeSpeed;
+}
+
+/* 2. Thiết lập cho Phần tử Gốc của React */
+#root {
+  max-width: 1400px; /* Thêm chiều rộng tối đa cho các màn hình lớn */
+  margin: 0 auto;
+  padding: 0; /* Thường bỏ padding ở đây và đặt vào layout component */
+}
+
+/* 3. Tiêu đề (Headings) */
+h1, h2, h3, h4 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--color-primary); /* Tiêu đề chính dùng màu primary */
+}
+
+/* ================================================= */
+/* UTILITY & COMPONENT BASE STYLES */
+/* ================================================= */
+
+/* Liên kết (Links) */
+a {
+  color: var(--color-primary);
+  text-decoration: none; /* Bỏ gạch chân mặc định */
+  transition: color 0.2s ease-in-out;
+}
+
+a:hover {
+  color: #0056b3; /* Tối màu hơn khi hover */
+  text-decoration: underline;
+}
+
+/* Nút bấm (Buttons) */
+button {
+  border-radius: 0.25rem;
+  border: 1px solid transparent;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: var(--color-primary);
+  color: var(--color-surface);
+}
+
+button:hover {
+  filter: brightness(1.1); /* Sáng hơn khi hover */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Nút phụ (ví dụ: Nút AI/Thành công) */
+.btn-secondary {
+    background-color: var(--color-secondary);
+}
+
+/* Thẻ Học liệu/Card */
+.card {
+    background-color: var(--color-surface);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
