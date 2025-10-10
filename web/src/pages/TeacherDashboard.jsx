@@ -1,0 +1,166 @@
+import React from 'react';
+import { Layout, Menu, Card, Row, Col, Typography, Button, Space } from 'antd';
+import {
+  FileTextOutlined,
+  ProjectOutlined,
+  QuestionCircleOutlined,
+  TableOutlined,
+  SettingOutlined,
+  AreaChartOutlined,
+} from '@ant-design/icons';
+
+const { Header, Content, Footer } = Layout;
+const { Title } = Typography;
+
+// --- Định nghĩa Màu sắc (Có thể thay thế bằng màu thương hiệu của bạn) ---
+const BRAND_COLORS = {
+  SLIDE: '#1890ff', // Xanh dương
+  LESSON: '#52c41a', // Xanh lá
+  QUESTION: '#faad14', // Vàng cam
+  TEST: '#eb2f96', // Hồng
+  ANALYTICS: '#f5222d', // Đỏ
+  BACKGROUND: '#f0f2f5', // Màu nền nhẹ
+};
+
+
+// --- Dữ liệu cho các Công cụ AI ---
+const aiTools = [
+  {
+    title: 'Tạo Slide Thuyết trình (AI)',
+    description: 'Biến ý tưởng thành bài giảng hấp dẫn chỉ trong vài giây.',
+    icon: <ProjectOutlined style={{ fontSize: '36px', color: BRAND_COLORS.SLIDE }} />,
+    link: '/create-slide',
+    color: BRAND_COLORS.SLIDE,
+  },
+  {
+    title: 'Xây dựng Giáo án Bài giảng (AI)',
+    description: 'Thiết kế giáo án chi tiết và cấu trúc cho bất kỳ chủ đề Hóa học nào.',
+    icon: <FileTextOutlined style={{ fontSize: '36px', color: BRAND_COLORS.LESSON }} />,
+    link: '/create-lesson-plan',
+    color: BRAND_COLORS.LESSON,
+  },
+  {
+    title: 'Ngân hàng Câu hỏi & Ôn tập (AI)',
+    description: 'Tự động tạo câu hỏi trắc nghiệm và tự luận chất lượng cao.',
+    icon: <QuestionCircleOutlined style={{ fontSize: '36px', color: BRAND_COLORS.QUESTION }} />,
+    link: '/question-bank',
+    color: BRAND_COLORS.QUESTION,
+  },
+];
+
+// --- Dữ liệu cho các Công cụ Quản lý & Đánh giá ---
+const managementTools = [
+  {
+    title: 'Quản lý Đề kiểm tra',
+    description: 'Tạo, phân phối và chấm điểm các bài kiểm tra từ ngân hàng câu hỏi.',
+    icon: <TableOutlined style={{ fontSize: '36px', color: BRAND_COLORS.TEST }} />,
+    link: '/manage-tests',
+    color: BRAND_COLORS.TEST,
+  },
+  {
+    title: 'Phân tích Kết quả Học tập',
+    description: 'Theo dõi tiến độ, điểm số và các lĩnh vực cần cải thiện của học sinh.',
+    icon: <AreaChartOutlined style={{ fontSize: '36px', color: BRAND_COLORS.ANALYTICS }} />,
+    link: '/analytics',
+    color: BRAND_COLORS.ANALYTICS,
+  },
+];
+
+const TeacherDashboard = () => {
+
+  const handleToolClick = (link) => {
+    // Logic chuyển hướng sẽ được thêm vào đây sau (ví dụ: với React Router)
+    console.log(`Chuyển hướng đến: ${link}`);
+  };
+
+  const ToolCard = ({ title, description, icon, link, color }) => (
+    <Col xs={24} sm={12} lg={8} style={{ marginBottom: 24 }}>
+      <Card
+        hoverable
+        onClick={() => handleToolClick(link)}
+        style={{ 
+          height: '100%', 
+          borderRadius: 12, 
+          // Thêm bóng đổ nhẹ để Card nổi bật hơn
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+          borderLeft: `5px solid ${color}`, // Tạo điểm nhấn màu ở cạnh trái
+        }}
+      >
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            {icon}
+            <Title level={4} style={{ margin: 0, marginLeft: 16, color: color }}>
+              {title}
+            </Title>
+          </div>
+          <p style={{ minHeight: 40 }}>{description}</p>
+          {/* Nút với màu sắc thương hiệu */}
+          <Button 
+            type="primary" 
+            size="large" 
+            style={{ backgroundColor: color, borderColor: color }}
+          >
+            Bắt đầu Ngay
+          </Button>
+        </Space>
+      </Card>
+    </Col>
+  );
+
+  return (
+    <Layout style={{ minHeight: '100vh', backgroundColor: BRAND_COLORS.BACKGROUND }}>
+      {/* Header */}
+      <Header style={{ background: '#fff', padding: 0, borderBottom: '1px solid #e8e8e8' }}>
+        <div style={{ float: 'left', margin: '0 24px' }}>
+          <Title level={3} style={{ margin: 0, lineHeight: '64px', color: '#001529' }}>
+            🧪 Teacher Hub
+          </Title>
+        </div>
+        <Menu theme="light" mode="horizontal" defaultSelectedKeys={['1']} style={{ lineHeight: '64px', float: 'right', borderBottom: 'none' }}>
+          <Menu.Item key="1" style={{ fontWeight: 'bold' }}>Dashboard</Menu.Item>
+          <Menu.Item key="2"><SettingOutlined /> Cài đặt</Menu.Item>
+          <Menu.Item key="3">Trợ giúp</Menu.Item>
+        </Menu>
+      </Header>
+
+      {/* Content */}
+      <Content style={{ padding: '24px 50px', maxWidth: 1200, margin: '0 auto' }}>
+        <div className="site-layout-content" style={{ background: '#fff', padding: 40, minHeight: 380, borderRadius: 12, boxShadow: '0 0 20px rgba(0, 0, 0, 0.08)' }}>
+          
+          <Title level={2} style={{ color: '#001529' }}>Chào mừng, Giáo viên! 👋</Title>
+          <p style={{ marginBottom: 40, fontSize: '16px', color: '#595959' }}>
+            Chọn một công cụ dưới đây để bắt đầu tạo tài nguyên dạy học và quản lý lớp học Hóa học bằng sức mạnh của AI.
+          </p>
+
+          {/* --- Phần 1: Công cụ Sáng tạo Nội dung AI --- */}
+          <Title level={3} style={{ borderBottom: '2px solid #e8e8e8', paddingBottom: 10, color: '#001529' }}>
+            ✨ Công cụ Sáng tạo Nội dung AI
+          </Title>
+          <Row gutter={[32, 32]}>
+            {aiTools.map((tool, index) => (
+              <ToolCard key={index} {...tool} />
+            ))}
+          </Row>
+
+          {/* --- Phần 2: Công cụ Quản lý & Đánh giá --- */}
+          <Title level={3} style={{ marginTop: 40, borderBottom: '2px solid #e8e8e8', paddingBottom: 10, color: '#001529' }}>
+            📊 Quản lý & Đánh giá
+          </Title>
+          <Row gutter={[32, 32]}>
+            {managementTools.map((tool, index) => (
+              <ToolCard key={index} {...tool} />
+            ))}
+          </Row>
+          
+        </div>
+      </Content>
+
+      {/* Footer */}
+      <Footer style={{ textAlign: 'center', backgroundColor: BRAND_COLORS.BACKGROUND }}>
+        AI Edu-Platform ©2025 Created by Your Team
+      </Footer>
+    </Layout>
+  );
+};
+
+export default TeacherDashboard;
