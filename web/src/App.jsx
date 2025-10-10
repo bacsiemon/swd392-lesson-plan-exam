@@ -3,7 +3,7 @@
 import { Routes, Route } from 'react-router-dom';
 import Home from './pages/Home'; 
 import Header from './components/Header'; 
-
+import Login from './pages/LoginPage';
 
 function App() {
   console.log("React App đang chạy thành công!");
@@ -12,9 +12,14 @@ function App() {
       <Header /> {/* Thanh điều hướng chung */}
       <main>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/Home" element={<Home />} />
     
         </Routes>
+        <Routes>
+          <Route path="/LoginPage" element={<Login />} />
+    
+        </Routes>
+
       </main>
     </>
   );
