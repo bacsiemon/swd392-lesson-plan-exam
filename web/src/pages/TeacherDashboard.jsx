@@ -1,26 +1,23 @@
 import React from 'react';
-import { Layout, Menu, Card, Row, Col, Typography, Button, Space } from 'antd';
+import { Card, Row, Col, Typography, Button, Space } from 'antd';
 import {
   FileTextOutlined,
   ProjectOutlined,
   QuestionCircleOutlined,
   TableOutlined,
-  SettingOutlined,
   AreaChartOutlined,
 } from '@ant-design/icons';
 
-const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
 
+// --- Dữ liệu và màu sắc không thay đổi ---
 const BRAND_COLORS = {
-  SLIDE: '#1890ff', 
-  LESSON: '#52c41a', 
-  QUESTION: '#faad14', 
-  TEST: '#eb2f96', 
-  ANALYTICS: '#f5222d', 
-  BACKGROUND: '#f0f2f5',
+  SLIDE: '#1890ff',
+  LESSON: '#52c41a',
+  QUESTION: '#faad14',
+  TEST: '#eb2f96',
+  ANALYTICS: '#f5222d',
 };
-
 
 const aiTools = [
   {
@@ -46,28 +43,27 @@ const aiTools = [
   },
 ];
 
-
 const managementTools = [
-  {
-    title: 'Quản lý Đề kiểm tra',
-    description: 'Tạo, phân phối và chấm điểm các bài kiểm tra từ ngân hàng câu hỏi.',
-    icon: <TableOutlined style={{ fontSize: '36px', color: BRAND_COLORS.TEST }} />,
-    link: '/manage-tests',
-    color: BRAND_COLORS.TEST,
-  },
-  {
-    title: 'Phân tích Kết quả Học tập',
-    description: 'Theo dõi tiến độ, điểm số và các lĩnh vực cần cải thiện của học sinh.',
-    icon: <AreaChartOutlined style={{ fontSize: '36px', color: BRAND_COLORS.ANALYTICS }} />,
-    link: '/analytics',
-    color: BRAND_COLORS.ANALYTICS,
-  },
+    {
+        title: 'Quản lý Đề kiểm tra',
+        description: 'Tạo, phân phối và chấm điểm các bài kiểm tra từ ngân hàng câu hỏi.',
+        icon: <TableOutlined style={{ fontSize: '36px', color: BRAND_COLORS.TEST }} />,
+        link: '/manage-tests',
+        color: BRAND_COLORS.TEST,
+    },
+    {
+        title: 'Phân tích Kết quả Học tập',
+        description: 'Theo dõi tiến độ, điểm số và các lĩnh vực cần cải thiện của học sinh.',
+        icon: <AreaChartOutlined style={{ fontSize: '36px', color: BRAND_COLORS.ANALYTICS }} />,
+        link: '/analytics',
+        color: BRAND_COLORS.ANALYTICS,
+    },
 ];
+
 
 const TeacherDashboard = () => {
 
   const handleToolClick = (link) => {
-    
     console.log(`Chuyển hướng đến: ${link}`);
   };
 
@@ -76,12 +72,11 @@ const TeacherDashboard = () => {
       <Card
         hoverable
         onClick={() => handleToolClick(link)}
-        style={{ 
-          height: '100%', 
-          borderRadius: 12, 
-        
+        style={{
+          height: '100%',
+          borderRadius: 12,
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-          borderLeft: `5px solid ${color}`, 
+          borderLeft: `5px solid ${color}`,
         }}
       >
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
@@ -92,10 +87,9 @@ const TeacherDashboard = () => {
             </Title>
           </div>
           <p style={{ minHeight: 40 }}>{description}</p>
-          {/* Nút với màu sắc thương hiệu */}
-          <Button 
-            type="primary" 
-            size="large" 
+          <Button
+            type="primary"
+            size="large"
             style={{ backgroundColor: color, borderColor: color }}
           >
             Bắt đầu Ngay
@@ -106,58 +100,36 @@ const TeacherDashboard = () => {
   );
 
   return (
-    <Layout style={{ minHeight: '100vh', backgroundColor: BRAND_COLORS.BACKGROUND }}>
-      {/* Header */}
-      <Header style={{ background: '#fff', padding: 0, borderBottom: '1px solid #e8e8e8' }}>
-        <div style={{ float: 'left', margin: '0 24px' }}>
-          <Title level={3} style={{ margin: 0, lineHeight: '64px', color: '#001529' }}>
-            🧪 Teacher Hub
-          </Title>
-        </div>
-        <Menu theme="light" mode="horizontal" defaultSelectedKeys={['1']} style={{ lineHeight: '64px', float: 'right', borderBottom: 'none' }}>
-          <Menu.Item key="1" style={{ fontWeight: 'bold' }}>Dashboard</Menu.Item>
-          <Menu.Item key="2"><SettingOutlined /> Cài đặt</Menu.Item>
-          <Menu.Item key="3">Trợ giúp</Menu.Item>
-        </Menu>
-      </Header>
+    // --- Bắt đầu nội dung chính ---
+    <div className="site-layout-content" style={{ background: '#fff', padding: 40, minHeight: 380, borderRadius: 12, boxShadow: '0 0 20px rgba(0, 0, 0, 0.08)' }}>
 
-      {/* Content */}
-      <Content style={{ padding: '24px 50px', maxWidth: 1200, margin: '0 auto' }}>
-        <div className="site-layout-content" style={{ background: '#fff', padding: 40, minHeight: 380, borderRadius: 12, boxShadow: '0 0 20px rgba(0, 0, 0, 0.08)' }}>
-          
-          <Title level={2} style={{ color: '#001529' }}>Chào mừng, Giáo viên! 👋</Title>
-          <p style={{ marginBottom: 40, fontSize: '16px', color: '#595959' }}>
-            Chọn một công cụ dưới đây để bắt đầu tạo tài nguyên dạy học và quản lý lớp học Hóa học bằng sức mạnh của AI.
-          </p>
+      <Title level={2} style={{ color: '#001529' }}>Chào mừng, Giáo viên! 👋</Title>
+      <p style={{ marginBottom: 40, fontSize: '16px', color: '#595959' }}>
+        Chọn một công cụ dưới đây để bắt đầu tạo tài nguyên dạy học và quản lý lớp học Hóa học bằng sức mạnh của AI.
+      </p>
 
-          {/* --- Phần 1: Công cụ Sáng tạo Nội dung AI --- */}
-          <Title level={3} style={{ borderBottom: '2px solid #e8e8e8', paddingBottom: 10, color: '#001529' }}>
-            ✨ Công cụ Sáng tạo Nội dung AI
-          </Title>
-          <Row gutter={[32, 32]}>
-            {aiTools.map((tool, index) => (
-              <ToolCard key={index} {...tool} />
-            ))}
-          </Row>
+      {/* --- Phần 1: Công cụ Sáng tạo Nội dung AI --- */}
+      <Title level={3} style={{ borderBottom: '2px solid #e8e8e8', paddingBottom: 10, color: '#001529' }}>
+        ✨ Công cụ Sáng tạo Nội dung AI
+      </Title>
+      <Row gutter={[32, 32]}>
+        {aiTools.map((tool, index) => (
+          <ToolCard key={index} {...tool} />
+        ))}
+      </Row>
 
-          {/* --- Phần 2: Công cụ Quản lý & Đánh giá --- */}
-          <Title level={3} style={{ marginTop: 40, borderBottom: '2px solid #e8e8e8', paddingBottom: 10, color: '#001529' }}>
-            📊 Quản lý & Đánh giá
-          </Title>
-          <Row gutter={[32, 32]}>
-            {managementTools.map((tool, index) => (
-              <ToolCard key={index} {...tool} />
-            ))}
-          </Row>
-          
-        </div>
-      </Content>
+      {/* --- Phần 2: Công cụ Quản lý & Đánh giá --- */}
+      <Title level={3} style={{ marginTop: 40, borderBottom: '2px solid #e8e8e8', paddingBottom: 10, color: '#001529' }}>
+        📊 Quản lý & Đánh giá
+      </Title>
+      <Row gutter={[32, 32]}>
+        {managementTools.map((tool, index) => (
+          <ToolCard key={index} {...tool} />
+        ))}
+      </Row>
 
-      {/* Footer */}
-      <Footer style={{ textAlign: 'center', backgroundColor: BRAND_COLORS.BACKGROUND }}>
-        AI Edu-Platform ©2025 Created by Your Team
-      </Footer>
-    </Layout>
+    </div>
+    // --- Kết thúc nội dung chính ---
   );
 };
 

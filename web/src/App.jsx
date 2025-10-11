@@ -1,32 +1,22 @@
-// web/src/App.jsx
-
 import { Routes, Route } from 'react-router-dom';
-import Home from './pages/Home'; 
-import Header from './components/Header'; 
+import Home from './pages/Home';
 import Login from './pages/LoginPage';
 import TeacherDashboard from './pages/TeacherDashboard';
+import Layout from './components/Layout';
 
 function App() {
   console.log("React App đang chạy thành công!");
   return (
-    <>
-      <Header /> {/* Thanh điều hướng chung */}
+    <Layout>
       <main>
         <Routes>
-          <Route path="/Home" element={<Home />} />
-    
+          <Route path="/home" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/dashboard" element={<TeacherDashboard />} />
+          <Route path="/" element={<Home />} />
         </Routes>
-        <Routes>
-          <Route path="/LoginPage" element={<Login />} />
-    
-        </Routes>
-        <Routes>
-          <Route path="/TeacherDashboard" element={<TeacherDashboard />} />
-    
-        </Routes>
-
       </main>
-    </>
+    </Layout>
   );
 }
 
