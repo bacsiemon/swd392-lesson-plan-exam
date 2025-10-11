@@ -12,18 +12,16 @@ import {
 const { Header, Content, Footer } = Layout;
 const { Title } = Typography;
 
-// --- Định nghĩa Màu sắc (Có thể thay thế bằng màu thương hiệu của bạn) ---
 const BRAND_COLORS = {
-  SLIDE: '#1890ff', // Xanh dương
-  LESSON: '#52c41a', // Xanh lá
-  QUESTION: '#faad14', // Vàng cam
-  TEST: '#eb2f96', // Hồng
-  ANALYTICS: '#f5222d', // Đỏ
-  BACKGROUND: '#f0f2f5', // Màu nền nhẹ
+  SLIDE: '#1890ff', 
+  LESSON: '#52c41a', 
+  QUESTION: '#faad14', 
+  TEST: '#eb2f96', 
+  ANALYTICS: '#f5222d', 
+  BACKGROUND: '#f0f2f5',
 };
 
 
-// --- Dữ liệu cho các Công cụ AI ---
 const aiTools = [
   {
     title: 'Tạo Slide Thuyết trình (AI)',
@@ -48,7 +46,7 @@ const aiTools = [
   },
 ];
 
-// --- Dữ liệu cho các Công cụ Quản lý & Đánh giá ---
+
 const managementTools = [
   {
     title: 'Quản lý Đề kiểm tra',
@@ -69,7 +67,7 @@ const managementTools = [
 const TeacherDashboard = () => {
 
   const handleToolClick = (link) => {
-    // Logic chuyển hướng sẽ được thêm vào đây sau (ví dụ: với React Router)
+    
     console.log(`Chuyển hướng đến: ${link}`);
   };
 
@@ -81,9 +79,9 @@ const TeacherDashboard = () => {
         style={{ 
           height: '100%', 
           borderRadius: 12, 
-          // Thêm bóng đổ nhẹ để Card nổi bật hơn
+        
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-          borderLeft: `5px solid ${color}`, // Tạo điểm nhấn màu ở cạnh trái
+          borderLeft: `5px solid ${color}`, 
         }}
       >
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
