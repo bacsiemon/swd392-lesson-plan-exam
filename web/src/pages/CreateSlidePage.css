@@ -1,0 +1,169 @@
+/* --- BIẾN MÀU VÀ FONT CHỮ --- */
+:root {
+  --minimal-blue: #0D6EFD;
+  --minimal-blue-light: #E7F1FF;
+  --background-grey: #F7F8FA;
+  --border-grey: #E9EDF0;
+  --workspace-bg: #F1F3F4; 
+  --text-primary: #212529;
+  --text-secondary: #6C757D;
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+}
+
+/* --- BỐ CỤC TOÀN TRANG --- */
+.create-slide-page-minimal {
+  padding: 16px;
+  background-color: var(--background-grey);
+  min-height: calc(100vh - 64px);
+  font-family: var(--font-family);
+}
+
+/* --- CỘT ĐIỀU KHIỂN BÊN TRÁI --- */
+.control-panel-minimal {
+  background: #FFFFFF;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid var(--border-grey);
+}
+.panel-title { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text-primary); }
+.minimal-button { margin-top: 16px !important; background-color: var(--minimal-blue) !important; font-weight: 500; }
+.saved-decks-list-minimal { display: flex; flex-direction: column; gap: 4px; }
+.saved-deck-item-minimal { padding: 10px 12px; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease; }
+.saved-deck-item-minimal:hover { background-color: var(--background-grey); }
+.saved-deck-item-minimal.active { background-color: var(--minimal-blue-light); }
+.saved-deck-item-minimal .ant-typography-secondary { font-size: 12px; }
+
+
+.workspace-container {
+  display: flex;
+  width: 100%;
+  height: calc(100vh - 64px - 32px); 
+  background: #FFFFFF;
+  border-radius: 8px;
+  border: 1px solid var(--border-grey);
+}
+
+/* Dàn bài (Navigator) */
+.slide-navigator-minimal {
+  width: 240px;
+  padding: 16px;
+  background-color: var(--background-grey);
+  border-right: 1px solid var(--border-grey);
+  display: flex;
+  flex-direction: column;
+}
+.navigator-list {
+  flex-grow: 1;
+  overflow-y: auto;
+  margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.thumbnail-item-minimal {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.thumbnail-number {
+  color: var(--text-secondary);
+}
+.thumbnail-preview {
+  flex-grow: 1;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--border-grey);
+  border-radius: 4px;
+  background: white;
+  transform: scale(1);
+  transition: all 0.2s ease;
+  overflow: hidden;
+  position: relative;
+}
+.thumbnail-item-minimal.active .thumbnail-preview {
+  border: 2px solid var(--minimal-blue);
+  box-shadow: 0 0 10px rgba(13, 110, 253, 0.3);
+}
+
+.thumbnail-preview div {
+  transform: scale(0.15);
+  transform-origin: top left;
+  width: 667%; 
+  height: 667%;
+  padding: 20px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.thumbnail-preview h1, .thumbnail-preview h2, .thumbnail-preview p, .thumbnail-preview li {
+    line-height: 1.2 !important;
+}
+
+
+.editor-workspace-minimal {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--workspace-bg);
+}
+
+
+#quill-toolbar {
+  padding: 8px 12px;
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--border-grey);
+}
+#quill-toolbar .ql-formats button, #quill-toolbar .ql-formats select {
+  border-radius: 4px;
+  margin-right: 4px;
+}
+#quill-toolbar .ql-formats button:hover, #quill-toolbar .ql-formats select:hover {
+  background-color: var(--background-grey);
+}
+
+
+.canvas-container {
+  flex-grow: 1;
+  padding: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; 
+  overflow: auto;
+}
+
+
+.slide-canvas {
+  width: 100%;
+  max-width: 960px;
+  aspect-ratio: 16 / 9;
+  background: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  overflow: hidden; 
+}
+
+
+.quill-editor-on-canvas {
+  height: 100%;
+  width: 100%;
+}
+.quill-editor-on-canvas .ql-toolbar {
+  display: none; 
+}
+.quill-editor-on-canvas .ql-container.ql-snow {
+  border: none; 
+}
+.quill-editor-on-canvas .ql-editor {
+  padding: 32px; 
+  height: 100%;
+  font-size: 18px; 
+}
+
+/* --- TIỆN ÍCH --- */
+.center-content-minimal {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}

@@ -1,5 +1,5 @@
-// web/src/components/Header.jsx
 import React from 'react';
+import Logo from '../Assets/Logo.png';
 import { Layout, Typography, Dropdown, Menu, Space, Avatar } from 'antd';
 import {
   SettingOutlined,
@@ -60,9 +60,10 @@ const AppHeader = ({ userName = 'Giáo viên A' }) => {
         alignItems: 'center'
     }}>
       {/* 1. Logo/Tên Ứng Dụng  */}
-      <div className="logo">
+      <div className="logo" style={{ display: 'flex', alignItems: 'center', height: '64px' }}>
+        <img src={Logo} alt="Logo" style={{ height: '64px', marginRight: 16 }} />
         <Title level={3} style={{ margin: 0, lineHeight: '64px', color: '#001529' }}>
-          🧪 AI Chemistry Hub
+          AI Chemistry Hub
         </Title>
       </div>
 

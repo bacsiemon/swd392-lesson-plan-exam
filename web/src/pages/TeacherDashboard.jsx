@@ -1,4 +1,6 @@
 import React from 'react';
+ import './CreateSlidePage.css';
+import { useNavigate } from 'react-router-dom'; 
 import { Card, Row, Col, Typography, Button, Space } from 'antd';
 import {
   FileTextOutlined,
@@ -9,8 +11,6 @@ import {
 } from '@ant-design/icons';
 
 const { Title } = Typography;
-
-// --- Dữ liệu và màu sắc không thay đổi ---
 const BRAND_COLORS = {
   SLIDE: '#1890ff',
   LESSON: '#52c41a',
@@ -24,7 +24,7 @@ const aiTools = [
     title: 'Tạo Slide Thuyết trình (AI)',
     description: 'Biến ý tưởng thành bài giảng hấp dẫn chỉ trong vài giây.',
     icon: <ProjectOutlined style={{ fontSize: '36px', color: BRAND_COLORS.SLIDE }} />,
-    link: '/create-slide',
+    link: '/create-slide', 
     color: BRAND_COLORS.SLIDE,
   },
   {
@@ -48,7 +48,7 @@ const managementTools = [
         title: 'Quản lý Đề kiểm tra',
         description: 'Tạo, phân phối và chấm điểm các bài kiểm tra từ ngân hàng câu hỏi.',
         icon: <TableOutlined style={{ fontSize: '36px', color: BRAND_COLORS.TEST }} />,
-        link: '/manage-tests',
+        link: '/create-test', 
         color: BRAND_COLORS.TEST,
     },
     {
@@ -62,16 +62,16 @@ const managementTools = [
 
 
 const TeacherDashboard = () => {
-
+  const navigate = useNavigate();
   const handleToolClick = (link) => {
-    console.log(`Chuyển hướng đến: ${link}`);
+    navigate(link); 
   };
 
   const ToolCard = ({ title, description, icon, link, color }) => (
     <Col xs={24} sm={12} lg={8} style={{ marginBottom: 24 }}>
       <Card
         hoverable
-        onClick={() => handleToolClick(link)}
+        onClick={() => handleToolClick(link)} 
         style={{
           height: '100%',
           borderRadius: 12,
@@ -100,36 +100,30 @@ const TeacherDashboard = () => {
   );
 
   return (
-    // --- Bắt đầu nội dung chính ---
-    <div className="site-layout-content" style={{ background: '#fff', padding: 40, minHeight: 380, borderRadius: 12, boxShadow: '0 0 20px rgba(0, 0, 0, 0.08)' }}>
-
-      <Title level={2} style={{ color: '#001529' }}>Chào mừng, Giáo viên! 👋</Title>
-      <p style={{ marginBottom: 40, fontSize: '16px', color: '#595959' }}>
-        Chọn một công cụ dưới đây để bắt đầu tạo tài nguyên dạy học và quản lý lớp học Hóa học bằng sức mạnh của AI.
-      </p>
-
-      {/* --- Phần 1: Công cụ Sáng tạo Nội dung AI --- */}
-      <Title level={3} style={{ borderBottom: '2px solid #e8e8e8', paddingBottom: 10, color: '#001529' }}>
-        ✨ Công cụ Sáng tạo Nội dung AI
-      </Title>
-      <Row gutter={[32, 32]}>
-        {aiTools.map((tool, index) => (
-          <ToolCard key={index} {...tool} />
-        ))}
-      </Row>
-
-      {/* --- Phần 2: Công cụ Quản lý & Đánh giá --- */}
-      <Title level={3} style={{ marginTop: 40, borderBottom: '2px solid #e8e8e8', paddingBottom: 10, color: '#001529' }}>
-        📊 Quản lý & Đánh giá
-      </Title>
-      <Row gutter={[32, 32]}>
-        {managementTools.map((tool, index) => (
-          <ToolCard key={index} {...tool} />
-        ))}
-      </Row>
-
+    <div className="create-slide-gradient-bg" style={{ minHeight: '100vh', width: '100%' }}>
+      <div className="site-layout-content" style={{ background: '#fff', padding: 40, minHeight: 380, borderRadius: 12, boxShadow: '0 0 20px rgba(0, 0, 0, 0.08)' }}>
+        <Title level={2} style={{ color: '#001529' }}>Chào mừng, Giáo viên! 👋</Title>
+        <p style={{ marginBottom: 40, fontSize: '16px', color: '#595959' }}>
+          Chọn một công cụ dưới đây để bắt đầu tạo tài nguyên dạy học và quản lý lớp học Hóa học.
+        </p>
+        <Title level={3} style={{ borderBottom: '2px solid #e8e8e8', paddingBottom: 10, color: '#001529' }}>
+          ✨ Công cụ Sáng tạo Nội dung AI
+        </Title>
+        <Row gutter={[32, 32]} style={{ marginTop: 24 }}>
+          {aiTools.map((tool, index) => (
+            <ToolCard key={index} {...tool} />
+          ))}
+        </Row>
+        <Title level={3} style={{ marginTop: 40, borderBottom: '2px solid #e8e8e8', paddingBottom: 10, color: '#001529' }}>
+          📊 Quản lý & Đánh giá
+        </Title>
+        <Row gutter={[32, 32]} style={{ marginTop: 24 }}>
+          {managementTools.map((tool, index) => (
+            <ToolCard key={index} {...tool} />
+          ))}
+        </Row>
+      </div>
     </div>
-    // --- Kết thúc nội dung chính ---
   );
 };
 
