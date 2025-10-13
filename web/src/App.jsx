@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Login from './pages/LoginPage';
 import Register from './pages/RegisterPage';
+import ForgotPassword from './pages/ForgotPasswordPage';
 import TeacherDashboard from './pages/TeacherDashboard';
 import QuestionBankManagement from './pages/QuestionBankManagement';
 import ExamMatrixManagement from './pages/ExamMatrixManagement';
@@ -18,6 +19,7 @@ function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/dashboard" element={<TeacherDashboard />} />
           <Route path="/question-banks" element={<QuestionBankManagement />} />
           <Route path="/exam-matrix" element={<ExamMatrixManagement />} />

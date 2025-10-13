@@ -49,11 +49,7 @@ const LoginPage = () => {
     };
 
     const handleForgotPassword = () => {
-        openNotification(
-            'warning',
-            'Đặt lại Mật khẩu',
-            'Vui lòng kiểm tra email của bạn để nhận liên kết đặt lại mật khẩu.'
-        );
+        navigate('/forgot-password');
     };
 
     const handleRegisterRedirect = () => {
