@@ -3,6 +3,7 @@ import Home from './pages/Home';
 import Login from './pages/LoginPage';
 import TeacherDashboard from './pages/TeacherDashboard';
 import QuestionBankManagement from './pages/QuestionBankManagement';
+import ExamMatrixManagement from './pages/ExamMatrixManagement';
 import Layout from './components/Layout';
 import CreateSlidePage from './pages/CreateSlidePage';
 import CreateLessonPlanPage from './pages/CreateLessonPlanPage';
@@ -17,6 +18,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<TeacherDashboard />} />
           <Route path="/question-banks" element={<QuestionBankManagement />} />
+          <Route path="/exam-matrix" element={<ExamMatrixManagement />} />
           <Route path="/" element={<Home />} />
           <Route path="/create-slide" element={<CreateSlidePage />} />
           <Route path="/create-lesson-plan" element={<CreateLessonPlanPage />} />
