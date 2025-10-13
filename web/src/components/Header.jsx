@@ -8,7 +8,8 @@ import {
   UserOutlined,
   DashboardOutlined,
   BookOutlined,
-  HomeOutlined
+  HomeOutlined,
+  TableOutlined
 } from '@ant-design/icons';
 
 const { Header } = Layout;
@@ -75,6 +76,11 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
       key: '/question-banks',
       icon: <BookOutlined />,
       label: 'Ngân hàng câu hỏi'
+    },
+    {
+      key: '/exam-matrix',
+      icon: <TableOutlined />,
+      label: 'Ma trận đề'
     }
   ];
 
