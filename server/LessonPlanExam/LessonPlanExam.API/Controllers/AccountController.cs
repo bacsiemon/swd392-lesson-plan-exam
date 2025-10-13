@@ -14,7 +14,6 @@ namespace LessonPlanExam.API.Controllers
             _accountService = accountService;
         }
 
-
         /// <summary>
         /// Get Accounts with pagination
         /// </summary>
