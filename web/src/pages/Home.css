@@ -1,0 +1,327 @@
+/* Home.css - Chemistry-themed professional styling */
+
+.home-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Hero Section */
+.hero-section {
+  padding: 80px 20px 60px;
+  text-align: center;
+  color: white;
+  position: relative;
+  z-index: 2;
+}
+
+.hero-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.chemistry-icon {
+  margin-bottom: 20px;
+}
+
+.atom-icon {
+  font-size: 4rem;
+  display: inline-block;
+  animation: rotate 3s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.hero-title {
+  font-size: 3.5rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  background: linear-gradient(45deg, #fff, #e3f2fd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-size: 1.4rem;
+  margin-bottom: 20px;
+  opacity: 0.9;
+  font-weight: 300;
+}
+
+.hero-description p {
+  font-size: 1.1rem;
+  opacity: 0.8;
+  line-height: 1.6;
+}
+
+/* Features Section */
+.features-section {
+  padding: 60px 20px;
+  background: #f8f9fa;
+  position: relative;
+  z-index: 2;
+}
+
+.features-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-title {
+  text-align: center;
+  font-size: 2.5rem;
+  color: #2c3e50;
+  margin-bottom: 50px;
+  font-weight: 600;
+}
+
+.feature-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* Feature Cards */
+.feature-card {
+  background: white;
+  border-radius: 20px;
+  padding: 40px 30px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+}
+
+.feature-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 30px 60px rgba(0,0,0,0.15);
+}
+
+.card-icon {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.card-icon .icon {
+  font-size: 3.5rem;
+  display: inline-block;
+}
+
+.ai-card .card-icon .icon {
+  background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.quiz-card .card-icon .icon {
+  background: linear-gradient(45deg, #00b894, #00cec9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.card-title {
+  font-size: 1.8rem;
+  color: #2c3e50;
+  margin-bottom: 15px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.card-description {
+  color: #636e72;
+  line-height: 1.6;
+  margin-bottom: 25px;
+  text-align: center;
+  font-size: 1.1rem;
+}
+
+.card-features {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 30px;
+}
+
+.card-features li {
+  padding: 8px 0;
+  color: #2c3e50;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.card-features li::before {
+  content: attr(data-icon);
+  margin-right: 10px;
+}
+
+/* Buttons */
+.feature-button {
+  width: 100%;
+  padding: 15px 25px;
+  border: none;
+  border-radius: 50px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.ai-button {
+  background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+  color: white;
+}
+
+.ai-button:hover {
+  background: linear-gradient(45deg, #ee5a24, #d63031);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(238, 90, 36, 0.3);
+}
+
+.quiz-button {
+  background: linear-gradient(45deg, #00b894, #00cec9);
+  color: white;
+}
+
+.quiz-button:hover {
+  background: linear-gradient(45deg, #00a085, #00b2a9);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 184, 148, 0.3);
+}
+
+.button-icon {
+  font-size: 1.2rem;
+}
+
+/* Chemistry Decoration */
+.chemistry-decoration {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.molecule {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.1);
+  font-size: 1.5rem;
+  font-weight: bold;
+  animation: float 6s ease-in-out infinite;
+}
+
+.molecule-1 {
+  top: 20%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.molecule-2 {
+  top: 40%;
+  right: 15%;
+  animation-delay: 1.5s;
+}
+
+.molecule-3 {
+  top: 70%;
+  left: 20%;
+  animation-delay: 3s;
+}
+
+.molecule-4 {
+  top: 60%;
+  right: 25%;
+  animation-delay: 4.5s;
+  font-size: 1.2rem;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(5deg); }
+}
+
+/* Stats Section */
+.stats-section {
+  padding: 50px 20px;
+  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  color: white;
+}
+
+.stats-container {
+  max-width: 800px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 40px;
+  text-align: center;
+}
+
+.stat-item {
+  padding: 20px;
+}
+
+.stat-number {
+  font-size: 3rem;
+  font-weight: bold;
+  color: #74b9ff;
+  margin-bottom: 10px;
+}
+
+.stat-label {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  font-weight: 300;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2.5rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.2rem;
+  }
+  
+  .feature-cards {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  
+  .feature-card {
+    padding: 30px 20px;
+  }
+  
+  .section-title {
+    font-size: 2rem;
+  }
+  
+  .stats-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
