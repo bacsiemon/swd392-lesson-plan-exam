@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom'; // <<< Bổ sung import Hooks
+import { useNavigate, useLocation } from 'react-router-dom';
 import Logo from '../Assets/Logo.png';
 import { Layout, Typography, Dropdown, Menu, Space, Avatar } from 'antd';
 import {
@@ -13,13 +13,9 @@ import {
 
 const { Header } = Layout;
 const { Title } = Typography;
-
-// Xóa định nghĩa const accountMenu ở đây để tránh lặp
-
 const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
   const navigate = useNavigate();
-  const location = useLocation(); // Dùng để xác định mục menu đang active
-
+  const location = useLocation(); 
   // 1. Định nghĩa menu cho Dropdown Tài khoản
   const accountMenu = (
     <Menu

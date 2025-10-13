@@ -38,7 +38,7 @@ const aiTools = [
     title: 'Ngân hàng Câu hỏi & Ôn tập (AI)',
     description: 'Tự động tạo câu hỏi trắc nghiệm và tự luận chất lượng cao.',
     icon: <QuestionCircleOutlined style={{ fontSize: '36px', color: BRAND_COLORS.QUESTION }} />,
-    link: '/question-bank',
+    link: '/question-banks',
     color: BRAND_COLORS.QUESTION,
   },
 ];

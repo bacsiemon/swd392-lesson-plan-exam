@@ -1,0 +1,110 @@
+/* --- BIẾN MÀU VÀ FONT CHỮ --- */
+:root {
+  --doc-blue: #2F54EB;
+  --doc-blue-light: #F0F5FF;
+  --background-grey: #F7F8FA;
+  --border-grey: #D9D9D9;
+  --workspace-bg: #F1F3F4;
+  --text-primary: #262626;
+  --text-secondary: #8C8C8C;
+  --font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+}
+
+/* --- BỐ CỤC TOÀN TRANG --- */
+.create-lesson-plan-page {
+  padding: 24px;
+  background-color: var(--background-grey);
+  min-height: calc(100vh - 64px);
+  font-family: var(--font-family);
+}
+
+/* --- CỘT ĐIỀU KHIỂN BÊN TRÁI --- */
+.control-panel-doc {
+  background: #FFFFFF;
+  border-radius: 8px;
+  padding: 24px;
+  border: 1px solid var(--border-grey);
+  height: 100%;
+}
+.panel-title-doc { display: flex; align-items: center; gap: 8px; font-weight: 500; color: var(--text-primary); }
+.doc-button { margin-top: 16px !important; background-color: var(--doc-blue) !important; font-weight: 500; }
+.saved-docs-list { display: flex; flex-direction: column; gap: 8px; }
+.saved-doc-item { padding: 12px; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease; border: 1px solid transparent; }
+.saved-doc-item:hover { background-color: var(--background-grey); }
+.saved-doc-item.active { background-color: var(--doc-blue-light); border-color: var(--doc-blue); }
+.saved-doc-item .ant-typography-secondary { font-size: 12px; }
+
+/* --- WORKSPACE BÊN PHẢI --- */
+.editor-workspace-doc {
+  height: calc(100vh - 64px - 48px);
+  background: #FFFFFF;
+  border-radius: 8px;
+  border: 1px solid var(--border-grey);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Thanh công cụ tùy chỉnh */
+#quill-toolbar-doc {
+  padding: 8px 12px;
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--border-grey);
+  flex-shrink: 0; /* Ngăn toolbar co lại */
+}
+#quill-toolbar-doc .ql-formats button, #quill-toolbar-doc .ql-formats select {
+  border-radius: 4px;
+  margin-right: 4px;
+}
+#quill-toolbar-doc .ql-formats button:hover, #quill-toolbar-doc .ql-formats select:hover {
+  background-color: var(--background-grey);
+}
+
+/* Vùng chứa document canvas */
+.canvas-container-doc {
+  flex-grow: 1;
+  padding: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow: auto; /* Cho phép cuộn khi nội dung dài */
+  background: var(--workspace-bg);
+}
+
+/* Document Canvas */
+.document-canvas {
+  width: 816px; /* Tương đương A4 width */
+  min-height: 1056px; /* Tương đương A4 height */
+  background: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  padding: 72px; /* Lề cho văn bản */
+}
+
+/* Trình soạn thảo Quill trên Canvas */
+.quill-editor-on-doc {
+  height: 100%;
+  width: 100%;
+}
+.quill-editor-on-doc .ql-toolbar {
+  display: none; /* Ẩn toolbar mặc định */
+}
+.quill-editor-on-doc .ql-container.ql-snow {
+  border: none; /* Xóa viền của trình soạn thảo */
+}
+.quill-editor-on-doc .ql-editor {
+  padding: 0; /* Reset padding vì đã có padding ở .document-canvas */
+  height: 100%;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* --- TIỆN ÍCH --- */
+.center-content-doc {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}

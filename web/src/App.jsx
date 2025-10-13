@@ -5,9 +5,10 @@ import TeacherDashboard from './pages/TeacherDashboard';
 import QuestionBankManagement from './pages/QuestionBankManagement';
 import Layout from './components/Layout';
 import CreateSlidePage from './pages/CreateSlidePage';
+import CreateLessonPlanPage from './pages/CreateLessonPlanPage';
 
 function App() {
-  console.log("React App đang chạy thành công!");
+ 
   return (
     <Layout>
       <main>
@@ -18,6 +19,7 @@ function App() {
           <Route path="/question-banks" element={<QuestionBankManagement />} />
           <Route path="/" element={<Home />} />
           <Route path="/create-slide" element={<CreateSlidePage />} />
+          <Route path="/create-lesson-plan" element={<CreateLessonPlanPage />} />
         </Routes>
       </main>
     </Layout>
