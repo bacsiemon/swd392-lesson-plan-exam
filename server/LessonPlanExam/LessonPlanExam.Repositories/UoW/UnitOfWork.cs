@@ -28,5 +28,7 @@ namespace LessonPlanExam.Repositories.UoW
         private IAccountRepository _accountRepository;
         public IAccountRepository AccountRepository => _accountRepository ??= new Repositories.AccountRepository(_context);
 
+        private IFileUploadRepository _fileUploadRepository;
+        public IFileUploadRepository FileUploadRepository => _fileUploadRepository ??= new Repositories.FileUploadRepository(_context);
     }
 }

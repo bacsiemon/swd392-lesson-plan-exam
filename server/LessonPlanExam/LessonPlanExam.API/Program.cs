@@ -1,5 +1,6 @@
 using App.Infrastructure;
 using LessonPlanExam.API;
+using LessonPlanExam.API.Middlewares;
 using LessonPlanExam.Repositories;
 using LessonPlanExam.Repositories.DTOs;
 using LessonPlanExam.Services;
@@ -13,9 +14,9 @@ builder.Services.AddServiceConfigurations(builder.Configuration);
 builder.Services.AddRepositoryConfigurations(builder.Configuration);
 
 // Get assemblies that contain validators
-// Requires a class from the assembly
-var repositoriesAssembly = Assembly.GetAssembly(typeof(ExampleRequest))!;
-builder.Services.AddInfrastructureConfigurations(builder.Configuration, repositoriesAssembly);
+var apiAssembly = Assembly.GetExecutingAssembly(); // API assembly for API DTOs and validators
+var repositoriesAssembly = Assembly.GetAssembly(typeof(ExampleRequest))!; // Repositories assembly
+builder.Services.AddInfrastructureConfigurations(builder.Configuration, apiAssembly, repositoriesAssembly);
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -28,6 +29,10 @@ builder.Services.AddSwaggerGen(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+
+// Add exception middleware first to catch all unhandled exceptions
+app.UseMiddleware<ExceptionMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

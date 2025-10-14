@@ -1,4 +1,4 @@
-﻿using LessonPlanExam.DTOs.AccountDTOs;
+﻿using LessonPlanExam.Repositories.DTOs.AccountDTOs;
 using LessonPlanExam.Repositories.Models;
 using System;
 using System.Collections.Generic;

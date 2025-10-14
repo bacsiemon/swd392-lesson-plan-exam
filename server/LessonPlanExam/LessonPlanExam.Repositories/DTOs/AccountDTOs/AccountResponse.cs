@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LessonPlanExam.DTOs.AccountDTOs
+namespace LessonPlanExam.Repositories.DTOs.AccountDTOs
 {
     public class AccountResponse
     {

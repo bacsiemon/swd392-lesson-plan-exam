@@ -348,5 +348,3 @@ SCHEMA STRUCTURE:
 - All application tables are in the lesson_plan_system schema
 - This provides better organization and avoids conflicts with system tables
 */
-
-ALTER TABLE lesson_plans DELETE COLUMN approval_status_enum;
