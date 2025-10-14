@@ -97,7 +97,19 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
       }}
     >
       {/* 1. Logo/Tên Ứng Dụng */}
-      <div className="logo" style={{ display: 'flex', alignItems: 'center', height: '64px' }}>
+      <div 
+        className="logo" 
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          height: '64px', 
+          cursor: 'pointer',
+          transition: 'opacity 0.3s'
+        }}
+        onClick={() => navigate('/')}
+        onMouseEnter={(e) => e.target.style.opacity = '0.8'}
+        onMouseLeave={(e) => e.target.style.opacity = '1'}
+      >
         <img src={Logo} alt="Logo" style={{ height: '64px', marginRight: 16 }} />
         <Title level={3} style={{ margin: 0, lineHeight: '64px', color: '#001529' }}>
           AI Chemistry Hub

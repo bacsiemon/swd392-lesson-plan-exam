@@ -9,6 +9,7 @@ import ExamMatrixManagement from './pages/ExamMatrixManagement';
 import Layout from './components/Layout';
 import CreateSlidePage from './pages/CreateSlidePage';
 import CreateLessonPlanPage from './pages/CreateLessonPlanPage';
+import AdminUserManagement from './pages/AdminUserManagement';
 
 function App() {
 
@@ -23,6 +24,7 @@ function App() {
           <Route path="/dashboard" element={<TeacherDashboard />} />
           <Route path="/question-banks" element={<QuestionBankManagement />} />
           <Route path="/exam-matrix" element={<ExamMatrixManagement />} />
+          <Route path="/admin/users" element={<AdminUserManagement />} />
           <Route path="/" element={<Home />} />
           <Route path="/create-slide" element={<CreateSlidePage />} />
           <Route path="/create-lesson-plan" element={<CreateLessonPlanPage />} />

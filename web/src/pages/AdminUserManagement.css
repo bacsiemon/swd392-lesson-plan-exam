@@ -1,0 +1,26 @@
+/* --- BỐ CỤC TOÀN TRANG --- */
+.admin-page-container {
+  padding: 24px;
+  background-color: #f0f2f5;
+  min-height: calc(100vh - 64px);
+}
+
+/* --- THANH CÔNG CỤ --- */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+/* --- BẢNG --- */
+.ant-table-wrapper {
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ant-table-thead > tr > th {
+  background-color: #fafafa !important;
+  font-weight: 600;
+}
