@@ -15,6 +15,33 @@ namespace LessonPlanExam.API.Controllers
             _fileUploadService = fileUploadService;
         }
 
+
+        /// <summary>User</summary>
+        /// <remarks>
+        /// 
+        /// Upload a file to the server with automatic validation.
+        /// 
+        /// Maximum file size: 10MB  
+        /// 
+        /// Validation is performed automatically using FluentValidation before processing.
+        /// 
+        /// Sample request:
+        /// 
+        /// POST /api/fileupload  
+        /// Content-Type: multipart/form-data  
+        /// 
+        /// Form Data:  
+        /// - file: [Select file to upload]  
+        /// 
+        /// </remarks>
+        /// <param name="request">File upload request containing the file</param>
+        /// <response code="201">File uploaded successfully. Returns file information including ID, filename, MIME type, upload date, and file size.</response>
+        /// <response code="400">Validation error with structured error response. Possible validation messages:  
+        /// - FILE_REQUIRED  
+        /// - INVALID_FILE_EXTENSION  
+        /// - FILE_SIZE_EXCEEDS_LIMIT  
+        /// </response>
+        /// <response code="500">Internal server error occurred during file upload. Handled by ExceptionMiddleware.</response>
         [HttpPost]
         public async Task<IActionResult> UploadFileAsync([FromForm] FileUploadRequest request)
         {
