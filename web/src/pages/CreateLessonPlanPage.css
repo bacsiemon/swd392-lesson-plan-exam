@@ -1,110 +1,126 @@
 /* --- BIẾN MÀU VÀ FONT CHỮ --- */
 :root {
-  --doc-blue: #2F54EB;
-  --doc-blue-light: #F0F5FF;
-  --background-grey: #F7F8FA;
-  --border-grey: #D9D9D9;
-  --workspace-bg: #F1F3F4;
-  --text-primary: #262626;
-  --text-secondary: #8C8C8C;
-  --font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  --alt-blue: #0D6EFD;
+  --alt-blue-light: #E7F1FF;
+  --alt-bg: #F8F9FA;
+  --alt-border: #DEE2E6;
+  --alt-workspace-bg: #E9ECEF; /* Thay đổi màu nền workspace */
+  --alt-text: #212529;
+  --alt-text-secondary: #6C757D;
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
 }
 
-/* --- BỐ CỤC TOÀN TRANG --- */
-.create-lesson-plan-page {
-  padding: 24px;
-  background-color: var(--background-grey);
-  min-height: calc(100vh - 64px);
-  font-family: var(--font-family);
-}
+/* --- BỐ CỤC TOÀN TRANG (GIỮ NGUYÊN) --- */
+.create-lesson-plan-page-alt { padding: 24px; background-color: var(--alt-bg); min-height: calc(100vh - 64px); font-family: var(--font-family); }
+.control-panel-alt { background: #FFFFFF; border-radius: 8px; padding: 24px; border: 1px solid var(--alt-border); height: 100%; }
+.panel-title-alt { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--alt-text); }
+.alt-button { margin-top: 16px !important; background-color: var(--alt-blue) !important; font-weight: 500; }
+.saved-docs-list-alt { display: flex; flex-direction: column; gap: 8px; }
+.saved-doc-item-alt { padding: 12px; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease; border: 1px solid transparent; }
+.saved-doc-item-alt:hover { background-color: var(--alt-bg); }
+.saved-doc-item-alt.active { background-color: var(--alt-blue-light); border-color: var(--alt-blue); }
 
-/* --- CỘT ĐIỀU KHIỂN BÊN TRÁI --- */
-.control-panel-doc {
-  background: #FFFFFF;
-  border-radius: 8px;
-  padding: 24px;
-  border: 1px solid var(--border-grey);
-  height: 100%;
+/* --- CSS MỚI CHO MỤC LỤC --- */
+.outline-panel {
+    max-height: 250px;
 }
-.panel-title-doc { display: flex; align-items: center; gap: 8px; font-weight: 500; color: var(--text-primary); }
-.doc-button { margin-top: 16px !important; background-color: var(--doc-blue) !important; font-weight: 500; }
-.saved-docs-list { display: flex; flex-direction: column; gap: 8px; }
-.saved-doc-item { padding: 12px; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease; border: 1px solid transparent; }
-.saved-doc-item:hover { background-color: var(--background-grey); }
-.saved-doc-item.active { background-color: var(--doc-blue-light); border-color: var(--doc-blue); }
-.saved-doc-item .ant-typography-secondary { font-size: 12px; }
+.outline-list {
+    overflow-y: auto;
+    max-height: 200px;
+    padding-right: 8px;
+}
+.outline-item {
+    display: block;
+    padding: 6px 8px;
+    border-radius: 4px;
+    color: var(--alt-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background-color 0.2s ease;
+}
+.outline-item:hover {
+    background-color: var(--alt-bg);
+}
+.outline-item.level-2 { padding-left: 24px; }
+.outline-item.level-3 { padding-left: 40px; }
 
-/* --- WORKSPACE BÊN PHẢI --- */
-.editor-workspace-doc {
+/* --- CSS MỚI CHO PHÂN TRANG VÀ WORKSPACE --- */
+.editor-workspace-alt {
   height: calc(100vh - 64px - 48px);
-  background: #FFFFFF;
+  background: var(--alt-workspace-bg); /* Nền xám cho khu vực làm việc */
   border-radius: 8px;
-  border: 1px solid var(--border-grey);
+  border: 1px solid var(--alt-border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
+.editor-header-alt {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 24px; border-bottom: 1px solid var(--alt-border);
+    flex-shrink: 0; background: #FFFFFF;
+}
+.document-title-alt { margin-bottom: 0 !important; flex-grow: 1; }
+.editor-actions-alt { display: flex; align-items: center; gap: 12px; }
+.save-status-alt { font-style: italic; }
+.save-status-alt.saved { color: green; }
+.save-status-alt.unsaved { color: orange; }
 
-/* Thanh công cụ tùy chỉnh */
-#quill-toolbar-doc {
-  padding: 8px 12px;
-  background: #FFFFFF;
-  border-bottom: 1px solid var(--border-grey);
-  flex-shrink: 0; /* Ngăn toolbar co lại */
-}
-#quill-toolbar-doc .ql-formats button, #quill-toolbar-doc .ql-formats select {
-  border-radius: 4px;
-  margin-right: 4px;
-}
-#quill-toolbar-doc .ql-formats button:hover, #quill-toolbar-doc .ql-formats select:hover {
-  background-color: var(--background-grey);
-}
-
-/* Vùng chứa document canvas */
-.canvas-container-doc {
+.canvas-container-alt {
   flex-grow: 1;
-  padding: 32px;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  overflow: auto; /* Cho phép cuộn khi nội dung dài */
-  background: var(--workspace-bg);
+  padding: 32px 0; /* Chỉ padding trên dưới */
+  overflow: auto; /* Cho phép cuộn */
 }
 
-/* Document Canvas */
-.document-canvas {
-  width: 816px; /* Tương đương A4 width */
-  min-height: 1056px; /* Tương đương A4 height */
-  background: #FFFFFF;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-radius: 2px;
-  padding: 72px; /* Lề cho văn bản */
+/* Đây là phần quan trọng để tạo hiệu ứng phân trang */
+.quill-editor-alt .ql-editor {
+    width: 816px; /* A4 width */
+    min-height: 1056px; /* A4 height */
+    padding: 72px; /* Lề văn bản */
+    margin: 0 auto 24px auto; /* Căn giữa trang và tạo khoảng cách giữa các trang */
+    background: #FFFFFF;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    border-radius: 2px;
+}
+.quill-editor-alt .ql-container.ql-snow {
+    border: none;
+}
+.quill-editor-alt .ql-toolbar {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
+    border: none;
+    border-bottom: 1px solid var(--alt-border);
+    padding: 12px;
 }
 
-/* Trình soạn thảo Quill trên Canvas */
-.quill-editor-on-doc {
-  height: 100%;
-  width: 100%;
-}
-.quill-editor-on-doc .ql-toolbar {
-  display: none; /* Ẩn toolbar mặc định */
-}
-.quill-editor-on-doc .ql-container.ql-snow {
-  border: none; /* Xóa viền của trình soạn thảo */
-}
-.quill-editor-on-doc .ql-editor {
-  padding: 0; /* Reset padding vì đã có padding ở .document-canvas */
-  height: 100%;
-  font-size: 16px;
-  line-height: 1.6;
-}
+.center-content-alt { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column; }
 
-/* --- TIỆN ÍCH --- */
-.center-content-doc {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
+/* --- CSS DÀNH RIÊNG CHO VIỆC IN --- */
+@media print {
+  /* Ẩn tất cả những gì không cần thiết */
+  body > *:not(.create-lesson-plan-page-alt) {
+    display: none;
+  }
+  .create-lesson-plan-page-alt > .ant-row > .ant-col:first-child,
+  .editor-header-alt,
+  .quill-editor-alt .ql-toolbar {
+    display: none;
+  }
+  /* Cấu hình lại layout để chỉ in nội dung */
+  .create-lesson-plan-page-alt {
+    padding: 0;
+  }
+  .editor-workspace-alt, .canvas-container-alt {
+    height: auto;
+    padding: 0;
+    overflow: visible;
+  }
+  .document-canvas-alt {
+    box-shadow: none;
+    width: 100%;
+    min-height: auto;
+    padding: 0;
+  }
 }
