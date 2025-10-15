@@ -5,8 +5,6 @@ const { Option } = Select;
 
 const EditUserModal = ({ visible, user, onEdit, onCancel }) => {
   const [form] = Form.useForm();
-
-  // Sử dụng useEffect để cập nhật form khi người dùng thay đổi
   useEffect(() => {
     if (user) {
       form.setFieldsValue(user);

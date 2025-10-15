@@ -4,7 +4,7 @@ import { GoogleOutlined, UserOutlined, LockOutlined, MailOutlined, PhoneOutlined
 import { useNavigate } from 'react-router-dom';
 
 import Logo from '../Assets/Logo.png';
-import Background from '../Assets/Backgound.jpg';
+import ChemistryBackground from '../components/ChemistryBackground';
 
 const { Title, Text, Link } = Typography;
 const { Content } = Layout;
@@ -57,10 +57,6 @@ const RegisterPage = () => {
             className="register-layout"
             style={{
                 minHeight: '100vh',
-                backgroundImage: `url(${Background})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
                 position: 'fixed',
                 top: 0,
                 left: 0,
@@ -70,6 +66,7 @@ const RegisterPage = () => {
                 height: '100vh',
             }}
         >
+            <ChemistryBackground />
             <Content style={{ padding: '24px', display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'transparent', minHeight: '100vh' }}>
 
                 <Card
