@@ -23,6 +23,10 @@ public partial class LessonPlan
 
     public DateTime? DeletedAt { get; set; }
 
+    public string ImageUrl { get; set; }
+
+    public int GradeLevel { get; set; }
+
     public virtual Teacher CreatedByTeacherNavigation { get; set; }
 
     public virtual ICollection<SlotPlan> SlotPlans { get; set; } = new List<SlotPlan>();

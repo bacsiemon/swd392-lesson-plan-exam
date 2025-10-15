@@ -11,7 +11,8 @@ CREATE SCHEMA public;
 -- exam_status_enum: 1=draft, 2=inactive, 3=active
 -- attempt_status_enum: 1=in_progress, 2=submitted, 3=graded, 4=expired
 -- scoring_method_enum: 1=average, 2=highest, 3=latest
--- approval_status_enum: 1=draft, 2=requested, 3=approved, 4=rejected
+-- question_bank_status_enum: 1=draft, 2=active, 3=archived
+-- =============================================================================
 
 
 
@@ -68,6 +69,8 @@ CREATE TABLE lesson_plans (
     created_by_teacher INTEGER NOT NULL REFERENCES teachers(account_id) ON DELETE CASCADE,
     objectives TEXT, -- mục tiêu
     description TEXT,
+    image_url TEXT,
+    grade_level INTEGER NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE
@@ -106,7 +109,7 @@ CREATE TABLE question_banks (
     grade_level INTEGER NOT NULL CHECK (grade_level BETWEEN 1 AND 12),
     teacher_id INTEGER NOT NULL REFERENCES teachers(account_id) ON DELETE CASCADE,
     description TEXT,
-    status_enum INTEGER DEFAULT 1, -- 1=draft, 2=requested, 3=approved, 4=rejected
+    status_enum INTEGER DEFAULT 1, -- 1=draft, 2=active, 3=archived
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE
@@ -305,46 +308,3 @@ CREATE TABLE file_uploads (
     mime_type VARCHAR(100) NOT NULL,
     uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-
-
-
--- =============================================================================
--- DEPLOYMENT INSTRUCTIONS
--- =============================================================================
-
-/*
-DEPLOYMENT STEPS:
-
-1. Run this script as a PostgreSQL superuser (typically 'postgres')
-
-2. The script will:
-   - Drop the database 'lesson_plan_exam_db' if it exists
-   - Create a new database 'lesson_plan_exam_db' with UTF-8 encoding
-   - Create a dedicated schema 'lesson_plan_system'
-   - Create all tables, constraints, and indexes within the new schema
-
-3. After running this script, connect to the database using:
-   Database: lesson_plan_exam_db
-   Schema: lesson_plan_system
-
-4. Connection examples:
-   
-   PostgreSQL Command Line:
-   psql -U postgres -d lesson_plan_exam_db
-   
-   Application Connection String:
-   postgresql://username:password@localhost:5432/lesson_plan_exam_db
-   
-   Set search path in your application:
-   SET search_path TO lesson_plan_system, public;
-
-5. All tables are created in the 'lesson_plan_system' schema, so you can either:
-   - Set the search_path to include lesson_plan_system (recommended)
-   - Reference tables with full schema name: lesson_plan_system.accounts
-
-SCHEMA STRUCTURE:
-- Database: lesson_plan_exam_db
-- Schema: lesson_plan_system
-- All application tables are in the lesson_plan_system schema
-- This provides better organization and avoids conflicts with system tables
-*/

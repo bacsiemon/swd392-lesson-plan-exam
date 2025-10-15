@@ -18,7 +18,7 @@ public partial class QuestionBank
 
     public string Description { get; set; }
 
-    public EApprovalStatus? StatusEnum { get; set; }
+    public EQuestionBankStatus? StatusEnum { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 
