@@ -16,7 +16,7 @@ const AppLayout = ({ children }) => {
       <AppHeader /> 
       
       {/* 2. Phần Nội dung */}
-      <Content style={{ padding: '0 50px', maxWidth: 1200, margin: '20px auto 0 auto', width: '100%' }}>
+      <Content style={{ padding: '0', margin: '0', width: '100%' }}>
         {children}
       </Content>
       

@@ -49,9 +49,9 @@ body {
 
 /* 2. Thiết lập cho Phần tử Gốc của React */
 #root {
-  max-width: 1400px; /* Thêm chiều rộng tối đa cho các màn hình lớn */
-  margin: 0 auto;
-  padding: 0; /* Thường bỏ padding ở đây và đặt vào layout component */
+  width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 /* 3. Tiêu đề (Headings) */

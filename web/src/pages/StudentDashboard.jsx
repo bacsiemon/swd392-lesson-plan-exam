@@ -14,6 +14,26 @@ import {
   QuestionCircleOutlined,
 } from '@ant-design/icons';
 
+// Add CSS for liquid glass animations
+const liquidGlassStyles = `
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(180deg); }
+  }
+  
+  @keyframes floatReverse {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(20px) rotate(-180deg); }
+  }
+`;
+
+// Inject styles
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement('style');
+  styleSheet.textContent = liquidGlassStyles;
+  document.head.appendChild(styleSheet);
+}
+
 const { Title, Text } = Typography;
 
 const BRAND_COLORS = {
@@ -133,13 +153,22 @@ const StudentDashboard = () => {
   };
 
   const StatCard = ({ title, value, icon, color, suffix }) => (
-    <Card style={{ textAlign: 'center', borderRadius: 12 }}>
+    <Card style={{ 
+      textAlign: 'center', 
+      borderRadius: 16,
+      background: 'rgba(255, 255, 255, 0.1)',
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
+      border: '1px solid rgba(255, 255, 255, 0.15)',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+      transition: 'all 0.3s ease'
+    }}>
       <Statistic
-        title={title}
+        title={<span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>{title}</span>}
         value={value}
         prefix={icon}
         suffix={suffix}
-        valueStyle={{ color: color }}
+        valueStyle={{ color: color, textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}
       />
     </Card>
   );
@@ -151,23 +180,43 @@ const StudentDashboard = () => {
         onClick={() => handleToolClick(link)}
         style={{
           height: '100%',
-          borderRadius: 12,
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-          borderLeft: `5px solid ${color}`,
+          borderRadius: 16,
+          background: 'rgba(255, 255, 255, 0.1)',
+          backdropFilter: 'blur(15px)',
+          WebkitBackdropFilter: 'blur(15px)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+          borderLeft: `4px solid ${color}`,
+          transition: 'all 0.3s ease',
+          transform: 'translateY(0)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = 'translateY(-4px)';
+          e.currentTarget.style.boxShadow = '0 12px 32px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = 'translateY(0)';
+          e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)';
         }}
       >
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             {icon}
-            <Title level={4} style={{ margin: 0, marginLeft: 16, color: color }}>
+            <Title level={4} style={{ margin: 0, marginLeft: 16, color: 'rgba(255, 255, 255, 0.95)', textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}>
               {title}
             </Title>
           </div>
-          <p style={{ minHeight: 40 }}>{description}</p>
+          <p style={{ minHeight: 40, color: 'rgba(255, 255, 255, 0.8)' }}>{description}</p>
           <Button
             type="primary"
             size="large"
-            style={{ backgroundColor: color, borderColor: color }}
+            style={{ 
+              backgroundColor: color, 
+              borderColor: color,
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)'
+            }}
           >
             Bắt đầu
           </Button>
@@ -177,20 +226,53 @@ const StudentDashboard = () => {
   );
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '20px' }}>
+    <div style={{ 
+      minHeight: '100vh', 
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)',
+      padding: '0',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      {/* Animated background elements for liquid glass effect */}
+      <div style={{
+        position: 'absolute',
+        top: '-50%',
+        left: '-50%',
+        width: '200%',
+        height: '200%',
+        background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
+        animation: 'float 20s ease-in-out infinite',
+        zIndex: 0
+      }} />
+      <div style={{
+        position: 'absolute',
+        top: '20%',
+        right: '-30%',
+        width: '60%',
+        height: '60%',
+        background: 'radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%)',
+        animation: 'floatReverse 15s ease-in-out infinite',
+        zIndex: 0
+      }} />
+      
       <div style={{ 
-        background: '#fff', 
-        padding: 40, 
-        minHeight: 'calc(100vh - 40px)', 
-        borderRadius: 12, 
-        boxShadow: '0 0 20px rgba(0, 0, 0, 0.08)' 
+        background: 'rgba(255, 255, 255, 0.15)', 
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        padding: '40px 20px', 
+        minHeight: '100vh', 
+        borderRadius: 0, 
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+        position: 'relative',
+        zIndex: 1
       }}>
         {/* Header */}
         <div style={{ marginBottom: 32 }}>
-          <Title level={2} style={{ color: '#001529', marginBottom: 8 }}>
+          <Title level={2} style={{ color: 'rgba(255, 255, 255, 0.95)', marginBottom: 8, textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}>
             Chào mừng, Học sinh! 👋
           </Title>
-          <Text type="secondary" style={{ fontSize: '16px' }}>
+          <Text style={{ fontSize: '16px', color: 'rgba(255, 255, 255, 0.8)' }}>
             Hôm nay là {currentTime} - Hãy tiếp tục hành trình học tập của bạn!
           </Text>
         </div>
@@ -237,7 +319,12 @@ const StudentDashboard = () => {
 
         {/* Quick Actions */}
         <div style={{ marginBottom: 32 }}>
-          <Title level={3} style={{ borderBottom: '2px solid #e8e8e8', paddingBottom: 10, color: '#001529' }}>
+          <Title level={3} style={{ 
+            borderBottom: '2px solid rgba(255, 255, 255, 0.2)', 
+            paddingBottom: 10, 
+            color: 'rgba(255, 255, 255, 0.95)',
+            textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+          }}>
             🚀 Hành động nhanh
           </Title>
           <Row gutter={[32, 32]} style={{ marginTop: 24 }}>
@@ -268,7 +355,17 @@ const StudentDashboard = () => {
         <Row gutter={[24, 24]}>
           {/* Recent Lessons */}
           <Col xs={24} lg={12}>
-            <Card title="📚 Bài học gần đây" style={{ borderRadius: 12 }}>
+            <Card 
+              title={<span style={{ color: 'rgba(255, 255, 255, 0.95)', textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}>📚 Bài học gần đây</span>} 
+              style={{ 
+                borderRadius: 16,
+                background: 'rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(15px)',
+                WebkitBackdropFilter: 'blur(15px)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+              }}
+            >
               <List
                 dataSource={recentLessons}
                 renderItem={(lesson) => (
@@ -321,7 +418,17 @@ const StudentDashboard = () => {
 
           {/* Upcoming Exams */}
           <Col xs={24} lg={12}>
-            <Card title="📅 Sắp tới" style={{ borderRadius: 12 }}>
+            <Card 
+              title={<span style={{ color: 'rgba(255, 255, 255, 0.95)', textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}>📅 Sắp tới</span>} 
+              style={{ 
+                borderRadius: 16,
+                background: 'rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(15px)',
+                WebkitBackdropFilter: 'blur(15px)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+              }}
+            >
               <List
                 dataSource={upcomingExams}
                 renderItem={(exam) => (
@@ -364,7 +471,12 @@ const StudentDashboard = () => {
 
         {/* Achievements */}
         <div style={{ marginTop: 32 }}>
-          <Title level={3} style={{ borderBottom: '2px solid #e8e8e8', paddingBottom: 10, color: '#001529' }}>
+          <Title level={3} style={{ 
+            borderBottom: '2px solid rgba(255, 255, 255, 0.2)', 
+            paddingBottom: 10, 
+            color: 'rgba(255, 255, 255, 0.95)',
+            textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+          }}>
             🏆 Thành tích
           </Title>
           <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
@@ -372,19 +484,24 @@ const StudentDashboard = () => {
               <Col xs={24} sm={12} lg={8} key={achievement.id}>
                 <Card
                   style={{
-                    borderRadius: 12,
+                    borderRadius: 16,
                     opacity: achievement.earned ? 1 : 0.6,
-                    border: achievement.earned ? '2px solid #52c41a' : '1px solid #d9d9d9',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    backdropFilter: 'blur(15px)',
+                    WebkitBackdropFilter: 'blur(15px)',
+                    border: achievement.earned ? '2px solid rgba(82, 196, 26, 0.6)' : '1px solid rgba(255, 255, 255, 0.2)',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                    transition: 'all 0.3s ease'
                   }}
                 >
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: '48px', marginBottom: 16 }}>
                       {achievement.icon}
                     </div>
-                    <Title level={4} style={{ marginBottom: 8 }}>
+                    <Title level={4} style={{ marginBottom: 8, color: 'rgba(255, 255, 255, 0.95)', textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}>
                       {achievement.title}
                     </Title>
-                    <Text type="secondary">{achievement.description}</Text>
+                    <Text style={{ color: 'rgba(255, 255, 255, 0.8)' }}>{achievement.description}</Text>
                     {achievement.earned && (
                       <div style={{ marginTop: 12 }}>
                         <Badge status="success" text="Đã đạt được" />

@@ -101,7 +101,7 @@ const TeacherDashboard = () => {
 
   return (
     <div className="create-slide-gradient-bg" style={{ minHeight: '100vh', width: '100%' }}>
-      <div className="site-layout-content" style={{ background: '#fff', padding: 40, minHeight: 380, borderRadius: 12, boxShadow: '0 0 20px rgba(0, 0, 0, 0.08)' }}>
+      <div className="site-layout-content" style={{ background: '#fff', padding: '40px 20px', minHeight: '100vh', borderRadius: 0, boxShadow: '0 0 20px rgba(0, 0, 0, 0.08)' }}>
         <Title level={2} style={{ color: '#001529' }}>Chào mừng, Giáo viên! 👋</Title>
         <p style={{ marginBottom: 40, fontSize: '16px', color: '#595959' }}>
           Chọn một công cụ dưới đây để bắt đầu tạo tài nguyên dạy học và quản lý lớp học Hóa học.
