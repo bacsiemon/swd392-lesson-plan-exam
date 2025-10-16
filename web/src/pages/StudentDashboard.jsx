@@ -329,10 +329,10 @@ const StudentDashboard = () => {
           </Title>
           <Row gutter={[32, 32]} style={{ marginTop: 24 }}>
             <ToolCard
-              title="Tiếp tục học"
-              description="Tiếp tục bài học đang dang dở hoặc bắt đầu bài học mới."
+              title="Tham gia lớp học"
+              description="Tìm và tham gia lớp học bằng mã lớp và mật khẩu."
               icon={<PlayCircleOutlined style={{ fontSize: '36px', color: BRAND_COLORS.LESSON }} />}
-              link="/lessons"
+              link="/enroll-class"
               color={BRAND_COLORS.LESSON}
             />
             <ToolCard

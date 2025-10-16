@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Form, Input, Button, Card, Typography, Row, Col, Layout, notification, Divider } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Form, Input, Button, Card, Typography, Row, Col, Layout, notification, Divider, Checkbox } from 'antd';
 import { GoogleOutlined, UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
@@ -17,18 +17,63 @@ const openNotification = (type, message, description) => {
 
 const LoginPage = () => {
     const [loading, setLoading] = useState(false);
+    const [hasSavedCredentials, setHasSavedCredentials] = useState(false);
     const [form] = Form.useForm();
     const navigate = useNavigate();
+
+    // Load saved credentials on component mount
+    useEffect(() => {
+        const savedCredentials = localStorage.getItem('rememberedCredentials');
+        setHasSavedCredentials(!!savedCredentials);
+        
+        if (savedCredentials) {
+            try {
+                const { username, password, remember } = JSON.parse(savedCredentials);
+                if (remember) {
+                    form.setFieldsValue({
+                        username: username,
+                        password: password,
+                        remember: remember
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading saved credentials:', error);
+                localStorage.removeItem('rememberedCredentials');
+                setHasSavedCredentials(false);
+            }
+        }
+    }, [form]);
     const onFinish = (values) => {
         setLoading(true);
         setTimeout(() => {
             setLoading(false);
             if (values.username === 'chemistry' && values.password === '123') {
+                // Handle remember password functionality
+                if (values.remember) {
+                    // Save credentials to localStorage
+                    const credentialsToSave = {
+                        username: values.username,
+                        password: values.password,
+                        remember: true,
+                        savedAt: new Date().toISOString()
+                    };
+                    localStorage.setItem('rememberedCredentials', JSON.stringify(credentialsToSave));
+                    setHasSavedCredentials(true);
+                } else {
+                    // Remove saved credentials if remember is unchecked
+                    localStorage.removeItem('rememberedCredentials');
+                    setHasSavedCredentials(false);
+                }
+
                 openNotification(
                     'success',
                     'Đăng nhập thành công',
                     'Chào mừng bạn đến với Trang web Giáo dục Hóa học.'
                 );
+
+                // Navigate to appropriate dashboard based on user role
+                // For demo purposes, navigate to student dashboard
+                navigate('/student-dashboard');
 
             } else {
                 openNotification(
@@ -54,6 +99,17 @@ const LoginPage = () => {
 
     const handleRegisterRedirect = () => {
         navigate('/register');
+    };
+
+    const handleClearSavedCredentials = () => {
+        localStorage.removeItem('rememberedCredentials');
+        setHasSavedCredentials(false);
+        form.resetFields();
+        openNotification(
+            'success',
+            'Đã xóa thông tin đã lưu',
+            'Thông tin đăng nhập đã được xóa khỏi trình duyệt.'
+        );
     };
     return (
         <Layout
@@ -138,6 +194,11 @@ const LoginPage = () => {
                                     />
                                 </Form.Item>
 
+                                {/* Remember Password Checkbox */}
+                                <Form.Item name="remember" valuePropName="checked" style={{ marginBottom: '16px' }}>
+                                    <Checkbox>Ghi nhớ mật khẩu</Checkbox>
+                                </Form.Item>
+
                                 {/* Nút Đăng nhập */}
                                 <Form.Item style={{ marginBottom: 0 }}>
                                     <Button
@@ -152,11 +213,16 @@ const LoginPage = () => {
                                 </Form.Item>
                             </Form>
 
-                            {/* Link Quên mật khẩu */}
+                            {/* Link Quên mật khẩu và Clear Saved Credentials */}
                             <div style={{ textAlign: 'center', marginTop: '16px' }}>
-                                <Link onClick={handleForgotPassword} style={{ color: '#595959' }}>
+                                <Link onClick={handleForgotPassword} style={{ color: '#595959', marginRight: '16px' }}>
                                     Quên mật khẩu?
                                 </Link>
+                                {hasSavedCredentials && (
+                                    <Link onClick={handleClearSavedCredentials} style={{ color: '#ff4d4f' }}>
+                                        Xóa thông tin đã lưu
+                                    </Link>
+                                )}
                             </div>
 
                             {/* Nút Đăng ký tài khoản */}
