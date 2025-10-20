@@ -1,7 +1,7 @@
 import React from 'react';
 import { Table, Space, Avatar, Progress, Tag } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
-import { getScoreColor, getProgressColor, getStatusTag } from '../services/classManagementUtils';
+import { getScoreColor, getProgressColor, getStatusTag } from '../utils/classManagementUtils';
 
 const StudentTable = ({ students }) => {
   const studentColumns = [

@@ -35,7 +35,7 @@ import {
   students, 
   calculateClassStats, 
   filterStudents 
-} from '../services/classManagementUtils';
+} from '../utils/classManagementUtils';
 
 const { Title, Text } = Typography;
 const { Search } = Input;

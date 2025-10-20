@@ -1,7 +1,7 @@
 import React from 'react';
 import { Row, Col, Typography, Progress } from 'antd';
 import GlassCard from './GlassCard';
-import { getProgressColor, getScoreColor } from '../services/classManagementUtils';
+import { getProgressColor, getScoreColor } from '../utils/classManagementUtils';
 
 const { Title, Text } = Typography;
 

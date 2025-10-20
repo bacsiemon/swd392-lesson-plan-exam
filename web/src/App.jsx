@@ -13,6 +13,7 @@ import Layout from './components/Layout';
 import CreateSlidePage from './pages/CreateSlidePage';
 import CreateLessonPlanPage from './pages/CreateLessonPlanPage';
 import AdminUserManagement from './pages/AdminUserManagement';
+import LessonPlansPage from './pages/LessonPlansPage';
 
 function App() {
 
@@ -34,6 +35,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/create-slide" element={<CreateSlidePage />} />
           <Route path="/create-lesson-plan" element={<CreateLessonPlanPage />} />
+          <Route path="/lesson-plans" element={<LessonPlansPage />} />
         </Routes>
       </main>
     </Layout>
