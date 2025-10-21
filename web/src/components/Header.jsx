@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Logo from '../Assets/Logo.png';
 import { Layout, Typography, Dropdown, Menu, Space, Avatar } from 'antd';
+import './Header.css';
 import {
   SettingOutlined,
   LogoutOutlined,
@@ -9,14 +10,48 @@ import {
   DashboardOutlined,
   BookOutlined,
   HomeOutlined,
-  TableOutlined
+  TableOutlined,
+  FileTextOutlined
 } from '@ant-design/icons';
 
 const { Header } = Layout;
 const { Title } = Typography;
 const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
   const navigate = useNavigate();
-  const location = useLocation(); 
+  const location = useLocation();
+
+  // State để theo dõi trạng thái scroll
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Effect để lắng nghe sự kiện scroll với throttling để tối ưu performance
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+          setIsScrolled(scrollTop > 10); // Trigger từ 10px để tránh flicker
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    // Thêm event listener với passive để tối ưu performance
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    // Cleanup event listener khi component unmount
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  // Memoized navigation handler
+  const handleNavigation = useCallback((path) => {
+    navigate(path);
+  }, [navigate]);
+
   // 1. Định nghĩa menu cho Dropdown Tài khoản
   const accountMenu = (
     <Menu
@@ -24,8 +59,8 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
         if (key === 'logout') {
           console.log('Đăng xuất...');
           navigate('/login');
-        } else if (key === 'dashboard') {
-          navigate('/dashboard');
+        } else if (key === 'create-lesson-plan') {
+          navigate('/create-lesson-plan');
         } else {
           // Xử lý các key khác như 'profile', 'settings'
           navigate(`/${key}`);
@@ -33,9 +68,9 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
       }}
       items={[
         {
-          key: 'dashboard',
-          icon: <DashboardOutlined />,
-          label: 'Dashboard',
+          key: 'create-lesson-plan',
+          icon: <FileTextOutlined />,
+          label: 'Xây dựng giáo án',
         },
         {
           key: 'profile',
@@ -68,9 +103,9 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
       label: 'Trang chủ'
     },
     {
-      key: '/dashboard',
-      icon: <DashboardOutlined />,
-      label: 'Dashboard'
+      key: '/create-lesson-plan',
+      icon: <FileTextOutlined />,
+      label: 'Xây dựng giáo án'
     },
     {
       key: '/question-banks',
@@ -91,6 +126,7 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
 
   return (
     <Header
+      className={`sticky-header ${isScrolled ? 'scrolled' : ''}`}
       style={{
         background: '#fff',
         padding: '0 50px',
@@ -102,16 +138,16 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
       }}
     >
       {/* 1. Logo/Tên Ứng Dụng */}
-      <div 
-        className="logo" 
-        style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          height: '64px', 
+      <div
+        className="logo"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          height: '64px',
           cursor: 'pointer',
           transition: 'opacity 0.3s'
         }}
-        onClick={() => navigate('/')}
+        onClick={() => handleNavigation('/')}
         onMouseEnter={(e) => e.target.style.opacity = '0.8'}
         onMouseLeave={(e) => e.target.style.opacity = '1'}
       >
@@ -126,12 +162,12 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
         theme="light"
         mode="horizontal"
         // Lấy key đang active từ URL (ví dụ: /dashboard)
-        selectedKeys={[location.pathname]} 
+        selectedKeys={[location.pathname]}
         items={menuItems}
-        onClick={({ key }) => navigate(key)}
+        onClick={({ key }) => handleNavigation(key)}
         style={{ flexGrow: 1, minWidth: 0, borderBottom: 'none', lineHeight: '62px', justifyContent: 'center' }}
       />
-      
+
 
       {/* 3. Mục Tài khoản và Dropdown */}
       <Dropdown overlay={accountMenu} trigger={['click']} placement="bottomRight">
