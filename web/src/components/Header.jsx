@@ -81,6 +81,11 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
       key: '/exam-matrix',
       icon: <TableOutlined />,
       label: 'Ma trận đề'
+    },
+    {
+      key: '/manage-tests',
+      icon: <TableOutlined />,
+      label: 'Quản lý đề kiểm tra'
     }
   ];
 

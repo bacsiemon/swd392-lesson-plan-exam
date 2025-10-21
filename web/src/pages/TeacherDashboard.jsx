@@ -39,13 +39,7 @@ const BRAND_COLORS = {
 };
 
 const aiTools = [
-  {
-    title: 'Tạo Slide Thuyết trình (AI)',
-    description: 'Biến ý tưởng thành bài giảng hấp dẫn chỉ trong vài giây.',
-    icon: <ProjectOutlined style={{ fontSize: '36px', color: BRAND_COLORS.SLIDE }} />,
-    link: '/create-slide', 
-    color: BRAND_COLORS.SLIDE,
-  },
+  
   {
     title: 'Xây dựng Giáo án Bài giảng (AI)',
     description: 'Thiết kế giáo án chi tiết và cấu trúc cho bất kỳ chủ đề Hóa học nào.',
@@ -67,14 +61,14 @@ const managementTools = [
         title: 'Quản lý Đề kiểm tra',
         description: 'Tạo, phân phối và chấm điểm các bài kiểm tra từ ngân hàng câu hỏi.',
         icon: <TableOutlined style={{ fontSize: '36px', color: BRAND_COLORS.TEST }} />,
-        link: '/create-test', 
+        link: '/manage-tests', 
         color: BRAND_COLORS.TEST,
     },
     {
         title: 'Phân tích Kết quả Học tập',
         description: 'Theo dõi tiến độ, điểm số và các lĩnh vực cần cải thiện của học sinh.',
         icon: <AreaChartOutlined style={{ fontSize: '36px', color: BRAND_COLORS.ANALYTICS }} />,
-        link: '/manage-classes',
+        link: '/manage-tests',
         color: BRAND_COLORS.ANALYTICS,
     },
 ];

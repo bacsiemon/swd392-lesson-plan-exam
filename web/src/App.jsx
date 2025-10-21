@@ -6,11 +6,10 @@ import ForgotPassword from './pages/ForgotPasswordPage';
 import TeacherDashboard from './pages/TeacherDashboard';
 import StudentDashboard from './pages/StudentDashboard';
 import ClassEnrollmentPage from './pages/ClassEnrollmentPage';
-import ManageClassesPage from './pages/ManageClassesPage';
+import ManageTestPage from './pages/ManageTestPage';
 import QuestionBankManagement from './pages/QuestionBankManagement';
 import ExamMatrixManagement from './pages/ExamMatrixManagement';
 import Layout from './components/Layout';
-import CreateSlidePage from './pages/CreateSlidePage';
 import CreateLessonPlanPage from './pages/CreateLessonPlanPage';
 import AdminUserManagement from './pages/AdminUserManagement';
 import LessonPlansPage from './pages/LessonPlansPage';
@@ -29,12 +28,11 @@ function App() {
           <Route path="/dashboard" element={<TeacherDashboard />} />
           <Route path="/student-dashboard" element={<StudentDashboard />} />
           <Route path="/enroll-class" element={<ClassEnrollmentPage />} />
-          <Route path="/manage-classes" element={<ManageClassesPage />} />
+          <Route path="/manage-tests" element={<ManageTestPage />} />
           <Route path="/question-banks" element={<QuestionBankManagement />} />
           <Route path="/exam-matrix" element={<ExamMatrixManagement />} />
           <Route path="/admin/users" element={<AdminUserManagement />} />
           <Route path="/" element={<Home />} />
-          <Route path="/create-slide" element={<CreateSlidePage />} />
           <Route path="/create-lesson-plan" element={<CreateLessonPlanPage />} />
           <Route path="/lesson-plans" element={<LessonPlansPage />} />
           <Route path="/lesson/:id" element={<LessonPlanDetails />} />
