@@ -22,9 +22,7 @@ const AppLayout = ({ children }) => {
           padding: '0',
           margin: '0',
           width: '100%',
-          minHeight: 'calc(100vh - 64px)',
-          // Đảm bảo content không bị che bởi sticky header
-          paddingTop: '0' // CSS class sẽ handle margin-top
+          minHeight: 'calc(100vh - 64px)'
         }}
       >
         {children}

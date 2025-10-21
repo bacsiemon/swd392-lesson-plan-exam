@@ -14,6 +14,7 @@ import CreateLessonPlanPage from './pages/CreateLessonPlanPage';
 import AdminUserManagement from './pages/AdminUserManagement';
 import LessonPlansPage from './pages/LessonPlansPage';
 import LessonPlanDetails from './pages/LessonPlanDetails';
+import TeacherProfile from './pages/TeacherProfile';
 
 function App() {
 
@@ -36,6 +37,7 @@ function App() {
           <Route path="/create-lesson-plan" element={<CreateLessonPlanPage />} />
           <Route path="/lesson-plans" element={<LessonPlansPage />} />
           <Route path="/lesson/:id" element={<LessonPlanDetails />} />
+          <Route path="/profile" element={<TeacherProfile />} />
         </Routes>
       </main>
     </Layout>
