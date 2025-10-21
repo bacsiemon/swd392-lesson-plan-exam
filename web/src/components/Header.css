@@ -117,10 +117,50 @@
   }
 }
 
-/* Smooth content transition */
+/* Smooth content transition - đảm bảo không bị header che */
 .content-with-sticky-header {
-  margin-top: 64px;
+  margin-top: 64px !important;
   transition: margin-top 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+/* Fallback cho các trang không dùng Layout component */
+.content-with-sticky-header main, 
+main.main-content, 
+.page-content,
+.ant-layout-content main {
+  margin-top: 0 !important; /* Reset margin vì parent đã có margin-top */
+  padding-top: 0;
+}
+
+/* Đảm bảo body có đủ space */
+body {
+  padding-top: 0 !important;
+}
+
+/* Utility classes cho các trường hợp đặc biệt */
+.page-with-sticky-header {
+  padding-top: 64px !important;
+}
+
+.no-header-spacing {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .content-with-sticky-header {
+    margin-top: 64px !important; /* Giữ nguyên 64px cho mobile */
+  }
+  
+  .content-with-sticky-header main, 
+  main.main-content, 
+  .page-content {
+    margin-top: 0 !important;
+    padding-top: 0;
+  }
 }
 
 /* Accessibility: Respect user's motion preferences */

@@ -7,9 +7,9 @@
   overflow-x: hidden;
 }
 
-/* Hero Section */
+/* Hero Section - Adjusted for sticky header */
 .hero-section {
-  padding: 80px 20px 60px;
+  padding: 20px 20px 60px; /* Giảm top padding từ 80px xuống 20px vì Layout đã có margin-top 64px */
   text-align: center;
   color: white;
   position: relative;
