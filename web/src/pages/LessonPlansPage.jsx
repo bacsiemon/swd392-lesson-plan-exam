@@ -300,14 +300,14 @@ const LessonPlansPage = () => {
                 type="primary" 
                 size="small"
                 icon={<PlayCircleOutlined />}
-                onClick={() => handleStudyLesson(lesson)}
+                onClick={() => navigate(`/lesson/${lesson.id}`)}
               >
                 Học ngay
               </Button>
               <Button 
                 size="small"
                 icon={<EyeOutlined />}
-                onClick={() => handleStudyLesson(lesson)}
+                onClick={() => navigate(`/lesson/${lesson.id}`)}
               >
                 Xem chi tiết
               </Button>
@@ -429,7 +429,7 @@ const LessonPlansPage = () => {
           <Button key="close" onClick={handleCloseModal}>
             Đóng
           </Button>,
-          <Button key="study" type="primary" icon={<PlayCircleOutlined />}>
+          <Button key="study" type="primary" icon={<PlayCircleOutlined />} onClick={() => navigate(`/lesson/${selectedLesson?.id}`)}>
             Bắt đầu học
           </Button>
         ]}

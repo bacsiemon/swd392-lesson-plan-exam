@@ -1,0 +1,5 @@
+/* Simple styles for lesson details */
+.lesson-details .lesson-card {
+  max-width: 900px;
+  margin: 0 auto;
+}
