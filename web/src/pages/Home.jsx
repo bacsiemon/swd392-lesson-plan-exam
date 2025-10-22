@@ -1,119 +1,92 @@
 // web/src/pages/Home.jsx
 
+
 import React from 'react';
 import './Home.css';
 
 function Home() {
-  const handleCreateLesson = () => {
-    // Navigate to AI lesson creation page
-    console.log('Navigate to AI lesson creation');
-  };
-
-  const handleCreateQuiz = () => {
-    // Navigate to quiz creation page
-    console.log('Navigate to quiz creation');
-  };
-
   return (
-    <div className="home-container">
-      {/* Header Section */}
-      <header className="hero-section">
-        <div className="hero-content">
-          <div className="chemistry-icon">
-            <span className="atom-icon">⚛️</span>
-          </div>
-          <h1 className="hero-title">ChemLearn Pro</h1>
-          <p className="hero-subtitle">
-            Hệ thống tạo bài giảng và quiz hóa học thông minh
-          </p>
-          <div className="hero-description">
-            <p>Tạo nội dung giáo dục hóa học chất lượng cao với công nghệ AI</p>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Features Section */}
-      <main className="features-section">
-        <div className="features-container">
-          <h2 className="section-title">Chọn chức năng</h2>
-          
-          <div className="feature-cards">
-            {/* AI Lesson Creation Card */}
-            <div className="feature-card ai-card">
-              <div className="card-icon">
-                <span className="icon">🧠</span>
-              </div>
-              <h3 className="card-title">Tạo Bài Giảng AI</h3>
-              <p className="card-description">
-                Sử dụng OpenAI để tạo bài giảng hóa học tự động với nội dung chất lượng cao
-              </p>
-              <ul className="card-features">
-                <li>✨ Tự động tạo nội dung</li>
-                <li>🔬 Tích hợp công thức hóa học</li>
-                <li>📊 Biểu đồ và minh họa</li>
-                <li>⚡ Nhanh chóng và chính xác</li>
-              </ul>
-              <button className="feature-button ai-button" onClick={handleCreateLesson}>
-                <span className="button-icon">🚀</span>
-                Tạo Bài Giảng
-              </button>
-            </div>
-
-            {/* Quiz Creation Card */}
-            <div className="feature-card quiz-card">
-              <div className="card-icon">
-                <span className="icon">📝</span>
-              </div>
-              <h3 className="card-title">Tạo Quiz Hóa Học</h3>
-              <p className="card-description">
-                Tạo và quản lý bộ câu hỏi từ question bank với nhiều dạng bài tập khác nhau
-              </p>
-              <ul className="card-features">
-                <li>📚 Question Bank đa dạng</li>
-                <li>🎯 Nhiều loại câu hỏi</li>
-                <li>⚖️ Phân loại độ khó</li>
-                <li>📈 Theo dõi kết quả</li>
-              </ul>
-              <button className="feature-button quiz-button" onClick={handleCreateQuiz}>
-                <span className="button-icon">📋</span>
-                Tạo Quiz
-              </button>
+    <div className="home-landing-container">
+      {/* Hero Section */}
+      <section className="hero-landing-section">
+        <div className="hero-landing-content">
+          <div className="hero-landing-left">
+            <div className="ai-badge">AI-Powered Chemistry Education</div>
+            <h1 className="main-headline">
+              Create Lessons &amp; Quizzes <span className="highlight">Intelligently</span>
+            </h1>
+            <p className="main-desc">
+              ChemMaster helps Chemistry teachers generate engaging lessons and custom quizzes with AI. Save time, focus on teaching excellence.
+            </p>
+            <div className="hero-btn-group">
+              <button className="main-btn primary">Start Creating Free</button>
+              <button className="main-btn secondary">Watch Demo</button>
             </div>
           </div>
+          <div className="hero-landing-right">
+            <img
+              src="https://chem-quest-maker.lovable.app/assets/hero-chemistry-CZtc_ENI.jpg"
+              alt="Chemistry Illustration"
+              className="hero-chem-img"
+            />
+          </div>
         </div>
-      </main>
+      </section>
 
-      {/* Chemistry Elements Decoration */}
-      <div className="chemistry-decoration">
-        <div className="molecule molecule-1">
-          <span>H₂O</span>
+      {/* Features Section */}
+      <section className="features-landing-section">
+        <div className="features-landing-container">
+          <div className="feature-landing-card">
+            <div className="feature-landing-icon" style={{background: 'linear-gradient(135deg,#1abc9c,#16a085)'}}>
+              <span role="img" aria-label="AI">🧠</span>
+            </div>
+            <div className="feature-landing-title">AI Lesson Generator</div>
+            <div className="feature-landing-desc">
+              Enter any Chemistry topic and get a complete, structured lesson with objectives, theory, examples, and practice questions in seconds.
+            </div>
+            <ul className="feature-landing-list">
+              <li>Full lesson structure</li>
+              <li>Learning objectives</li>
+              <li>Export to Word/PDF</li>
+            </ul>
+          </div>
+          <div className="feature-landing-card">
+            <div className="feature-landing-icon" style={{background: 'linear-gradient(135deg,#00b894,#00cec9)'}}>
+              <span role="img" aria-label="Quiz">📝</span>
+            </div>
+            <div className="feature-landing-title">Smart Quiz Creator</div>
+            <div className="feature-landing-desc">
+              Generate custom quizzes tailored to grade level and difficulty. Multiple choice, true/false, and short answer questions with solutions.
+            </div>
+            <ul className="feature-landing-list">
+              <li>Grade 8-12 support</li>
+              <li>Adjustable difficulty</li>
+              <li>Instant answers</li>
+            </ul>
+          </div>
+          <div className="feature-landing-card">
+            <div className="feature-landing-icon" style={{background: 'linear-gradient(135deg,#6c5ce7,#a29bfe)'}}>
+              <span role="img" aria-label="Dashboard">🎓</span>
+            </div>
+            <div className="feature-landing-title">Personal Dashboard</div>
+            <div className="feature-landing-desc">
+              Organize all your lessons and quizzes in one place. Access, edit, and share your content anytime.
+            </div>
+            <ul className="feature-landing-list">
+              <li>Save unlimited content</li>
+              <li>Quick search</li>
+              <li>Easy sharing</li>
+            </ul>
+          </div>
         </div>
-        <div className="molecule molecule-2">
-          <span>CO₂</span>
-        </div>
-        <div className="molecule molecule-3">
-          <span>NaCl</span>
-        </div>
-        <div className="molecule molecule-4">
-          <span>C₆H₁₂O₆</span>
-        </div>
-      </div>
+      </section>
 
-      {/* Stats Section */}
-      <section className="stats-section">
-        <div className="stats-container">
-          <div className="stat-item">
-            <div className="stat-number">500+</div>
-            <div className="stat-label">Bài giảng</div>
-          </div>
-          <div className="stat-item">
-            <div className="stat-number">1000+</div>
-            <div className="stat-label">Câu hỏi</div>
-          </div>
-          <div className="stat-item">
-            <div className="stat-number">50+</div>
-            <div className="stat-label">Chủ đề</div>
-          </div>
+      {/* Call to Action Section */}
+      <section className="cta-landing-section">
+        <div className="cta-landing-container">
+          <h2 className="cta-headline">Ready to Transform Your Chemistry Teaching?</h2>
+          <p className="cta-desc">Join Chemistry teachers who are saving hours every week with ChemMaster</p>
+          <button className="main-btn primary cta-btn">Create Your Free Account</button>
         </div>
       </section>
     </div>

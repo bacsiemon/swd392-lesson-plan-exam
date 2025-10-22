@@ -15,6 +15,7 @@ import AdminUserManagement from './pages/AdminUserManagement';
 import LessonPlansPage from './pages/LessonPlansPage';
 import LessonPlanDetails from './pages/LessonPlanDetails';
 import TeacherProfile from './pages/TeacherProfile';
+import StudentTestPage from './pages/StudentTestPage';
 
 function App() {
 
@@ -38,6 +39,7 @@ function App() {
           <Route path="/lesson-plans" element={<LessonPlansPage />} />
           <Route path="/lesson/:id" element={<LessonPlanDetails />} />
           <Route path="/profile" element={<TeacherProfile />} />
+          <Route path="/student-test" element={<StudentTestPage />} />
         </Routes>
       </main>
     </Layout>

@@ -1,343 +1,262 @@
-/* Home.css - Chemistry-themed professional styling */
-
-.home-container {
+/* Modern landing page styles for Home */
+.home-landing-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  position: relative;
-  overflow-x: hidden;
-}
-
-/* Hero Section - Adjusted for sticky header */
-.hero-section {
-  padding: 20px 20px 60px;
-  /* Giảm top padding từ 80px xuống 20px vì Layout đã có margin-top 64px */
-  text-align: center;
-  color: white;
-  position: relative;
-  z-index: 2;
-}
-
-.hero-content {
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-
-.chemistry-icon {
-  margin-bottom: 20px;
-}
-
-.atom-icon {
-  font-size: 4rem;
-  display: inline-block;
-  animation: rotate 3s linear infinite;
-}
-
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.hero-title {
-  font-size: 3.5rem;
-  font-weight: 700;
-  margin-bottom: 20px;
-  background: linear-gradient(45deg, #fff, #e3f2fd);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.hero-subtitle {
-  font-size: 1.4rem;
-  margin-bottom: 20px;
-  opacity: 0.9;
-  font-weight: 300;
-}
-
-.hero-description p {
-  font-size: 1.1rem;
-  opacity: 0.8;
-  line-height: 1.6;
-}
-
-/* Features Section */
-.features-section {
-  padding: 60px 20px;
-  background: #f8f9fa;
-  position: relative;
-  z-index: 2;
-}
-
-.features-container {
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-
-.section-title {
-  text-align: center;
-  font-size: 2.5rem;
-  color: #2c3e50;
-  margin-bottom: 50px;
-  font-weight: 600;
-}
-
-.feature-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 40px;
-  max-width: 100%;
-  margin: 0 auto;
-}
-
-/* Feature Cards */
-.feature-card {
-  background: white;
-  border-radius: 20px;
-  padding: 40px 30px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.feature-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(45deg, #667eea, #764ba2);
-}
-
-.feature-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
-}
-
-.card-icon {
-  text-align: center;
-  margin-bottom: 25px;
-}
-
-.card-icon .icon {
-  font-size: 3.5rem;
-  display: inline-block;
-}
-
-.ai-card .card-icon .icon {
-  background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.quiz-card .card-icon .icon {
-  background: linear-gradient(45deg, #00b894, #00cec9);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.card-title {
-  font-size: 1.8rem;
-  color: #2c3e50;
-  margin-bottom: 15px;
-  font-weight: 600;
-  text-align: center;
-}
-
-.card-description {
-  color: #636e72;
-  line-height: 1.6;
-  margin-bottom: 25px;
-  text-align: center;
-  font-size: 1.1rem;
-}
-
-.card-features {
-  list-style: none;
-  padding: 0;
-  margin-bottom: 30px;
-}
-
-.card-features li {
-  padding: 8px 0;
-  color: #2c3e50;
-  font-size: 1rem;
+  background: #f8fafd;
   display: flex;
+  flex-direction: column;
+}
+
+/* Hero Section */
+.hero-landing-section {
+  width: 100%;
+  padding: 48px 0 32px 0;
+  background: #fff;
+  display: flex;
+  justify-content: center;
   align-items: center;
 }
 
-.card-features li::before {
-  content: attr(data-icon);
-  margin-right: 10px;
+.hero-landing-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  width: 100%;
+  gap: 48px;
+  padding: 0 32px;
 }
 
-/* Buttons */
-.feature-button {
-  width: 100%;
-  padding: 15px 25px;
-  border: none;
-  border-radius: 50px;
+.hero-landing-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 320px;
+}
+
+.ai-badge {
+  display: inline-block;
+  background: #e6fcf5;
+  color: #16a085;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 20px;
+  padding: 6px 18px;
+  margin-bottom: 24px;
+  letter-spacing: 0.5px;
+}
+
+.main-headline {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: #222;
+  margin-bottom: 18px;
+  line-height: 1.1;
+}
+.main-headline .highlight {
+  color: #16a085;
+}
+
+.main-desc {
+  font-size: 1.2rem;
+  color: #444;
+  margin-bottom: 32px;
+  max-width: 500px;
+}
+
+.hero-btn-group {
+  display: flex;
+  gap: 18px;
+}
+
+.main-btn {
   font-size: 1.1rem;
   font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  padding: 14px 32px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(22,160,133,0.08);
+}
+.main-btn.primary {
+  background: linear-gradient(90deg,#1abc9c,#16a085);
+  color: #fff;
+}
+.main-btn.primary:hover {
+  background: linear-gradient(90deg,#16a085,#1abc9c);
+  box-shadow: 0 4px 16px rgba(22,160,133,0.15);
+}
+.main-btn.secondary {
+  background: #fff;
+  color: #16a085;
+  border: 2px solid #16a085;
+}
+.main-btn.secondary:hover {
+  background: #e6fcf5;
+}
+
+.hero-landing-right {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  min-width: 320px;
 }
-
-.ai-button {
-  background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-  color: white;
-}
-
-.ai-button:hover {
-  background: linear-gradient(45deg, #ee5a24, #d63031);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(238, 90, 36, 0.3);
-}
-
-.quiz-button {
-  background: linear-gradient(45deg, #00b894, #00cec9);
-  color: white;
-}
-
-.quiz-button:hover {
-  background: linear-gradient(45deg, #00a085, #00b2a9);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 25px rgba(0, 184, 148, 0.3);
-}
-
-.button-icon {
-  font-size: 1.2rem;
-}
-
-/* Chemistry Decoration */
-.chemistry-decoration {
-  position: fixed;
-  top: 0;
-  left: 0;
+.hero-chem-img {
   width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
+  max-width: 420px;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(22,160,133,0.10);
 }
 
-.molecule {
-  position: absolute;
-  color: rgba(255, 255, 255, 0.1);
-  font-size: 1.5rem;
-  font-weight: bold;
-  animation: float 6s ease-in-out infinite;
+/* Features Section */
+.features-landing-section {
+  background: #f8fafd;
+  padding: 48px 0 32px 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
-
-.molecule-1 {
-  top: 20%;
-  left: 10%;
-  animation-delay: 0s;
+.features-landing-container {
+  display: flex;
+  flex-direction: row;
+  gap: 32px;
+  max-width: 1100px;
+  width: 100%;
+  justify-content: center;
 }
-
-.molecule-2 {
-  top: 40%;
-  right: 15%;
-  animation-delay: 1.5s;
+.feature-landing-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(44,62,80,0.07);
+  padding: 32px 24px 24px 24px;
+  flex: 1;
+  min-width: 260px;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: box-shadow 0.2s;
 }
-
-.molecule-3 {
-  top: 70%;
-  left: 20%;
-  animation-delay: 3s;
+.feature-landing-card:hover {
+  box-shadow: 0 8px 32px rgba(44,62,80,0.13);
 }
-
-.molecule-4 {
-  top: 60%;
-  right: 25%;
-  animation-delay: 4.5s;
-  font-size: 1.2rem;
+.feature-landing-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin-bottom: 18px;
+  color: #fff;
 }
-
-@keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-
-  50% {
-    transform: translateY(-20px) rotate(5deg);
-  }
-}
-
-/* Stats Section */
-.stats-section {
-  padding: 50px 20px;
-  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-  color: white;
-}
-
-.stats-container {
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 0 20px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 40px;
-  text-align: center;
-}
-
-.stat-item {
-  padding: 20px;
-}
-
-.stat-number {
-  font-size: 3rem;
-  font-weight: bold;
-  color: #74b9ff;
+.feature-landing-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #222;
   margin-bottom: 10px;
 }
+.feature-landing-desc {
+  color: #444;
+  font-size: 1rem;
+  margin-bottom: 14px;
+}
+.feature-landing-list {
+  list-style: disc inside;
+  color: #16a085;
+  font-size: 0.98rem;
+  padding-left: 16px;
+  margin: 0;
+}
+.feature-landing-list li {
+  margin-bottom: 4px;
+}
 
-.stat-label {
-  font-size: 1.2rem;
-  opacity: 0.9;
-  font-weight: 300;
+/* CTA Section */
+.cta-landing-section {
+  width: 100%;
+  background: linear-gradient(90deg,#1abc9c,#16a085);
+  padding: 48px 0 48px 0;
+  display: flex;
+  justify-content: center;
+}
+.cta-landing-container {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(44,62,80,0.07);
+  padding: 40px 32px;
+  max-width: 800px;
+  width: 100%;
+  text-align: center;
+}
+.cta-headline {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #16a085;
+  margin-bottom: 16px;
+}
+.cta-desc {
+  color: #444;
+  font-size: 1.1rem;
+  margin-bottom: 28px;
+}
+.cta-btn {
+  font-size: 1.1rem;
+  padding: 14px 32px;
+  border-radius: 8px;
+  background: linear-gradient(90deg,#1abc9c,#16a085);
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.cta-btn:hover {
+  background: linear-gradient(90deg,#16a085,#1abc9c);
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
-  .hero-title {
-    font-size: 2.5rem;
+@media (max-width: 1024px) {
+  .hero-landing-content {
+    flex-direction: column;
+    gap: 32px;
+    align-items: flex-start;
   }
-
-  .hero-subtitle {
-    font-size: 1.2rem;
+  .hero-landing-right {
+    width: 100%;
+    justify-content: flex-start;
   }
-
-  .feature-cards {
-    grid-template-columns: 1fr;
-    gap: 30px;
+  .features-landing-container {
+    flex-direction: column;
+    gap: 24px;
+    align-items: stretch;
   }
-
-  .feature-card {
-    padding: 30px 20px;
+}
+@media (max-width: 600px) {
+  .hero-landing-section {
+    padding: 24px 0 16px 0;
   }
-
-  .section-title {
+  .hero-landing-content {
+    padding: 0 8px;
+  }
+  .main-headline {
     font-size: 2rem;
   }
-
-  .stats-container {
-    grid-template-columns: 1fr;
-    gap: 20px;
+  .features-landing-section {
+    padding: 24px 0 16px 0;
+  }
+  .feature-landing-card {
+    padding: 20px 10px 16px 10px;
+  }
+  .cta-landing-section {
+    padding: 24px 0 24px 0;
+  }
+  .cta-landing-container {
+    padding: 24px 8px;
   }
 }
