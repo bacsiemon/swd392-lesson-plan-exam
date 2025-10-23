@@ -31,8 +31,10 @@ import {
   QuestionCircleOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
-  ExclamationCircleOutlined
+  ExclamationCircleOutlined,
+  ExperimentOutlined
 } from '@ant-design/icons';
+import '../styles/chemistryTheme.css';
 import { questionBankService } from '../services/questionBankService';
 import {
   CHEMISTRY_GRADES,
@@ -351,18 +353,19 @@ const QuestionBankManagement = () => {
   ];
 
   return (
-    <div style={{ padding: '24px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+    <div className="chemistry-page">
+      <div className="chemistry-molecules-bg"></div>
       {/* Header */}
-      <Card style={{ marginBottom: 24 }}>
+      <Card className="chemistry-header-card" style={{ marginBottom: 24 }}>
         <Row justify="space-between" align="middle">
           <Col>
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <BookOutlined style={{ fontSize: 32, color: '#1890ff', marginRight: 16 }} />
+              <ExperimentOutlined style={{ fontSize: 32, marginRight: 16 }} />
               <div>
-                <Title level={2} style={{ margin: 0, color: '#1890ff' }}>
+                <Title level={2} className="chemistry-title" style={{ margin: 0 }}>
                   Quản lý Ngân hàng Câu hỏi Hóa học
                 </Title>
-                <Text type="secondary" style={{ fontSize: '16px' }}>
+                <Text className="chemistry-subtitle" style={{ fontSize: '16px' }}>
                   Tạo và quản lý ngân hàng câu hỏi cho các lớp từ 8 đến 12
                 </Text>
               </div>
@@ -371,6 +374,7 @@ const QuestionBankManagement = () => {
           <Col>
             <Button
               type="primary"
+              className="chemistry-btn-primary"
               icon={<PlusOutlined />}
               onClick={handleCreate}
               size="large"
@@ -385,7 +389,7 @@ const QuestionBankManagement = () => {
       {/* Statistics */}
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col span={6}>
-          <Card>
+          <Card className="chemistry-stat-card">
             <Statistic
               title="Tổng ngân hàng"
               value={stats.total}
@@ -395,7 +399,7 @@ const QuestionBankManagement = () => {
           </Card>
         </Col>
         <Col span={6}>
-          <Card>
+          <Card className="chemistry-stat-card">
             <Statistic
               title="Đã duyệt"
               value={stats.approved}
@@ -405,7 +409,7 @@ const QuestionBankManagement = () => {
           </Card>
         </Col>
         <Col span={6}>
-          <Card>
+          <Card className="chemistry-stat-card">
             <Statistic
               title="Chờ duyệt"
               value={stats.pending}
@@ -415,7 +419,7 @@ const QuestionBankManagement = () => {
           </Card>
         </Col>
         <Col span={6}>
-          <Card>
+          <Card className="chemistry-stat-card">
             <Statistic
               title="Bị từ chối"
               value={stats.rejected}
@@ -427,7 +431,7 @@ const QuestionBankManagement = () => {
       </Row>
 
       {/* Filters */}
-      <Card style={{ marginBottom: 16 }}>
+      <Card className="chemistry-card" style={{ marginBottom: 16 }}>
         <Row gutter={16} align="middle">
           <Col span={6}>
             <Select
@@ -482,39 +486,43 @@ const QuestionBankManagement = () => {
       </Card>
 
       {/* Table */}
-      <Card>
-        <Table
-          columns={columns}
-          dataSource={questionBanks}
-          rowKey="id"
-          loading={loading}
-          pagination={{
-            ...pagination,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) =>
-              `${range[0]}-${range[1]} của ${total} ngân hàng câu hỏi`,
-            pageSizeOptions: ['10', '20', '50']
-          }}
-          onChange={handleTableChange}
-          scroll={{ x: 1400 }}
-          locale={{
-            emptyText: (
-              <Empty
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description="Chưa có ngân hàng câu hỏi nào"
-              >
-                <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-                  Tạo ngân hàng đầu tiên
-                </Button>
-              </Empty>
-            )
-          }}
-        />
+      <Card className="chemistry-card">
+        <div className="chemistry-table">
+          <Table
+            columns={columns}
+            dataSource={questionBanks}
+            rowKey="id"
+            loading={loading}
+            pagination={{
+              ...pagination,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} của ${total} ngân hàng câu hỏi`,
+              pageSizeOptions: ['10', '20', '50']
+            }}
+            onChange={handleTableChange}
+            scroll={{ x: 1400 }}
+            locale={{
+              emptyText: (
+                <Empty
+                  className="chemistry-empty"
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description="Chưa có ngân hàng câu hỏi nào"
+                >
+                  <Button type="primary" className="chemistry-btn-primary" icon={<PlusOutlined />} onClick={handleCreate}>
+                    Tạo ngân hàng đầu tiên
+                  </Button>
+                </Empty>
+              )
+            }}
+          />
+        </div>
       </Card>
 
       {/* Form Modal */}
       <Modal
+        className="chemistry-modal"
         title={null}
         open={isFormModalVisible}
         onCancel={() => setIsFormModalVisible(false)}
@@ -532,6 +540,7 @@ const QuestionBankManagement = () => {
 
       {/* Question Management Modal */}
       <Modal
+        className="chemistry-modal"
         title={null}
         open={isQuestionModalVisible}
         onCancel={() => setIsQuestionModalVisible(false)}

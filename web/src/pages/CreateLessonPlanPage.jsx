@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Row, Col, Input, Button, Typography, Spin, Empty, message, Divider, Upload } from 'antd';
-import { PlusOutlined, FolderOpenOutlined, FileTextOutlined, SaveOutlined, UploadOutlined, PrinterOutlined, MenuOutlined } from '@ant-design/icons';
+import { PlusOutlined, FolderOpenOutlined, FileTextOutlined, SaveOutlined, UploadOutlined, PrinterOutlined, MenuOutlined, ExperimentOutlined, BulbOutlined } from '@ant-design/icons';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import './CreateLessonPlanPage.css';
@@ -14,12 +14,9 @@ const MOCK_SAVED_PLANS = [
 
 const quillModules = { toolbar: [ [{ 'header': [1, 2, 3, false] }], ['bold', 'italic', 'underline'], [{ 'color': [] }, { 'background': [] }], [{ 'list': 'ordered'}, { 'list': 'bullet' }], ] };
 
-// ===================================================================
-// === COMPONENT CON: Bảng Mục lục (Outline) ===
-// ===================================================================
 const OutlinePanel = ({ outline, onNavigate }) => (
-    <div className="outline-panel">
-        <Title level={5} className="panel-title-alt"><MenuOutlined /> Mục lục</Title>
+    <div className="outline-panel chemistry-panel">
+        <Title level={5} className="panel-title-alt chemistry-title"><MenuOutlined /> Mục lục</Title>
         {outline.length === 0 ? (
             <Text type="secondary">Chưa có tiêu đề nào.</Text>
         ) : (
@@ -85,11 +82,12 @@ const CreateLessonPlanPage = () => {
             <Row gutter={[24, 24]}>
                 {/* === CỘT ĐIỀU KHIỂN BÊN TRÁI === */}
                 <Col xs={24} lg={7}>
-                    <div className="control-panel-alt">
+                    <div className="control-panel-alt chemistry-control-panel">
+                        <div className="chemistry-molecules"></div>
                         {/* Phần Tạo mới và Thư viện */}
-                        <Title level={5} className="panel-title-alt"><PlusOutlined /> Tạo giáo án mới</Title>
+                        <Title level={5} className="panel-title-alt chemistry-title"><ExperimentOutlined /> Tạo giáo án mới</Title>
                         <Input.TextArea rows={4} placeholder="Yêu cầu AI soạn giáo án bài..." />
-                        <Button type="primary" className="alt-button" icon={<PlusOutlined />} loading={isLoading && !activePlanId} onClick={handleGenerateClick} block>Bắt đầu tạo với AI</Button>
+                        <Button type="primary" className="alt-button chemistry-button" icon={<BulbOutlined />} loading={isLoading && !activePlanId} onClick={handleGenerateClick} block>Bắt đầu tạo với AI</Button>
                         <Upload beforeUpload={handleUpload} showUploadList={false}>
                             <Button icon={<UploadOutlined />} block style={{marginTop: '8px'}}>Tải lên từ máy tính</Button>
                         </Upload>
@@ -97,7 +95,7 @@ const CreateLessonPlanPage = () => {
                         {/* Phần Mục lục mới */}
                         <OutlinePanel outline={outline} onNavigate={handleNavigate} />
                         <Divider />
-                        <Title level={5} className="panel-title-alt"><FolderOpenOutlined /> Thư viện Giáo án</Title>
+                        <Title level={5} className="panel-title-alt chemistry-title"><FolderOpenOutlined /> Thư viện Giáo án</Title>
                         <div className="saved-docs-list-alt">
                             {MOCK_SAVED_PLANS.map(plan => (
                                 <div key={plan.id} className={`saved-doc-item-alt ${plan.id === activePlanId ? 'active' : ''}`} onClick={() => handleLoadSavedPlan(plan)}>
@@ -110,14 +108,14 @@ const CreateLessonPlanPage = () => {
                 </Col>
                 {/* === WORKSPACE BÊN PHẢI === */}
                 <Col xs={24} lg={17}>
-                    <div className="editor-workspace-alt">
-                        {isLoading ? <div className="center-content-alt"><Spin size="large" /></div>
+                    <div className="editor-workspace-alt chemistry-workspace">
+                        {isLoading ? <div className="center-content-alt"><Spin size="large" tip="Đang xử lý..." className="chemistry-spinner" /></div>
                             : (
                             !document
-                            ? <div className="center-content-alt"><Empty description="Nội dung sẽ xuất hiện ở đây" image={<FileTextOutlined style={{fontSize: '60px', color: '#ccc'}}/>}/></div>
+                            ? <div className="center-content-alt chemistry-empty"><Empty description="Nội dung sẽ xuất hiện ở đây" image={<ExperimentOutlined style={{fontSize: '60px', color: '#b19cd9'}}/>}/></div>
                             : (
                                 <>
-                                    <div className="editor-header-alt">
+                                    <div className="editor-header-alt chemistry-header">
                                         <Title level={4} editable={{ onChange: handleTitleChange }} className="document-title-alt">{document.title}</Title>
                                         <div className="editor-actions-alt">
                                             <Text type="secondary" className={`save-status-alt ${saveStatus}`}>{saveStatus === 'saved' ? 'Đã lưu' : 'Chưa lưu'}</Text>
@@ -125,7 +123,7 @@ const CreateLessonPlanPage = () => {
                                             <Button icon={<PrinterOutlined />} onClick={handlePrint}>In / Xuất PDF</Button>
                                         </div>
                                     </div>
-                                    <div className="canvas-container-alt">
+                                    <div className="canvas-container-alt chemistry-canvas">
                                         {/* Quill Editor giờ đây render trong một cấu trúc mô phỏng trang giấy */}
                                         <ReactQuill ref={editorRef} theme="snow" value={document.content} onChange={handleContentChange} modules={quillModules} className="quill-editor-alt" />
                                     </div>

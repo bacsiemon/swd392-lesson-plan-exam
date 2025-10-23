@@ -31,8 +31,10 @@ import {
   QuestionCircleOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
-  ExclamationCircleOutlined
+  ExclamationCircleOutlined,
+  ExperimentOutlined
 } from '@ant-design/icons';
+import '../styles/chemistryTheme.css';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -219,18 +221,19 @@ const ExamMatrixManagement = () => {
   ];
 
   return (
-    <div style={{ padding: '24px', background: '#f5f5f5', minHeight: '100vh' }}>
+    <div className="chemistry-page">
+      <div className="chemistry-molecules-bg"></div>
       {/* Header */}
-      <div style={{ marginBottom: '24px' }}>
-        <Title level={2} style={{ margin: 0, color: '#1890ff' }}>
-          <TableOutlined style={{ marginRight: '12px' }} />
+      <Card className="chemistry-header-card" style={{ marginBottom: '24px' }}>
+        <Title level={2} className="chemistry-title" style={{ margin: 0 }}>
+          <ExperimentOutlined />
           Quản lý Ma trận Đề thi
         </Title>
-        <Text type="secondary">Tạo và quản lý ma trận đề thi hóa học</Text>
-      </div>
+        <Text className="chemistry-subtitle">Tạo và quản lý ma trận đề thi hóa học</Text>
+      </Card>
 
       {/* Main Content Card */}
-      <Card>
+      <Card className="chemistry-card">
         {/* Filters and Actions */}
         <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
           <Col xs={24} sm={12} md={8} lg={6}>
@@ -259,6 +262,7 @@ const ExamMatrixManagement = () => {
               <Button icon={<FilterOutlined />}>Đặt lại</Button>
               <Button
                 type="primary"
+                className="chemistry-btn-primary"
                 icon={<PlusOutlined />}
                 onClick={handleCreate}
               >
@@ -269,26 +273,30 @@ const ExamMatrixManagement = () => {
         </Row>
 
         {/* Table */}
-        <Table
-          columns={columns}
-          dataSource={examMatrixes}
-          rowKey="id"
-          loading={loading}
-          pagination={pagination}
-          scroll={{ x: 1200 }}
-          locale={{
-            emptyText: (
-              <Empty
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description="Chưa có ma trận đề nào"
-              />
-            ),
-          }}
-        />
+        <div className="chemistry-table">
+          <Table
+            columns={columns}
+            dataSource={examMatrixes}
+            rowKey="id"
+            loading={loading}
+            pagination={pagination}
+            scroll={{ x: 1200 }}
+            locale={{
+              emptyText: (
+                <Empty
+                  className="chemistry-empty"
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  description="Chưa có ma trận đề nào"
+                />
+              ),
+            }}
+          />
+        </div>
       </Card>
 
       {/* Form Modal */}
       <Modal
+        className="chemistry-modal"
         title={editingRecord ? 'Chỉnh sửa ma trận đề' : 'Tạo ma trận đề mới'}
         open={isFormModalVisible}
         onCancel={() => setIsFormModalVisible(false)}
@@ -300,7 +308,8 @@ const ExamMatrixManagement = () => {
           <Text>Form tạo ma trận đề sẽ được implement ở đây</Text>
           <br />
           <Button 
-            type="primary" 
+            type="primary"
+            className="chemistry-btn-primary"
             onClick={handleFormSubmit}
             style={{ marginTop: '16px' }}
           >

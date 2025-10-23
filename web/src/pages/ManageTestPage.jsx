@@ -37,8 +37,10 @@ import {
   CheckCircleOutlined,
   ExclamationCircleOutlined,
   FileTextOutlined,
-  SettingOutlined
+  SettingOutlined,
+  ExperimentOutlined
 } from '@ant-design/icons';
+import '../styles/chemistryTheme.css';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -311,18 +313,19 @@ const ManageTestPage = () => {
   ];
 
   return (
-    <div style={{ padding: '24px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+    <div className="chemistry-page">
+      <div className="chemistry-molecules-bg"></div>
       {/* Header */}
-      <Card style={{ marginBottom: 24 }}>
+      <Card className="chemistry-header-card" style={{ marginBottom: 24 }}>
         <Row justify="space-between" align="middle">
           <Col>
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <FileTextOutlined style={{ fontSize: 32, color: '#1890ff', marginRight: 16 }} />
+              <ExperimentOutlined style={{ fontSize: 32, marginRight: 16 }} />
               <div>
-                <Title level={2} style={{ margin: 0, color: '#1890ff' }}>
+                <Title level={2} className="chemistry-title" style={{ margin: 0 }}>
                   Quản lý Bài kiểm tra
                 </Title>
-                <Text type="secondary" style={{ fontSize: '16px' }}>
+                <Text className="chemistry-subtitle" style={{ fontSize: '16px' }}>
                   Tạo và quản lý các bài kiểm tra cho học sinh
                 </Text>
               </div>
@@ -339,6 +342,7 @@ const ManageTestPage = () => {
               </Button>
               <Button
                 type="primary"
+                className="chemistry-btn-primary"
                 icon={<PlusOutlined />}
                 size="large"
                 onClick={() => setIsCreateModalVisible(true)}
@@ -354,7 +358,7 @@ const ManageTestPage = () => {
       {/* Statistics */}
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card className="chemistry-stat-card">
             <Statistic
               title="Tổng bài kiểm tra"
               value={tests.length}
@@ -364,7 +368,7 @@ const ManageTestPage = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card className="chemistry-stat-card">
             <Statistic
               title="Đang hoạt động"
               value={tests.filter(t => t.status === 'active').length}
@@ -374,7 +378,7 @@ const ManageTestPage = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card className="chemistry-stat-card">
             <Statistic
               title="Tổng lần thử"
               value={tests.reduce((sum, test) => sum + test.studentAttempts, 0)}
@@ -384,7 +388,7 @@ const ManageTestPage = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card className="chemistry-stat-card">
             <Statistic
               title="Điểm TB"
               value={tests.length > 0 ? (tests.reduce((sum, test) => sum + test.averageScore, 0) / tests.length).toFixed(1) : 0}
@@ -397,7 +401,7 @@ const ManageTestPage = () => {
       </Row>
 
       {/* Search */}
-      <Card style={{ marginBottom: 24 }}>
+      <Card className="chemistry-card" style={{ marginBottom: 24 }}>
         <Row gutter={16} align="middle">
           <Col xs={24} sm={12} md={16}>
             <div style={{ marginBottom: 8 }}>
@@ -414,7 +418,7 @@ const ManageTestPage = () => {
       </Card>
 
       {/* Test List */}
-      <Card>
+      <Card className="chemistry-card">
         <div style={{ marginBottom: 16 }}>
           <Title level={4} style={{ margin: 0 }}>
             <FileTextOutlined style={{ marginRight: 8 }} />
@@ -424,21 +428,24 @@ const ManageTestPage = () => {
             Hiển thị {filteredTests.length} bài kiểm tra
           </Text>
         </div>
-        <Table
-          columns={testColumns}
-          dataSource={filteredTests}
-          rowKey="id"
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} bài kiểm tra`
-          }}
-        />
+        <div className="chemistry-table">
+          <Table
+            columns={testColumns}
+            dataSource={filteredTests}
+            rowKey="id"
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} bài kiểm tra`
+            }}
+          />
+        </div>
       </Card>
 
       {/* Create/Edit Test Modal */}
       <Modal
+        className="chemistry-modal"
         title={selectedTest ? "Chỉnh sửa bài kiểm tra" : "Tạo bài kiểm tra mới"}
         open={isCreateModalVisible}
         onCancel={() => {
@@ -621,7 +628,7 @@ const ManageTestPage = () => {
               <Button onClick={() => setIsCreateModalVisible(false)}>
                 Hủy
               </Button>
-              <Button type="primary" htmlType="submit" loading={loading}>
+              <Button type="primary" className="chemistry-btn-primary" htmlType="submit" loading={loading}>
                 {selectedTest ? 'Cập nhật' : 'Tạo bài kiểm tra'}
               </Button>
             </Space>
@@ -631,6 +638,7 @@ const ManageTestPage = () => {
 
       {/* Test Details Modal */}
       <Modal
+        className="chemistry-modal"
         title={`Chi tiết bài kiểm tra: ${selectedTest?.title}`}
         open={isDetailsModalVisible}
         onCancel={() => setIsDetailsModalVisible(false)}
@@ -641,7 +649,7 @@ const ManageTestPage = () => {
           <div>
             <Row gutter={16} style={{ marginBottom: 24 }}>
               <Col span={8}>
-                <Card>
+                <Card className="chemistry-stat-card">
                   <Statistic
                     title="Tổng lần thử"
                     value={selectedTest.studentAttempts}
@@ -651,7 +659,7 @@ const ManageTestPage = () => {
                 </Card>
               </Col>
               <Col span={8}>
-                <Card>
+                <Card className="chemistry-stat-card">
                   <Statistic
                     title="Điểm trung bình"
                     value={selectedTest.averageScore}
@@ -662,7 +670,7 @@ const ManageTestPage = () => {
                 </Card>
               </Col>
               <Col span={8}>
-                <Card>
+                <Card className="chemistry-stat-card">
                   <Statistic
                     title="Tỷ lệ đạt"
                     value={selectedTest.passRate}

@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import './Home.css'; // Tái sử dụng style landing page
+import { Card, Typography, Button, Radio, Space } from 'antd';
+import { ExperimentOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import '../styles/chemistryTheme.css';
+import './Home.css';
+
+const { Title, Text } = Typography;
 
 const mockTest = {
   title: 'Bài kiểm tra Hóa học - Chương 1',
@@ -57,63 +62,79 @@ function StudentTestPage() {
   };
 
   return (
-    <div className="home-landing-container" style={{ minHeight: '100vh', background: '#f8fafd' }}>
-      <section className="hero-landing-section" style={{padding: '32px 0 16px 0'}}>
-        <div className="hero-landing-content" style={{gap: 32}}>
-          <div className="hero-landing-left" style={{alignItems: 'flex-start'}}>
-            <div className="ai-badge" style={{background: '#e6fcf5', color: '#16a085'}}>Làm bài kiểm tra</div>
-            <h1 className="main-headline" style={{fontSize: '2.2rem', marginBottom: 10}}>{mockTest.title}</h1>
-            <p className="main-desc" style={{marginBottom: 18}}>{mockTest.description}</p>
-            <div style={{color: '#16a085', fontWeight: 600, marginBottom: 8}}>
-              ⏰ Thời gian: {mockTest.duration} phút | {mockTest.questions.length} câu hỏi
+    <div className="chemistry-page">
+      <div className="chemistry-molecules-bg"></div>
+      
+      {/* Header Card */}
+      <Card className="chemistry-header-card" style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <ExperimentOutlined style={{ fontSize: 48 }} />
+          <div>
+            <Title level={2} className="chemistry-title" style={{ margin: 0, marginBottom: 8 }}>
+              {mockTest.title}
+            </Title>
+            <Text className="chemistry-subtitle" style={{ fontSize: 16 }}>
+              {mockTest.description}
+            </Text>
+            <div style={{ marginTop: 12, display: 'flex', gap: 24 }}>
+              <Space>
+                <ClockCircleOutlined />
+                <Text strong>{mockTest.duration} phút</Text>
+              </Space>
+              <Space>
+                <CheckCircleOutlined />
+                <Text strong>{mockTest.questions.length} câu hỏi</Text>
+              </Space>
             </div>
           </div>
         </div>
-      </section>
+      </Card>
 
-      <section className="features-landing-section" style={{padding: '0 0 32px 0'}}>
-        <form className="features-landing-container" style={{flexDirection: 'column', gap: 32, maxWidth: 700}} onSubmit={handleSubmit}>
+      {/* Questions Form */}
+      <form onSubmit={handleSubmit} style={{ maxWidth: 900, margin: '0 auto' }}>
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
           {mockTest.questions.map((q, idx) => (
-            <div key={q.id} className="feature-landing-card" style={{alignItems: 'flex-start', width: '100%', maxWidth: '100%'}}>
-              <div className="feature-landing-title" style={{marginBottom: 8, color: '#16a085'}}>
-                Câu {idx + 1}:
-              </div>
-              <div className="feature-landing-desc" style={{marginBottom: 12, color: '#222', fontWeight: 600}}>
-                {q.question}
-              </div>
-              <div style={{width: '100%'}}>
-                {q.options.map((opt, oidx) => (
-                  <label key={oidx} style={{display: 'block', marginBottom: 8, cursor: 'pointer', fontSize: '1rem', color: '#444'}}>
-                    <input
-                      type="radio"
-                      name={`q_${q.id}`}
-                      value={oidx}
-                      checked={answers[q.id] === oidx}
-                      onChange={() => handleOptionChange(q.id, oidx)}
-                      style={{marginRight: 10, accentColor: '#16a085'}}
-                      disabled={submitted}
-                    />
-                    {opt}
-                  </label>
-                ))}
-              </div>
+            <Card key={q.id} className="chemistry-card">
+              <Title level={5} style={{ marginBottom: 16, color: 'var(--chem-purple-dark)' }}>
+                Câu {idx + 1}: {q.question}
+              </Title>
+              <Radio.Group
+                value={answers[q.id]}
+                onChange={(e) => handleOptionChange(q.id, e.target.value)}
+                disabled={submitted}
+                style={{ width: '100%' }}
+              >
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  {q.options.map((opt, oidx) => (
+                    <Radio key={oidx} value={oidx} style={{ fontSize: 16, padding: '8px 0' }}>
+                      {opt}
+                    </Radio>
+                  ))}
+                </Space>
+              </Radio.Group>
               {submitted && (
-                <div style={{marginTop: 8, color: '#16a085', fontWeight: 500}}>
-                  Đáp án đã lưu!
+                <div style={{ marginTop: 16, padding: 12, background: 'var(--chem-blue-light)', borderRadius: 8 }}>
+                  <CheckCircleOutlined style={{ color: 'var(--chem-blue-dark)', marginRight: 8 }} />
+                  <Text strong style={{ color: 'var(--chem-blue-dark)' }}>Đáp án đã lưu!</Text>
                 </div>
               )}
-            </div>
+            </Card>
           ))}
-          <button
-            className="main-btn primary"
-            type="submit"
-            style={{margin: '0 auto', marginTop: 12, minWidth: 220, fontSize: '1.15rem'}}
-            disabled={submitted}
-          >
-            {submitted ? 'Đã nộp bài' : 'Nộp bài kiểm tra'}
-          </button>
-        </form>
-      </section>
+          
+          <div style={{ textAlign: 'center', marginTop: 24 }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              size="large"
+              className="chemistry-btn-primary"
+              disabled={submitted}
+              style={{ minWidth: 220, height: 48, fontSize: 18 }}
+            >
+              {submitted ? '✓ Đã nộp bài' : 'Nộp bài kiểm tra'}
+            </Button>
+          </div>
+        </Space>
+      </form>
     </div>
   );
 }

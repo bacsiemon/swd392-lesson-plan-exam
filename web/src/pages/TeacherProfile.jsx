@@ -23,8 +23,10 @@ import {
     HomeOutlined,
     CameraOutlined,
     SaveOutlined,
-    LoadingOutlined
+    LoadingOutlined,
+    ExperimentOutlined
 } from '@ant-design/icons';
+import '../styles/chemistryTheme.css';
 import './TeacherProfile.css';
 
 const { Title, Text, Paragraph } = Typography;
@@ -91,17 +93,18 @@ const TeacherProfile = () => {
     }
 
     return (
-        <div className="teacher-profile-container">
-            <div className="profile-header">
-                <Title level={2} className="page-title">
-                    <UserOutlined /> Hồ Sơ Cá Nhân
+        <div className="teacher-profile-container chemistry-page">
+            <div className="chemistry-molecules-bg"></div>
+            <Card className="chemistry-header-card" style={{ marginBottom: 24 }}>
+                <Title level={2} className="chemistry-title" style={{ margin: 0, marginBottom: 8 }}>
+                    <ExperimentOutlined /> Hồ Sơ Cá Nhân
                 </Title>
-                <Text className="page-subtitle">
+                <Text className="chemistry-subtitle" style={{ fontSize: 16 }}>
                     Quản lý thông tin cá nhân và cài đặt tài khoản
                 </Text>
-            </div>
+            </Card>
 
-            <Card className="profile-card" loading={loading}>
+            <Card className="profile-card chemistry-card" loading={loading}>
                 {/* Header with Avatar and Basic Info */}
                 <div className="profile-header-section">
                     <Row gutter={24} align="middle">
@@ -142,6 +145,7 @@ const TeacherProfile = () => {
                     <div className="action-buttons">
                         <Button
                             type="primary"
+                            className="chemistry-btn-primary"
                             icon={<EditOutlined />}
                             onClick={handleEdit}
                             size="large"
@@ -215,12 +219,12 @@ const TeacherProfile = () => {
 
             {/* Edit Modal */}
             <Modal
+                className="chemistry-modal"
                 title="Chỉnh sửa hồ sơ"
                 open={editing}
                 onCancel={() => setEditing(false)}
                 footer={null}
                 width={600}
-                className="edit-profile-modal"
             >
                 <Form
                     form={form}
@@ -304,7 +308,7 @@ const TeacherProfile = () => {
                             <Button onClick={() => setEditing(false)}>
                                 Hủy
                             </Button>
-                            <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+                            <Button type="primary" className="chemistry-btn-primary" htmlType="submit" icon={<SaveOutlined />}>
                                 Lưu thay đổi
                             </Button>
                         </Space>

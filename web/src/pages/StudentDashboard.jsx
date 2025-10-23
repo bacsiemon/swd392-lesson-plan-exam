@@ -157,14 +157,7 @@ const StudentDashboard = () => {
             🚀 Hành động nhanh
           </Title>
           <Row gutter={[32, 32]} style={{ marginTop: 24 }}>
-            <ToolCard
-              title="Tham gia lớp học"
-              description="Tìm và tham gia lớp học bằng mã lớp và mật khẩu."
-              icon={<PlayCircleOutlined style={{ fontSize: '36px', color: BRAND_COLORS.LESSON }} />}
-              link="/enroll-class"
-              color={BRAND_COLORS.LESSON}
-              onToolClick={handleToolClick}
-            />
+          
             <ToolCard
               title="Bài giảng và Tài liệu"
               description="Xem và học các bài giảng được phân phối bởi giáo viên."

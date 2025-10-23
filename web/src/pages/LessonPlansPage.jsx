@@ -25,7 +25,9 @@ import {
   StarOutlined,
   CheckCircleOutlined,
   PlayCircleOutlined,
+  ExperimentOutlined
 } from '@ant-design/icons';
+import '../styles/chemistryTheme.css';
 
 const { Title, Text, Paragraph } = Typography;
 const { Search } = Input;
@@ -225,19 +227,9 @@ const LessonPlansPage = () => {
     <Col xs={24} sm={12} lg={8} style={{ marginBottom: 24 }}>
       <Card
         hoverable
+        className="chemistry-card"
         style={{
           height: '100%',
-          borderRadius: 12,
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-          transition: 'all 0.3s ease',
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'translateY(-4px)';
-          e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.15)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'translateY(0)';
-          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
         }}
       >
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
@@ -297,7 +289,8 @@ const LessonPlansPage = () => {
             </div>
             <Space>
               <Button 
-                type="primary" 
+                type="primary"
+                className="chemistry-btn-primary"
                 size="small"
                 icon={<PlayCircleOutlined />}
                 onClick={() => navigate(`/lesson/${lesson.id}`)}
@@ -319,18 +312,19 @@ const LessonPlansPage = () => {
   );
 
   return (
-    <div style={{ padding: '24px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+    <div className="chemistry-page">
+      <div className="chemistry-molecules-bg"></div>
       {/* Header */}
-      <Card style={{ marginBottom: 24 }}>
+      <Card className="chemistry-header-card" style={{ marginBottom: 24 }}>
         <Row justify="space-between" align="middle">
           <Col>
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <BookOutlined style={{ fontSize: 32, color: '#1890ff', marginRight: 16 }} />
+              <ExperimentOutlined style={{ fontSize: 32, marginRight: 16 }} />
               <div>
-                <Title level={2} style={{ margin: 0, color: '#1890ff' }}>
+                <Title level={2} className="chemistry-title" style={{ margin: 0 }}>
                   Bài giảng và Tài liệu học tập
                 </Title>
-                <Text type="secondary" style={{ fontSize: '16px' }}>
+                <Text className="chemistry-subtitle" style={{ fontSize: '16px' }}>
                   Khám phá các bài giảng được phân phối bởi giáo viên
                 </Text>
               </div>
@@ -349,7 +343,7 @@ const LessonPlansPage = () => {
       </Card>
 
       {/* Filters */}
-      <Card style={{ marginBottom: 24 }}>
+      <Card className="chemistry-card" style={{ marginBottom: 24 }}>
         <Row gutter={16} align="middle">
           <Col xs={24} sm={8} md={6}>
             <div style={{ marginBottom: 8 }}>
@@ -398,7 +392,7 @@ const LessonPlansPage = () => {
       </Card>
 
       {/* Lesson Plans Grid */}
-      <Card>
+      <Card className="chemistry-card">
         <div style={{ marginBottom: 16 }}>
           <Title level={4} style={{ margin: 0 }}>
             <BookOutlined style={{ marginRight: 8 }} />
@@ -417,9 +411,10 @@ const LessonPlansPage = () => {
 
       {/* Lesson Detail Modal */}
       <Modal
+        className="chemistry-modal"
         title={
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <BookOutlined style={{ marginRight: 8, color: '#1890ff' }} />
+            <ExperimentOutlined style={{ marginRight: 8 }} />
             {selectedLesson?.title}
           </div>
         }
@@ -429,7 +424,7 @@ const LessonPlansPage = () => {
           <Button key="close" onClick={handleCloseModal}>
             Đóng
           </Button>,
-          <Button key="study" type="primary" icon={<PlayCircleOutlined />} onClick={() => navigate(`/lesson/${selectedLesson?.id}`)}>
+          <Button key="study" type="primary" className="chemistry-btn-primary" icon={<PlayCircleOutlined />} onClick={() => navigate(`/lesson/${selectedLesson?.id}`)}>
             Bắt đầu học
           </Button>
         ]}

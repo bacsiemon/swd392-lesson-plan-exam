@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Card, Typography, Button, List, Divider, Progress, Space, Switch, notification } from 'antd';
+import { ExperimentOutlined, BookOutlined, PlayCircleOutlined, CheckCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import '../styles/chemistryTheme.css';
 import './LessonPlanDetails.css';
 
 const { Title, Paragraph, Text } = Typography;
@@ -71,44 +73,61 @@ const LessonPlanDetails = () => {
 
   if (!lesson) {
     return (
-      <div style={{ padding: 24 }}>
-        <Card>
+      <div className="chemistry-page">
+        <div className="chemistry-molecules-bg"></div>
+        <Card className="chemistry-card">
           <Title level={4}>Bài học không tìm thấy</Title>
           <Paragraph>Không tìm thấy bài học với id: {id}</Paragraph>
-          <Link to="/">Quay về trang chủ</Link>
+          <Link to="/lesson-plans">
+            <Button className="chemistry-btn-primary"><ArrowLeftOutlined /> Quay về danh sách</Button>
+          </Link>
         </Card>
       </div>
     );
   }
 
   return (
-    <div className="lesson-details" style={{ padding: 24 }}>
-      <Card className="lesson-card">
-        <Space direction="vertical" style={{ width: '100%' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <Title style={{ margin: 0 }}>{lesson.title}</Title>
-              <Text type="secondary">Tác giả: {lesson.author} • Thời lượng: {lesson.duration}</Text>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <Text>Tiến độ chương: </Text>
-              <Progress percent={Math.round(((currentIndex+1)/lesson.slides.length)*100)} size="small" style={{ width: 160 }} />
-              <div style={{ marginTop: 8 }}>
-                <Text>{completed ? 'Hoàn thành' : 'Chưa hoàn thành'}</Text>
-              </div>
+    <div className="lesson-details chemistry-page">
+      <div className="chemistry-molecules-bg"></div>
+      
+      {/* Header Card */}
+      <Card className="chemistry-header-card" style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12 }}>
+          <ExperimentOutlined style={{ fontSize: 48 }} />
+          <div style={{ flex: 1 }}>
+            <Title level={2} className="chemistry-title" style={{ margin: 0, marginBottom: 8 }}>
+              {lesson.title}
+            </Title>
+            <Text className="chemistry-subtitle" style={{ fontSize: 16 }}>
+              Tác giả: {lesson.author} • Thời lượng: {lesson.duration}
+            </Text>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <Text>Tiến độ chương: </Text>
+            <Progress 
+              percent={Math.round(((currentIndex+1)/lesson.slides.length)*100)} 
+              size="small" 
+              style={{ width: 160 }} 
+              strokeColor="var(--chem-gradient)"
+            />
+            <div style={{ marginTop: 8 }}>
+              <Text strong>{completed ? '✓ Hoàn thành' : 'Chưa hoàn thành'}</Text>
             </div>
           </div>
-
-          <Divider />
+        </div>
+      </Card>
+      
+      <Card className="lesson-card chemistry-card">
+        <Space direction="vertical" style={{ width: '100%' }}>
 
           <div style={{ display: 'flex', gap: 24 }}>
             <div style={{ width: '40%' }}>
-              <Title level={4}>Mục tiêu</Title>
+              <Title level={4} style={{ color: 'var(--chem-purple-dark)' }}><BookOutlined /> Mục tiêu</Title>
               <List dataSource={lesson.objectives} renderItem={o => (<List.Item>{o}</List.Item>)} />
 
               <Divider />
 
-              <Title level={4}>Slides</Title>
+              <Title level={4} style={{ color: 'var(--chem-purple-dark)' }}><PlayCircleOutlined /> Slides</Title>
               <List
                 dataSource={lesson.slides}
                 renderItem={(s, idx) => (
@@ -120,15 +139,36 @@ const LessonPlanDetails = () => {
             </div>
 
             <div style={{ flex: 1 }}>
-              <Title level={4}>{lesson.slides[currentIndex].title}</Title>
+              <Card className="chemistry-card" style={{ background: 'var(--chem-purple-light)', marginBottom: 16 }}>
+                <Title level={4} style={{ margin: 0 }}>{lesson.slides[currentIndex].title}</Title>
+              </Card>
               <Paragraph>
                 {lesson.slides[currentIndex].notes.map((n,i) => (<div key={i}>- {n}</div>))}
               </Paragraph>
 
               <div style={{ marginTop: 16, display: 'flex', gap: 12 }}>
-                <Button onClick={() => setCurrentIndex(i => Math.max(0, i-1))} disabled={currentIndex===0}>Trước</Button>
-                <Button onClick={() => setCurrentIndex(i => Math.min(lesson.slides.length-1, i+1))} disabled={currentIndex===lesson.slides.length-1}>Tiếp</Button>
-                <Button onClick={() => { setCompleted(true); notification.success({ message: 'Đã hoàn thành bài học' }); }}>Đánh dấu hoàn thành</Button>
+                <Button 
+                  className="chemistry-btn-secondary"
+                  onClick={() => setCurrentIndex(i => Math.max(0, i-1))} 
+                  disabled={currentIndex===0}
+                >
+                  Trước
+                </Button>
+                <Button 
+                  className="chemistry-btn-secondary"
+                  onClick={() => setCurrentIndex(i => Math.min(lesson.slides.length-1, i+1))} 
+                  disabled={currentIndex===lesson.slides.length-1}
+                >
+                  Tiếp
+                </Button>
+                <Button 
+                  type="primary"
+                  className="chemistry-btn-primary"
+                  icon={<CheckCircleOutlined />}
+                  onClick={() => { setCompleted(true); notification.success({ message: 'Đã hoàn thành bài học' }); }}
+                >
+                  Đánh dấu hoàn thành
+                </Button>
               </div>
 
               <Divider />
@@ -155,9 +195,23 @@ const LessonPlanDetails = () => {
           <Divider />
 
           <div style={{ display: 'flex', gap: 12 }}>
-            <Button type="primary" onClick={() => { setCompleted(true); navigate('/lesson-plans'); }}>Hoàn tất và về danh sách</Button>
-            <Button onClick={() => { setCompleted(true); }}>Đánh dấu đã đọc</Button>
-            <Link to="/lesson-plans">Quay lại danh sách</Link>
+            <Button 
+              type="primary" 
+              className="chemistry-btn-primary"
+              icon={<CheckCircleOutlined />}
+              onClick={() => { setCompleted(true); navigate('/lesson-plans'); }}
+            >
+              Hoàn tất và về danh sách
+            </Button>
+            <Button 
+              className="chemistry-btn-secondary"
+              onClick={() => { setCompleted(true); }}
+            >
+              Đánh dấu đã đọc
+            </Button>
+            <Link to="/lesson-plans">
+              <Button icon={<ArrowLeftOutlined />}>Quay lại danh sách</Button>
+            </Link>
           </div>
         </Space>
       </Card>

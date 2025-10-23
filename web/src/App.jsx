@@ -5,7 +5,6 @@ import Register from './pages/RegisterPage';
 import ForgotPassword from './pages/ForgotPasswordPage';
 import TeacherDashboard from './pages/TeacherDashboard';
 import StudentDashboard from './pages/StudentDashboard';
-import ClassEnrollmentPage from './pages/ClassEnrollmentPage';
 import ManageTestPage from './pages/ManageTestPage';
 import QuestionBankManagement from './pages/QuestionBankManagement';
 import ExamMatrixManagement from './pages/ExamMatrixManagement';
@@ -29,7 +28,6 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/dashboard" element={<TeacherDashboard />} />
           <Route path="/student-dashboard" element={<StudentDashboard />} />
-          <Route path="/enroll-class" element={<ClassEnrollmentPage />} />
           <Route path="/manage-tests" element={<ManageTestPage />} />
           <Route path="/question-banks" element={<QuestionBankManagement />} />
           <Route path="/exam-matrix" element={<ExamMatrixManagement />} />
