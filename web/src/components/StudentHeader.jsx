@@ -11,7 +11,9 @@ import {
   HomeOutlined,
   BookOutlined,
   FileTextOutlined,
-  ExperimentOutlined
+  ExperimentOutlined,
+  CalendarOutlined,
+  TrophyOutlined
 } from '@ant-design/icons';
 
 const { Header } = Layout;
@@ -66,9 +68,14 @@ const StudentHeader = ({ userName = 'Học sinh' }) => {
           label: 'Hồ sơ cá nhân',
         },
         {
-          key: 'settings',
-          icon: <SettingOutlined />,
-          label: 'Cài đặt',
+          key: 'calendar',
+          icon: <CalendarOutlined />,
+          label: 'Lịch học',
+        },
+        {
+          key: 'test-scores',
+          icon: <TrophyOutlined />,
+          label: 'Xem điểm kiểm tra',
         },
         {
           type: 'divider',

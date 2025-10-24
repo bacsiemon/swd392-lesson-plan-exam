@@ -12,7 +12,8 @@ import {
   TableOutlined,
   ExperimentOutlined,
   BulbOutlined,
-  QuestionCircleOutlined
+  QuestionCircleOutlined,
+  CalendarOutlined
 } from '@ant-design/icons';
 
 const { Header } = Layout;
@@ -74,9 +75,9 @@ const TeacherHeader = ({ userName = 'Giáo viên Hóa học' }) => {
           label: 'Hồ sơ cá nhân',
         },
         {
-          key: 'settings',
-          icon: <SettingOutlined />,
-          label: 'Cài đặt hệ thống',
+          key: 'calendar',
+          icon: <CalendarOutlined />,
+          label: 'Lịch làm việc',
         },
         {
           type: 'divider',

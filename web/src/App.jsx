@@ -15,6 +15,8 @@ import LessonPlansPage from './pages/LessonPlansPage';
 import LessonPlanDetails from './pages/LessonPlanDetails';
 import TeacherProfile from './pages/TeacherProfile';
 import StudentTestPage from './pages/StudentTestPage';
+import CalendarPage from './pages/CalendarPage';
+import TestScoresPage from './pages/TestScoresPage';
 
 function App() {
   const location = useLocation();
@@ -50,6 +52,8 @@ function App() {
               <Route path="/lesson/:id" element={<LessonPlanDetails />} />
               <Route path="/profile" element={<TeacherProfile />} />
               <Route path="/student-test" element={<StudentTestPage />} />
+              <Route path="/calendar" element={<CalendarPage />} />
+              <Route path="/test-scores" element={<TestScoresPage />} />
             </Routes>
           </main>
         </Layout>

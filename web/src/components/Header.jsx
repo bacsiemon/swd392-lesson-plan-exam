@@ -14,12 +14,14 @@ import {
   FileTextOutlined,
   ExperimentOutlined,
   BulbOutlined,
-  QuestionCircleOutlined
+  QuestionCircleOutlined,
+  CalendarOutlined,
+  TrophyOutlined
 } from '@ant-design/icons';
 
 const { Header } = Layout;
 const { Title } = Typography;
-const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
+const AppHeader = ({ userName = 'Giáo viên Hóa học', userRole = 'teacher' }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchValue, setSearchValue] = useState('');
@@ -54,8 +56,8 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
     navigate(path);
   }, [navigate]);
 
-  // 1. Định nghĩa menu cho Dropdown Tài khoản (Chemistry themed)
-  const accountMenu = (
+  // 1. Định nghĩa menu cho Dropdown Tài khoản - Teacher (Chemistry themed)
+  const teacherAccountMenu = (
     <Menu
       className="chemistry-dropdown-menu"
       onClick={({ key }) => {
@@ -80,9 +82,9 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
           label: 'Hồ sơ cá nhân',
         },
         {
-          key: 'settings',
-          icon: <SettingOutlined />,
-          label: 'Cài đặt hệ thống',
+          key: 'calendar',
+          icon: <CalendarOutlined />,
+          label: 'Lịch làm việc',
         },
         {
           type: 'divider',
@@ -97,7 +99,51 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
     />
   );
 
-  // 2. Định nghĩa menu điều hướng chính (Chemistry themed)
+  // 2. Định nghĩa menu cho Dropdown Tài khoản - Student (Chemistry themed)
+  const studentAccountMenu = (
+    <Menu
+      className="chemistry-dropdown-menu"
+      onClick={({ key }) => {
+        if (key === 'logout') {
+          console.log('Đăng xuất...');
+          navigate('/login');
+        } else {
+          navigate(`/${key}`);
+        }
+      }}
+      items={[
+        {
+          key: 'profile',
+          icon: <UserOutlined />,
+          label: 'Hồ sơ cá nhân',
+        },
+        {
+          key: 'calendar',
+          icon: <CalendarOutlined />,
+          label: 'Lịch học',
+        },
+        {
+          key: 'test-scores',
+          icon: <TrophyOutlined />,
+          label: 'Xem điểm kiểm tra',
+        },
+        {
+          type: 'divider',
+        },
+        {
+          key: 'logout',
+          icon: <LogoutOutlined />,
+          label: 'Đăng xuất',
+          danger: true,
+        },
+      ]}
+    />
+  );
+
+  // Select the appropriate menu based on user role
+  const accountMenu = userRole === 'student' ? studentAccountMenu : teacherAccountMenu;
+
+  // 3. Định nghĩa menu điều hướng chính (Chemistry themed)
   const menuItems = [
     {
       key: '/',
@@ -190,7 +236,7 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
         }}
       />
 
-      {/* 3. Mục Tài khoản và Dropdown - Chemistry Themed */}
+      {/* 4. Mục Tài khoản và Dropdown - Chemistry Themed */}
       <Dropdown 
         overlay={accountMenu} 
         trigger={['click']} 
