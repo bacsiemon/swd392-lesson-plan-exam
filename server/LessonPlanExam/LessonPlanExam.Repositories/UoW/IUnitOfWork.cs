@@ -6,6 +6,7 @@ namespace LessonPlanExam.Repositories.UoW
     {
         IAccountRepository AccountRepository { get; }
         IFileUploadRepository FileUploadRepository { get; }
+        ILessonPlanRepository LessonPlanRepository { get; }
 
         Task<int> SaveChangesAsync();
     }

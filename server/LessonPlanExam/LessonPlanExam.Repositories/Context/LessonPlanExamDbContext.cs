@@ -98,6 +98,7 @@ public partial class LessonPlanExamDbContext : DbContext
                 .HasMaxLength(20)
                 .HasColumnName("phone");
             entity.Property(e => e.RoleEnum)
+                .HasConversion<int>()
                 .HasColumnName("role_enum");
             entity.Property(e => e.UpdatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
@@ -161,6 +162,7 @@ public partial class LessonPlanExamDbContext : DbContext
                 .HasDefaultValue(false)
                 .HasColumnName("randomize_questions");
             entity.Property(e => e.ScoringMethodEnum)
+                .HasConversion<int>()
                 .HasDefaultValue(EScoringMethod.Latest)
                 .HasColumnName("scoring_method_enum");
             entity.Property(e => e.ShowCorrectAnswers)
@@ -171,6 +173,7 @@ public partial class LessonPlanExamDbContext : DbContext
                 .HasColumnName("show_results_immediately");
             entity.Property(e => e.StartTime).HasColumnName("start_time");
             entity.Property(e => e.StatusEnum)
+                .HasConversion<int>()
                 .HasDefaultValue(EExamStatus.Inactive)
                 .HasColumnName("status_enum");
             entity.Property(e => e.Title)
@@ -230,6 +233,7 @@ public partial class LessonPlanExamDbContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("started_at");
             entity.Property(e => e.StatusEnum)
+                .HasConversion<int>()
                 .HasDefaultValue(EAttemptStatus.InProgress)
                 .HasColumnName("status_enum");
             entity.Property(e => e.StudentId).HasColumnName("student_id");
@@ -477,6 +481,7 @@ public partial class LessonPlanExamDbContext : DbContext
             entity.Property(e => e.QuestionBankId).HasColumnName("question_bank_id");
             entity.Property(e => e.QuestionDifficultyId).HasColumnName("question_difficulty_id");
             entity.Property(e => e.QuestionTypeEnum)
+                .HasConversion<int>()
                 .HasColumnName("question_type_enum");
             entity.Property(e => e.Title)
                 .IsRequired()
@@ -513,6 +518,7 @@ public partial class LessonPlanExamDbContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("name");
             entity.Property(e => e.StatusEnum)
+                .HasConversion<int>()
                 .HasDefaultValue(EQuestionBankStatus.Draft)
                 .HasColumnName("status_enum");
             entity.Property(e => e.TeacherId).HasColumnName("teacher_id");

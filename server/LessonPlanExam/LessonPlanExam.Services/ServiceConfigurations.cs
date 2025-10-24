@@ -16,6 +16,7 @@ namespace LessonPlanExam.Services
         public static IServiceCollection AddServiceConfigurations(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<FileUploadConfiguration>(configuration.GetSection(FileUploadConfiguration.SectionName));
+            services.AddHttpContextAccessor(); // Required for AccountService JWT functionality
             services.AddDependencyInjection();
             return services;
         }
@@ -24,6 +25,8 @@ namespace LessonPlanExam.Services
         {
             services.AddScoped<IAccountService, AccountService>();
             services.AddScoped<IFileUploadService, FileUploadService>();
+            services.AddScoped<ILessonPlanService, LessonPlanService>();
+            // Removed IUserService registration as functionality moved to AccountService
         }
     }
 }

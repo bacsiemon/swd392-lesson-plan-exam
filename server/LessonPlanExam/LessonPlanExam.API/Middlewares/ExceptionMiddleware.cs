@@ -1,4 +1,5 @@
 ﻿using App.Infrastructure.BaseClasses;
+using App.Infrastructure.Exceptions;
 
 namespace LessonPlanExam.API.Middlewares
 {
@@ -18,6 +19,18 @@ namespace LessonPlanExam.API.Middlewares
             try
             {
                 await _next(httpContext);
+            }
+            catch (UnauthorizedException ex)
+            {
+                _logger.LogWarning($"Unauthorized access attempt: {ex.Message}");
+                httpContext.Response.StatusCode = 401;
+                httpContext.Response.ContentType = "application/json";
+                await httpContext.Response.WriteAsJsonAsync(new BaseResponse
+                {
+                    StatusCode = 401,
+                    Message = ex.Message,
+                    Errors = null
+                });
             }
             catch (Exception ex)
             {

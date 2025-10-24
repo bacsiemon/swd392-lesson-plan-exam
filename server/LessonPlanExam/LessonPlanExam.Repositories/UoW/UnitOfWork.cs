@@ -30,5 +30,8 @@ namespace LessonPlanExam.Repositories.UoW
 
         private IFileUploadRepository _fileUploadRepository;
         public IFileUploadRepository FileUploadRepository => _fileUploadRepository ??= new Repositories.FileUploadRepository(_context);
+
+        private ILessonPlanRepository _lessonPlanRepository;
+        public ILessonPlanRepository LessonPlanRepository => _lessonPlanRepository ??= new Repositories.LessonPlanRepository(_context);
     }
 }

@@ -6,7 +6,7 @@
 - Use `ALL_CAPS` for constants.
 
 ## Api Commenting
-- XML Content must be written using Markdown syntax.
+- XML Content must be written using proper Markdown syntax. Pay extra careful to line breaks
 - `summary` only includes roles
     - If the enpoint doesn't require authentication, leave it blank.
     - If the endpoint only requires authentication, use `User`.
