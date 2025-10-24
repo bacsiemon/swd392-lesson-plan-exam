@@ -6,16 +6,16 @@ const { Title, Text } = Typography;
 
 const UserManagementHeader = ({ onAddUser }) => {
   return (
-    <Card style={{ marginBottom: 24 }}>
+    <Card className="admin-header-card" style={{ marginBottom: 24 }}>
       <Row justify="space-between" align="middle">
         <Col>
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <UserOutlined style={{ fontSize: 32, color: '#1890ff', marginRight: 16 }} />
+            <UserOutlined style={{ fontSize: 32, color: 'var(--admin-red-dark)', marginRight: 16 }} />
             <div>
-              <Title level={2} style={{ margin: 0, color: '#1890ff' }}>
+              <Title level={2} className="admin-title" style={{ margin: 0 }}>
                 Quản lý Người dùng
               </Title>
-              <Text type="secondary" style={{ fontSize: '16px' }}>
+              <Text className="admin-subtitle" style={{ fontSize: '16px' }}>
                 Quản lý tài khoản giáo viên và học sinh trong hệ thống
               </Text>
             </div>
@@ -23,6 +23,7 @@ const UserManagementHeader = ({ onAddUser }) => {
         </Col>
         <Col>
           <Button
+            className="admin-btn-primary"
             type="primary"
             icon={<PlusOutlined />}
             onClick={onAddUser}

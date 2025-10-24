@@ -6,7 +6,7 @@ const { Option } = Select;
 
 const UserFilters = ({ filters, onFilterChange, onResetFilters }) => {
   return (
-    <Card style={{ marginBottom: 16 }}>
+    <Card className="admin-card" style={{ marginBottom: 16 }}>
       <Row gutter={16} align="middle">
         <Col span={6}>
           <Select
@@ -37,6 +37,7 @@ const UserFilters = ({ filters, onFilterChange, onResetFilters }) => {
         </Col>
         <Col span={2}>
           <Button
+            className="admin-btn-secondary"
             icon={<FilterOutlined />}
             onClick={onResetFilters}
             title="Xóa bộ lọc"

@@ -8,24 +8,17 @@ import {
   SettingOutlined,
   LogoutOutlined,
   UserOutlined,
-  BookOutlined,
-  HomeOutlined,
-  TableOutlined,
-  FileTextOutlined,
-  ExperimentOutlined,
-  BulbOutlined,
-  QuestionCircleOutlined
+  TeamOutlined,
+  DashboardOutlined,
+  SafetyOutlined
 } from '@ant-design/icons';
 
 const { Header } = Layout;
 const { Title } = Typography;
-const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
+
+const AdminHeader = ({ userName = 'Quản trị viên' }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchValue, setSearchValue] = useState('');
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-
-  
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -35,7 +28,7 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
       if (!ticking) {
         requestAnimationFrame(() => {
           const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-          setIsScrolled(scrollTop > 10); 
+          setIsScrolled(scrollTop > 10);
           ticking = false;
         });
         ticking = true;
@@ -49,12 +42,11 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
     };
   }, []);
 
-  // Memoized navigation handler
   const handleNavigation = useCallback((path) => {
     navigate(path);
   }, [navigate]);
 
-  // 1. Định nghĩa menu cho Dropdown Tài khoản (Chemistry themed)
+  // Account menu for admin
   const accountMenu = (
     <Menu
       className="chemistry-dropdown-menu"
@@ -62,18 +54,11 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
         if (key === 'logout') {
           console.log('Đăng xuất...');
           navigate('/login');
-        } else if (key === 'create-lesson-plan') {
-          navigate('/create-lesson-plan');
         } else {
           navigate(`/${key}`);
         }
       }}
       items={[
-        {
-          key: 'create-lesson-plan',
-          icon: <ExperimentOutlined />,
-          label: 'Xây dựng giáo án',
-        },
         {
           key: 'profile',
           icon: <UserOutlined />,
@@ -97,32 +82,22 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
     />
   );
 
-  // 2. Định nghĩa menu điều hướng chính (Chemistry themed)
+  // Admin navigation menu
   const menuItems = [
     {
-      key: '/',
-      icon: <HomeOutlined />,
-      label: 'Trang chủ'
+      key: '/admin/users',
+      icon: <TeamOutlined />,
+      label: 'Quản lý người dùng'
     },
     {
-      key: '/create-lesson-plan',
-      icon: <ExperimentOutlined />,
-      label: 'Xây dựng giáo án'
+      key: '/admin/dashboard',
+      icon: <DashboardOutlined />,
+      label: 'Thống kê'
     },
     {
-      key: '/question-banks',
-      icon: <QuestionCircleOutlined />,
-      label: 'Ngân hàng câu hỏi'
-    },
-    {
-      key: '/exam-matrix',
-      icon: <TableOutlined />,
-      label: 'Ma trận đề'
-    },
-    {
-      key: '/manage-tests',
-      icon: <BulbOutlined />,
-      label: 'Quản lý đề kiểm tra'
+      key: '/admin/settings',
+      icon: <SafetyOutlined />,
+      label: 'Cấu hình'
     }
   ];
 
@@ -130,17 +105,17 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
     <Header
       className={`sticky-header chemistry-header ${isScrolled ? 'scrolled' : ''}`}
       style={{
-        background: 'linear-gradient(135deg, rgba(232, 213, 242, 0.95) 0%, rgba(213, 232, 247, 0.95) 100%)',
+        background: 'linear-gradient(135deg, rgba(255, 220, 220, 0.95) 0%, rgba(255, 240, 220, 0.95) 100%)',
         padding: '0 50px',
-        borderBottom: '2px solid rgba(177, 156, 217, 0.3)',
+        borderBottom: '2px solid rgba(217, 156, 156, 0.3)',
         height: 64,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        boxShadow: '0 2px 12px rgba(138, 109, 184, 0.15)'
+        boxShadow: '0 2px 12px rgba(184, 109, 109, 0.15)'
       }}
     >
-      {/* 1. Logo/Tên Ứng Dụng - Chemistry Themed */}
+      {/* Logo */}
       <div
         className="logo chemistry-logo"
         style={{
@@ -150,7 +125,7 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
           cursor: 'pointer',
           transition: 'all 0.3s ease'
         }}
-        onClick={() => handleNavigation('/')}
+        onClick={() => handleNavigation('/admin/users')}
       >
         <img 
           src={Logo} 
@@ -164,14 +139,14 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
         <Title level={3} style={{ 
           margin: 0, 
           lineHeight: '64px',
-          color: 'var(--chem-purple-dark, #8a6db8)',
+          color: '#c92a2a',
           fontWeight: 700
         }}>
-          AI Chemistry Hub
+          AI Chemistry Hub - Admin
         </Title>
       </div>
 
-      {/* 2. Menu Điều hướng Chính - Chemistry Themed */}
+      {/* Navigation Menu */}
       <Menu
         className="chemistry-nav-menu"
         theme="light"
@@ -190,7 +165,7 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
         }}
       />
 
-      {/* 3. Mục Tài khoản và Dropdown - Chemistry Themed */}
+      {/* User Account */}
       <Dropdown 
         overlay={accountMenu} 
         trigger={['click']} 
@@ -205,17 +180,17 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
             transition: 'all 0.3s ease'
           }}
         >
-          <Badge dot color="var(--chem-blue)">
+          <Badge dot color="#f5222d">
             <Avatar
               icon={<UserOutlined />}
               style={{ 
-                background: 'linear-gradient(135deg, var(--chem-purple), var(--chem-blue))',
-                boxShadow: '0 2px 8px rgba(138, 109, 184, 0.3)'
+                background: 'linear-gradient(135deg, #ff4d4f, #ff7875)',
+                boxShadow: '0 2px 8px rgba(184, 109, 109, 0.3)'
               }}
             />
           </Badge>
           <span style={{ 
-            color: 'var(--chem-purple-dark)', 
+            color: '#c92a2a', 
             fontWeight: 600,
             fontSize: '14px'
           }}>
@@ -227,4 +202,4 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
   );
 };
 
-export default AppHeader;
+export default AdminHeader;

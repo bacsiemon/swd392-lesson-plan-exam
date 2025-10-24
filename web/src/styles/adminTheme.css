@@ -1,0 +1,355 @@
+/* ========================================
+   ADMIN THEME STYLES
+   Red/Orange Color Scheme for Admin Pages
+   ======================================== */
+
+:root {
+  /* Admin color palette */
+  --admin-red-light: #ffe7e7;
+  --admin-red: #ff4d4f;
+  --admin-red-dark: #c92a2a;
+  --admin-orange-light: #fff0e6;
+  --admin-orange: #ff7a45;
+  --admin-orange-dark: #d4380d;
+  --admin-gradient: linear-gradient(135deg, #ffe7e7 0%, #fff0e6 100%);
+  --admin-gradient-reverse: linear-gradient(135deg, #fff0e6 0%, #ffe7e7 100%);
+  
+  /* Glass effect colors */
+  --admin-glass-bg: rgba(255, 255, 255, 0.85);
+  --admin-glass-border: rgba(255, 77, 79, 0.3);
+  
+  /* Background and borders */
+  --admin-bg: #fff5f5;
+  --admin-border: #ffc9c9;
+  --admin-workspace-bg: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+  
+  /* Text colors */
+  --admin-text: #5c1f1f;
+  --admin-text-secondary: #8e4a4a;
+}
+
+/* Page container with admin background */
+.admin-page {
+  padding: 24px;
+  min-height: 100vh;
+  background: var(--admin-workspace-bg);
+  animation: fadeInAdmin 0.5s ease-in-out;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Page fade-in animation */
+@keyframes fadeInAdmin {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Admin-themed card */
+.admin-card {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  background: var(--admin-glass-bg) !important;
+  border: 2px solid var(--admin-glass-border) !important;
+  box-shadow: 0 8px 32px rgba(255, 77, 79, 0.15) !important;
+  border-radius: 12px !important;
+  transition: all 0.3s ease;
+}
+
+.admin-card:hover {
+  box-shadow: 0 12px 40px rgba(255, 77, 79, 0.25) !important;
+  transform: translateY(-2px);
+}
+
+/* Header card with gradient */
+.admin-header-card {
+  background: var(--admin-gradient) !important;
+  border: 2px solid var(--admin-red-light) !important;
+  box-shadow: 0 8px 32px rgba(255, 77, 79, 0.2) !important;
+  border-radius: 12px !important;
+}
+
+/* Statistics cards */
+.admin-stat-card {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 2px solid var(--admin-glass-border) !important;
+  box-shadow: 0 4px 16px rgba(255, 77, 79, 0.15) !important;
+  border-radius: 10px !important;
+  transition: all 0.3s ease;
+}
+
+.admin-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(255, 77, 79, 0.25) !important;
+  border-color: var(--admin-red) !important;
+}
+
+/* Primary button with admin gradient */
+.admin-btn-primary {
+  background: var(--admin-gradient-reverse) !important;
+  border: none !important;
+  color: var(--admin-text) !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  transition: left 0.5s ease;
+}
+
+.admin-btn-primary:hover::before {
+  left: 100%;
+}
+
+.admin-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 122, 69, 0.4) !important;
+  color: var(--admin-text) !important;
+  background: linear-gradient(135deg, #ff4d4f, #ff7a45) !important;
+}
+
+/* Danger button for delete actions */
+.admin-btn-danger {
+  background: var(--admin-red) !important;
+  border: none !important;
+  color: white !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+}
+
+.admin-btn-danger:hover {
+  background: var(--admin-red-dark) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(201, 42, 42, 0.3) !important;
+}
+
+/* Secondary button */
+.admin-btn-secondary {
+  border: 2px solid var(--admin-orange-light) !important;
+  color: var(--admin-text) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  transition: all 0.3s ease !important;
+}
+
+.admin-btn-secondary:hover {
+  border-color: var(--admin-orange) !important;
+  background: var(--admin-orange-light) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 122, 69, 0.2) !important;
+}
+
+/* Page title with icon */
+.admin-title {
+  color: var(--admin-text) !important;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700 !important;
+}
+
+.admin-title .anticon {
+  color: var(--admin-red) !important;
+  font-size: 1.3em;
+}
+
+/* Subtitle text */
+.admin-subtitle {
+  color: var(--admin-text-secondary) !important;
+}
+
+/* Input fields with admin theme */
+.admin-page .ant-input,
+.admin-page .ant-input-number,
+.admin-page .ant-select-selector,
+.admin-page .ant-picker {
+  border: 2px solid var(--admin-red-light) !important;
+  border-radius: 6px !important;
+  transition: all 0.3s ease !important;
+}
+
+.admin-page .ant-input:focus,
+.admin-page .ant-input-number-focused,
+.admin-page .ant-select-focused .ant-select-selector,
+.admin-page .ant-picker-focused {
+  border-color: var(--admin-red) !important;
+  box-shadow: 0 0 0 2px rgba(255, 77, 79, 0.1) !important;
+}
+
+/* Table with admin theme */
+.admin-table .ant-table {
+  background: transparent;
+}
+
+.admin-table .ant-table-thead > tr > th {
+  background: var(--admin-gradient) !important;
+  color: var(--admin-text) !important;
+  font-weight: 700 !important;
+  border-color: var(--admin-red-light) !important;
+  border-width: 2px !important;
+}
+
+.admin-table .ant-table-tbody > tr:hover > td {
+  background: var(--admin-red-light) !important;
+}
+
+.admin-table .ant-table-tbody > tr > td {
+  border-color: var(--admin-red-light) !important;
+}
+
+/* Tags with admin colors */
+.admin-tag-red {
+  background: var(--admin-red-light) !important;
+  color: var(--admin-text) !important;
+  border: 2px solid var(--admin-red) !important;
+  font-weight: 600 !important;
+}
+
+.admin-tag-orange {
+  background: var(--admin-orange-light) !important;
+  color: var(--admin-text) !important;
+  border: 2px solid var(--admin-orange) !important;
+  font-weight: 600 !important;
+}
+
+/* Modal with admin theme */
+.admin-modal .ant-modal-content {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 2px solid var(--admin-glass-border) !important;
+  box-shadow: 0 12px 48px rgba(255, 77, 79, 0.3) !important;
+}
+
+.admin-modal .ant-modal-header {
+  background: var(--admin-gradient) !important;
+  border-bottom: 2px solid var(--admin-red-light) !important;
+}
+
+.admin-modal .ant-modal-title {
+  color: var(--admin-text) !important;
+  font-weight: 700 !important;
+}
+
+/* Statistic with admin colors */
+.admin-stat .ant-statistic-title {
+  color: var(--admin-text-secondary) !important;
+  font-weight: 600 !important;
+}
+
+.admin-stat .ant-statistic-content {
+  color: var(--admin-red-dark) !important;
+  font-weight: 700 !important;
+}
+
+/* Alert background decoration */
+.admin-alert-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.04;
+  background-image: 
+    radial-gradient(circle at 20% 30%, var(--admin-red) 2px, transparent 2px),
+    radial-gradient(circle at 80% 70%, var(--admin-orange) 2px, transparent 2px),
+    radial-gradient(circle at 40% 80%, var(--admin-red) 1.5px, transparent 1.5px),
+    radial-gradient(circle at 60% 20%, var(--admin-orange) 1.5px, transparent 1.5px);
+  background-size: 100px 100px;
+  background-position: 0 0, 30px 30px, 50px 10px, 10px 50px;
+  pointer-events: none;
+  animation: adminFloat 20s ease-in-out infinite;
+}
+
+@keyframes adminFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Smooth transitions for interactive elements */
+.admin-page .ant-btn,
+.admin-page .ant-card,
+.admin-page .ant-tag,
+.admin-page .ant-table-row {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Avatar with admin border */
+.admin-avatar {
+  border: 3px solid var(--admin-red-light) !important;
+  box-shadow: 0 4px 12px rgba(255, 77, 79, 0.3) !important;
+}
+
+/* Empty state with admin theme */
+.admin-empty .ant-empty-image svg {
+  fill: var(--admin-red) !important;
+}
+
+/* Progress bar with admin colors */
+.admin-progress .ant-progress-bg {
+  background: var(--admin-gradient) !important;
+}
+
+/* Divider with admin color */
+.admin-divider {
+  border-color: var(--admin-red-light) !important;
+  border-width: 2px !important;
+}
+
+/* Badge with admin colors */
+.admin-badge {
+  background: var(--admin-gradient) !important;
+  color: var(--admin-text) !important;
+  box-shadow: 0 2px 8px rgba(255, 77, 79, 0.3) !important;
+  font-weight: 700 !important;
+}
+
+/* Tabs with admin theme */
+.admin-tabs .ant-tabs-tab {
+  color: var(--admin-text-secondary) !important;
+  font-weight: 600 !important;
+}
+
+.admin-tabs .ant-tabs-tab-active {
+  color: var(--admin-red-dark) !important;
+  font-weight: 700 !important;
+}
+
+.admin-tabs .ant-tabs-ink-bar {
+  background: var(--admin-red) !important;
+  height: 3px !important;
+}
+
+/* Warning messages */
+.admin-warning {
+  background: var(--admin-orange-light) !important;
+  border: 2px solid var(--admin-orange) !important;
+  color: var(--admin-text) !important;
+  border-radius: 8px !important;
+  padding: 12px 16px !important;
+  font-weight: 600 !important;
+}
+
+/* Success messages */
+.admin-success {
+  background: #e6f7e6 !important;
+  border: 2px solid #52c41a !important;
+  color: #135200 !important;
+  border-radius: 8px !important;
+  padding: 12px 16px !important;
+  font-weight: 600 !important;
+}

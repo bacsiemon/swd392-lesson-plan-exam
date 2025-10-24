@@ -7,6 +7,7 @@ import UserFilters from '../components/UserFilters';
 import UserTable from '../components/UserTable';
 import AddUserModal from '../components/AddUserModals'; 
 import EditUserModal from '../components/EditUserModals';
+import '../styles/adminTheme.css';
 
 const AdminUserManagement = () => {
   const {
@@ -34,7 +35,9 @@ const AdminUserManagement = () => {
   } = useUserManagement();
 
   return (
-    <div style={{ padding: '24px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+    <div className="admin-page" style={{ position: 'relative' }}>
+      {/* Admin background decoration */}
+      <div className="admin-alert-bg"></div>
       {/* Header */}
       <UserManagementHeader onAddUser={() => setIsAddModalVisible(true)} />
 
@@ -53,14 +56,16 @@ const AdminUserManagement = () => {
       />
 
       {/* Table */}
-      <Card>
-        <UserTable
-          users={filteredUsers}
-          filters={filters}
-          onEdit={showEditModal}
-          onDelete={handleDelete}
-          onAddUser={() => setIsAddModalVisible(true)}
-        />
+      <Card className="admin-card">
+        <div className="admin-table">
+          <UserTable
+            users={filteredUsers}
+            filters={filters}
+            onEdit={showEditModal}
+            onDelete={handleDelete}
+            onAddUser={() => setIsAddModalVisible(true)}
+          />
+        </div>
       </Card>
 
       {/* Add User Modal */}
@@ -72,6 +77,7 @@ const AdminUserManagement = () => {
         width="90%"
         style={{ top: 20 }}
         destroyOnClose
+        className="admin-modal"
       >
         <AddUserModal
           visible={isAddModalVisible}
@@ -89,6 +95,7 @@ const AdminUserManagement = () => {
         width="90%"
         style={{ top: 20 }}
         destroyOnClose
+        className="admin-modal"
       >
         <EditUserModal
           visible={isEditModalVisible}

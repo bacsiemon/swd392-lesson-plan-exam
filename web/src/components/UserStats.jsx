@@ -6,32 +6,35 @@ const UserStats = ({ totalUsers, totalTeachers, totalStudents }) => {
   return (
     <Row gutter={16} style={{ marginBottom: 24 }}>
       <Col span={8}>
-        <Card>
+        <Card className="admin-stat-card">
           <Statistic
+            className="admin-stat"
             title="Tổng người dùng"
             value={totalUsers}
-            prefix={<UserOutlined />}
-            valueStyle={{ color: '#1890ff' }}
+            prefix={<UserOutlined style={{ color: 'var(--admin-red)' }} />}
+            valueStyle={{ color: 'var(--admin-red-dark)', fontWeight: 700 }}
           />
         </Card>
       </Col>
       <Col span={8}>
-        <Card>
+        <Card className="admin-stat-card">
           <Statistic
+            className="admin-stat"
             title="Giáo viên"
             value={totalTeachers}
-            prefix={<BookOutlined />}
-            valueStyle={{ color: '#52c41a' }}
+            prefix={<BookOutlined style={{ color: 'var(--admin-orange)' }} />}
+            valueStyle={{ color: 'var(--admin-orange-dark)', fontWeight: 700 }}
           />
         </Card>
       </Col>
       <Col span={8}>
-        <Card>
+        <Card className="admin-stat-card">
           <Statistic
+            className="admin-stat"
             title="Học sinh"
             value={totalStudents}
-            prefix={<TeamOutlined />}
-            valueStyle={{ color: '#faad14' }}
+            prefix={<TeamOutlined style={{ color: 'var(--admin-red)' }} />}
+            valueStyle={{ color: 'var(--admin-red-dark)', fontWeight: 700 }}
           />
         </Card>
       </Col>

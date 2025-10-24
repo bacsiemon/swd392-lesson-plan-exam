@@ -8,10 +8,8 @@ import {
   SettingOutlined,
   LogoutOutlined,
   UserOutlined,
-  BookOutlined,
   HomeOutlined,
   TableOutlined,
-  FileTextOutlined,
   ExperimentOutlined,
   BulbOutlined,
   QuestionCircleOutlined
@@ -19,13 +17,10 @@ import {
 
 const { Header } = Layout;
 const { Title } = Typography;
-const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
+
+const TeacherHeader = ({ userName = 'Giáo viên Hóa học' }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchValue, setSearchValue] = useState('');
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-
-  
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -35,7 +30,7 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
       if (!ticking) {
         requestAnimationFrame(() => {
           const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-          setIsScrolled(scrollTop > 10); 
+          setIsScrolled(scrollTop > 10);
           ticking = false;
         });
         ticking = true;
@@ -49,12 +44,11 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
     };
   }, []);
 
-  // Memoized navigation handler
   const handleNavigation = useCallback((path) => {
     navigate(path);
   }, [navigate]);
 
-  // 1. Định nghĩa menu cho Dropdown Tài khoản (Chemistry themed)
+  // Account menu for teachers
   const accountMenu = (
     <Menu
       className="chemistry-dropdown-menu"
@@ -97,10 +91,10 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
     />
   );
 
-  // 2. Định nghĩa menu điều hướng chính (Chemistry themed)
+  // Teacher navigation menu
   const menuItems = [
     {
-      key: '/',
+      key: '/dashboard',
       icon: <HomeOutlined />,
       label: 'Trang chủ'
     },
@@ -140,7 +134,7 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
         boxShadow: '0 2px 12px rgba(138, 109, 184, 0.15)'
       }}
     >
-      {/* 1. Logo/Tên Ứng Dụng - Chemistry Themed */}
+      {/* Logo */}
       <div
         className="logo chemistry-logo"
         style={{
@@ -150,7 +144,7 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
           cursor: 'pointer',
           transition: 'all 0.3s ease'
         }}
-        onClick={() => handleNavigation('/')}
+        onClick={() => handleNavigation('/dashboard')}
       >
         <img 
           src={Logo} 
@@ -171,7 +165,7 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
         </Title>
       </div>
 
-      {/* 2. Menu Điều hướng Chính - Chemistry Themed */}
+      {/* Navigation Menu */}
       <Menu
         className="chemistry-nav-menu"
         theme="light"
@@ -190,7 +184,7 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
         }}
       />
 
-      {/* 3. Mục Tài khoản và Dropdown - Chemistry Themed */}
+      {/* User Account */}
       <Dropdown 
         overlay={accountMenu} 
         trigger={['click']} 
@@ -227,4 +221,4 @@ const AppHeader = ({ userName = 'Giáo viên Hóa học' }) => {
   );
 };
 
-export default AppHeader;
+export default TeacherHeader;
