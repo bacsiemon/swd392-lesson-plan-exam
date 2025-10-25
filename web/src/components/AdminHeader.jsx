@@ -10,7 +10,8 @@ import {
   UserOutlined,
   TeamOutlined,
   DashboardOutlined,
-  SafetyOutlined
+  SafetyOutlined,
+  LineChartOutlined
 } from '@ant-design/icons';
 
 const { Header } = Layout;
@@ -90,15 +91,10 @@ const AdminHeader = ({ userName = 'Quản trị viên' }) => {
       label: 'Quản lý người dùng'
     },
     {
-      key: '/admin/dashboard',
-      icon: <DashboardOutlined />,
-      label: 'Thống kê'
+      key: '/admin/activity-status',
+      icon: <LineChartOutlined />,
+      label: 'Trạng thái hoạt động'
     },
-    {
-      key: '/admin/settings',
-      icon: <SafetyOutlined />,
-      label: 'Cấu hình'
-    }
   ];
 
   return (

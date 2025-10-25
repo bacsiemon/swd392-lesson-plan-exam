@@ -18,7 +18,7 @@ const AppLayout = ({ children }) => {
   // Define routes for each user role
   const studentRoutes = ['/student-dashboard', '/student-test', '/lesson-plans', '/lesson', '/test-scores', '/calendar'];
   const teacherRoutes = ['/dashboard', '/profile', '/question-banks', '/manage-tests', '/create-lesson-plan', '/exam-matrix', '/calendar'];
-  const adminRoutes = ['/admin'];
+  const adminRoutes = ['/admin/users', '/admin/activity-status', '/admin/dashboard', '/admin/settings', '/admin'];
   
   // Determine which header to render based on current path
   const isStudentRoute = studentRoutes.some(route => location.pathname.startsWith(route));

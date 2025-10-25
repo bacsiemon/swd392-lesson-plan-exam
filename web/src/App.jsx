@@ -17,6 +17,7 @@ import TeacherProfile from './pages/TeacherProfile';
 import StudentTestPage from './pages/StudentTestPage';
 import CalendarPage from './pages/CalendarPage';
 import TestScoresPage from './pages/TestScoresPage';
+import AdminActivityStatus from './pages/AdminActivityStatus';
 
 function App() {
   const location = useLocation();
@@ -54,6 +55,7 @@ function App() {
               <Route path="/student-test" element={<StudentTestPage />} />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/test-scores" element={<TestScoresPage />} />
+              <Route path="/admin/activity-status" element={<AdminActivityStatus />} />
             </Routes>
           </main>
         </Layout>
