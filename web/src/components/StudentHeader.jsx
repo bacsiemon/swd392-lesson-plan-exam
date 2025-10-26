@@ -106,6 +106,11 @@ const StudentHeader = ({ userName = 'Học sinh' }) => {
       key: '/student-test',
       icon: <FileTextOutlined />,
       label: 'Bài kiểm tra'
+    },
+    {
+      key: '/periodic-table',
+      icon: <ExperimentOutlined />,
+      label: 'Bảng tuần hoàn'
     }
   ];
 

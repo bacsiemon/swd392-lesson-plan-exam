@@ -18,6 +18,7 @@ import StudentTestPage from './pages/StudentTestPage';
 import CalendarPage from './pages/CalendarPage';
 import TestScoresPage from './pages/TestScoresPage';
 import AdminActivityStatus from './pages/AdminActivityStatus';
+import PeriodicTablePage from './pages/PeriodicTablePage';
 
 function App() {
   const location = useLocation();
@@ -56,6 +57,7 @@ function App() {
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/test-scores" element={<TestScoresPage />} />
               <Route path="/admin/activity-status" element={<AdminActivityStatus />} />
+              <Route path="/periodic-table" element={<PeriodicTablePage />} />
             </Routes>
           </main>
         </Layout>
