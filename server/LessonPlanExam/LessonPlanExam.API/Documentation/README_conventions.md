@@ -28,7 +28,7 @@
 /// lastName: Required.  
 ///
 /// Sample request:
-///
+///```
 /// POST /api/accounts  
 /// {  
 /// "email": "user@example.com",  
@@ -37,6 +37,7 @@
 /// "firstName": "John",  
 /// "lastName": "Doe"  
 /// }
+///```
 /// </remarks>
 /// <response code="400">Validation error. Possible messages:
 /// - EMAIL_REQUIRED  

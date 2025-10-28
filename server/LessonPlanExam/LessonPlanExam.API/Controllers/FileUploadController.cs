@@ -26,10 +26,10 @@ namespace LessonPlanExam.API.Controllers
         /// Validation is performed automatically using FluentValidation before processing.
         /// 
         /// Sample request:
-        /// 
+        /// ```
         /// POST /api/fileupload  
         /// Content-Type: multipart/form-data  
-        /// 
+        /// ```
         /// Form Data:  
         /// - file: [Select file to upload]  
         /// 
@@ -56,9 +56,9 @@ namespace LessonPlanExam.API.Controllers
         /// Get file information by ID.
         /// 
         /// Sample request:
-        /// 
+        /// ```
         /// GET /api/fileupload/123
-        /// 
+        /// ```
         /// </remarks>
         /// <param name="id">The ID of the file to retrieve information for</param>
         /// <response code="200">File information retrieved successfully. Returns file metadata including filename, MIME type, upload date, and file size.</response>
@@ -77,9 +77,9 @@ namespace LessonPlanExam.API.Controllers
         /// Download a file by ID.
         /// 
         /// Sample request:
-        /// 
+        /// ```
         /// GET /api/fileupload/123/download
-        /// 
+        /// ```
         /// </remarks>
         /// <param name="id">The ID of the file to download</param>
         /// <response code="200">File downloaded successfully. Returns the file as a binary stream with appropriate content type and filename.</response>
@@ -104,9 +104,9 @@ namespace LessonPlanExam.API.Controllers
         /// Delete a file by ID.
         /// 
         /// Sample request:
-        /// 
+        /// ```
         /// DELETE /api/fileupload/123
-        /// 
+        /// ```
         /// </remarks>
         /// <param name="id">The ID of the file to delete</param>
         /// <response code="200">File deleted successfully.</response>
@@ -131,9 +131,9 @@ namespace LessonPlanExam.API.Controllers
         /// - Can be used directly in HTML img tags, anchor tags, etc.
         /// 
         /// Sample requests:
-        /// 
+        /// ```
         /// GET /api/fileupload/123/direct
-        /// 
+        /// ```
         /// Usage examples:
         /// - In HTML: &lt;img src="/api/fileupload/123/direct" alt="Image" /&gt;
         /// - In HTML: &lt;a href="/api/fileupload/123/direct"&gt;Download Document&lt;/a&gt;
