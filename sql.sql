@@ -76,6 +76,13 @@ CREATE TABLE lesson_plans (
     deleted_at TIMESTAMP WITH TIME ZONE
 );
 
+create table lesson_plan_files (
+    id SERIAL PRIMARY KEY,
+    lesson_plan_id INTEGER NOT NULL REFERENCES lesson_plans(id) ON DELETE CASCADE,
+    file_url TEXT NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Individual lesson periods (Tiết học)
 CREATE TABLE slot_plans (
     id SERIAL PRIMARY KEY,

@@ -35,6 +35,8 @@ public partial class LessonPlanExamDbContext : DbContext
 
     public virtual DbSet<LessonPlan> LessonPlans { get; set; }
 
+    public virtual DbSet<LessonPlanFile> LessonPlanFiles { get; set; }
+
     public virtual DbSet<Question> Questions { get; set; }
 
     public virtual DbSet<QuestionBank> QuestionBanks { get; set; }
@@ -455,6 +457,26 @@ public partial class LessonPlanExamDbContext : DbContext
             entity.HasOne(d => d.CreatedByTeacherNavigation).WithMany(p => p.LessonPlans)
                 .HasForeignKey(d => d.CreatedByTeacher)
                 .HasConstraintName("lesson_plans_created_by_teacher_fkey");
+        });
+
+        modelBuilder.Entity<LessonPlanFile>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("lesson_plan_files_pkey");
+
+            entity.ToTable("lesson_plan_files");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.FileUrl)
+                .IsRequired()
+                .HasColumnName("file_url");
+            entity.Property(e => e.LessonPlanId).HasColumnName("lesson_plan_id");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.LessonPlan).WithMany(p => p.LessonPlanFiles)
+                .HasForeignKey(d => d.LessonPlanId)
+                .HasConstraintName("lesson_plan_files_lesson_plan_id_fkey");
         });
 
         modelBuilder.Entity<Question>(entity =>

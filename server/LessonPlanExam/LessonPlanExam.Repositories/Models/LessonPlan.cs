@@ -29,5 +29,7 @@ public partial class LessonPlan
 
     public virtual Teacher CreatedByTeacherNavigation { get; set; }
 
+    public virtual ICollection<LessonPlanFile> LessonPlanFiles { get; set; } = new List<LessonPlanFile>();
+
     public virtual ICollection<SlotPlan> SlotPlans { get; set; } = new List<SlotPlan>();
 }

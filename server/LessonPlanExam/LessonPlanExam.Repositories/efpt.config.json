@@ -4,6 +4,7 @@
    "ContextNamespace": null,
    "FilterSchemas": false,
    "IncludeConnectionString": false,
+   "MinimumProductVersion": "2.6.1186",
    "ModelNamespace": null,
    "OutputContextPath": null,
    "OutputPath": "Models",
@@ -48,6 +49,10 @@
       },
       {
          "Name": "public.file_uploads",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.lesson_plan_files",
          "ObjectType": 0
       },
       {
