@@ -66,5 +66,12 @@ namespace LessonPlanExam.API.Controllers
             var response = await _lessonPlanService.UploadFileAsync(id, file);
             return StatusCode(response.StatusCode, response);
         }
+
+        [HttpDelete("files/{id}")]
+        public async Task<IActionResult> DeleteLessonPlanFileAsync(int id)
+        {
+            var response = await _lessonPlanService.DeleteLessonPlanFileAsync(id);
+            return StatusCode(response.StatusCode, response);
+        }
     }
 }

@@ -13,5 +13,6 @@ namespace LessonPlanExam.Services.Interfaces
         Task<BaseResponse> GetLessonPlanByIdAsync(int id);
         Task<BaseResponse> GetByCurrentTeacherAsync(int page, int size);
         Task<BaseResponse<FileUploadResponse>> UploadFileAsync(int lessonPlanId, IFormFile file);
+        Task<BaseResponse> DeleteLessonPlanFileAsync(int fileId);
     }
 }

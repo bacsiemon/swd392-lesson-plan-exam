@@ -187,5 +187,29 @@ namespace LessonPlanExam.Services.Services
                 Data = fileUploadResponse.Data
             };
         }
+
+        public async Task<BaseResponse> DeleteLessonPlanFileAsync(int fileId)
+        {
+            var lessonPlanFile = await _unitOfWork.LessonPlanFileRepository.GetByIdAsync(fileId);
+            
+            if (lessonPlanFile == null)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 404,
+                    Errors = "LESSON_PLAN_FILE_NOT_FOUND"
+                };
+            }
+
+            // Remove the lesson plan file record
+            _unitOfWork.LessonPlanFileRepository.Remove(lessonPlanFile);
+            await _unitOfWork.SaveChangesAsync();
+
+            return new BaseResponse
+            {
+                StatusCode = 200,
+                Message = "LESSON_PLAN_FILE_DELETED_SUCCESSFULLY"
+            };
+        }
     }
 }
