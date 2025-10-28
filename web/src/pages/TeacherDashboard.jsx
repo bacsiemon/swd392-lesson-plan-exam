@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; 
-import { Card, Row, Col, Typography, Button, Space, Statistic, Progress, List, Tag, Spin } from 'antd';
+import { Card, Row, Col, Typography, Button, Space, Statistic, Progress, List, Tag } from 'antd';
 import {
   FileTextOutlined,
   ProjectOutlined,
@@ -16,6 +16,7 @@ import {
   FallOutlined,
 } from '@ant-design/icons';
 import dashboardService from '../services/dashboardService';
+import ChemistryLoader from '../components/ChemistryLoader';
 
 // Add CSS for liquid glass animations
 const liquidGlassStyles = `
@@ -226,7 +227,7 @@ const TeacherDashboard = () => {
         {/* Statistics Overview */}
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px' }}>
-            <Spin size="large" />
+            <ChemistryLoader size="large" text="Đang tải thống kê..." />
           </div>
         ) : (
           <>

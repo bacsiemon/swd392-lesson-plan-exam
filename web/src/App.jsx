@@ -19,9 +19,12 @@ import CalendarPage from './pages/CalendarPage';
 import TestScoresPage from './pages/TestScoresPage';
 import AdminActivityStatus from './pages/AdminActivityStatus';
 import PeriodicTablePage from './pages/PeriodicTablePage';
+import ChemistryPageLoader from './components/ChemistryPageLoader';
+import usePageTransition from './hooks/usePageTransition';
 
 function App() {
   const location = useLocation();
+  const isLoading = usePageTransition(1000);
   
   // Auth pages that should not have Layout wrapper
   const authPages = ['/login', '/register', '/forgot-password'];
@@ -29,6 +32,7 @@ function App() {
 
   return (
     <>
+      {isLoading && <ChemistryPageLoader />}
       {isAuthPage ? (
         <main>
           <Routes>

@@ -1,0 +1,492 @@
+/* Chemistry Page Loader Styles */
+.chemistry-loader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.chemistry-loader-container {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Molecule Structure Animation */
+.molecule-structure {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin-bottom: 30px;
+  animation: rotate 8s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Central Atom */
+.atom {
+  position: absolute;
+}
+
+.central-atom {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.atom-core {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(118, 75, 162, 0.6),
+              0 0 40px rgba(102, 126, 234, 0.4),
+              inset 0 0 10px rgba(255, 255, 255, 0.5);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.atom-core.small {
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, #52c41a, #faad14);
+  box-shadow: 0 0 15px rgba(250, 173, 20, 0.6);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 20px rgba(118, 75, 162, 0.6),
+                0 0 40px rgba(102, 126, 234, 0.4);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 30px rgba(118, 75, 162, 0.8),
+                0 0 60px rgba(102, 126, 234, 0.6);
+  }
+}
+
+/* Electron Orbits */
+.electron-orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  animation: orbitRotate 3s linear infinite;
+}
+
+.orbit-1 {
+  width: 60px;
+  height: 60px;
+  margin: -30px 0 0 -30px;
+}
+
+.orbit-2 {
+  width: 80px;
+  height: 80px;
+  margin: -40px 0 0 -40px;
+  animation-duration: 4s;
+}
+
+.orbit-3 {
+  width: 100px;
+  height: 100px;
+  margin: -50px 0 0 -50px;
+  animation-duration: 5s;
+}
+
+@keyframes orbitRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.electron {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border-radius: 50%;
+  top: 0;
+  left: 50%;
+  margin-left: -4px;
+  box-shadow: 0 0 10px #fff, 0 0 20px #fff;
+  animation: electronGlow 1s ease-in-out infinite alternate;
+}
+
+@keyframes electronGlow {
+  from {
+    box-shadow: 0 0 10px #fff, 0 0 20px #fff;
+  }
+  to {
+    box-shadow: 0 0 15px #fff, 0 0 30px #fff, 0 0 40px rgba(255, 255, 255, 0.8);
+  }
+}
+
+/* Surrounding Atoms */
+.surrounding-atom {
+  position: absolute;
+  animation: float 3s ease-in-out infinite;
+}
+
+.atom-1 {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  animation-delay: 0s;
+}
+
+.atom-2 {
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  animation-delay: 0.5s;
+}
+
+.atom-3 {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  animation-delay: 1s;
+}
+
+.atom-4 {
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  animation-delay: 1.5s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(0, -10px) scale(1.1);
+  }
+}
+
+/* Bonds */
+.bond {
+  position: absolute;
+  width: 2px;
+  height: 70px;
+  background: linear-gradient(to bottom, 
+    rgba(255, 255, 255, 0.8), 
+    rgba(255, 255, 255, 0.3));
+  top: 50%;
+  left: 50%;
+  transform-origin: center top;
+  animation: bondPulse 2s ease-in-out infinite;
+}
+
+.bond-1 {
+  transform: translate(-50%, -70px) rotate(0deg);
+}
+
+.bond-2 {
+  transform: translate(-50%, -70px) rotate(90deg);
+}
+
+.bond-3 {
+  transform: translate(-50%, -70px) rotate(180deg);
+}
+
+.bond-4 {
+  transform: translate(-50%, -70px) rotate(270deg);
+}
+
+@keyframes bondPulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Test Tubes Animation */
+.test-tubes {
+  position: absolute;
+  bottom: 20px;
+  display: flex;
+  gap: 20px;
+  opacity: 0.7;
+}
+
+.test-tube {
+  position: relative;
+  width: 30px;
+  height: 80px;
+  animation: shake 2s ease-in-out infinite;
+}
+
+.test-tube.tube-1 {
+  animation-delay: 0s;
+}
+
+.test-tube.tube-2 {
+  animation-delay: 0.3s;
+}
+
+.test-tube.tube-3 {
+  animation-delay: 0.6s;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  25% {
+    transform: translateX(-2px) rotate(-2deg);
+  }
+  75% {
+    transform: translateX(2px) rotate(2deg);
+  }
+}
+
+.tube-glass {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0 0 10px 10px;
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+}
+
+.tube-liquid {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  border-radius: 0 0 8px 8px;
+  animation: fillUp 3s ease-in-out infinite;
+}
+
+.liquid-1 {
+  background: linear-gradient(to top, #52c41a, rgba(82, 196, 26, 0.5));
+  height: 60%;
+}
+
+.liquid-2 {
+  background: linear-gradient(to top, #1890ff, rgba(24, 144, 255, 0.5));
+  height: 70%;
+  animation-delay: 0.3s;
+}
+
+.liquid-3 {
+  background: linear-gradient(to top, #faad14, rgba(250, 173, 20, 0.5));
+  height: 50%;
+  animation-delay: 0.6s;
+}
+
+@keyframes fillUp {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.1);
+  }
+}
+
+/* Bubbles */
+.bubbles {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.bubble {
+  position: absolute;
+  bottom: 0;
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  animation: rise 2s ease-in infinite;
+}
+
+.bubble:nth-child(1) {
+  left: 30%;
+  animation-delay: 0s;
+  animation-duration: 2s;
+}
+
+.bubble:nth-child(2) {
+  left: 50%;
+  animation-delay: 0.5s;
+  animation-duration: 2.5s;
+}
+
+.bubble:nth-child(3) {
+  left: 70%;
+  animation-delay: 1s;
+  animation-duration: 3s;
+}
+
+@keyframes rise {
+  0% {
+    bottom: 0;
+    opacity: 1;
+  }
+  100% {
+    bottom: 100%;
+    opacity: 0;
+  }
+}
+
+/* Loading Text */
+.loading-text {
+  position: absolute;
+  bottom: -40px;
+  display: flex;
+  gap: 2px;
+  font-size: 18px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.loading-dot {
+  display: inline-block;
+  animation: wave 1.5s ease-in-out infinite;
+}
+
+.loading-dot:nth-child(1) { animation-delay: 0s; }
+.loading-dot:nth-child(2) { animation-delay: 0.1s; }
+.loading-dot:nth-child(3) { animation-delay: 0.2s; }
+.loading-dot:nth-child(4) { animation-delay: 0.3s; }
+.loading-dot:nth-child(5) { animation-delay: 0.4s; }
+.loading-dot:nth-child(6) { animation-delay: 0.5s; }
+.loading-dot:nth-child(7) { animation-delay: 0.6s; }
+.loading-dot:nth-child(8) { animation-delay: 0.7s; }
+.loading-dot:nth-child(9) { animation-delay: 0.8s; }
+.loading-dot:nth-child(10) { animation-delay: 0.9s; }
+.loading-dot:nth-child(11) { animation-delay: 1s; }
+
+@keyframes wave {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Chemical Formulas */
+.chemical-formulas {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.formula {
+  position: absolute;
+  font-size: 20px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.4);
+  animation: float-formula 4s ease-in-out infinite;
+}
+
+.formula-1 {
+  top: 10%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.formula-2 {
+  top: 10%;
+  right: 10%;
+  animation-delay: 1s;
+}
+
+.formula-3 {
+  bottom: 10%;
+  left: 10%;
+  animation-delay: 2s;
+}
+
+.formula-4 {
+  bottom: 10%;
+  right: 10%;
+  animation-delay: 3s;
+}
+
+@keyframes float-formula {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translateY(-20px) rotate(180deg);
+    opacity: 0.6;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .chemistry-loader-container {
+    width: 250px;
+    height: 250px;
+  }
+
+  .molecule-structure {
+    width: 150px;
+    height: 150px;
+  }
+
+  .test-tubes {
+    gap: 10px;
+  }
+
+  .test-tube {
+    width: 20px;
+    height: 60px;
+  }
+
+  .chemical-formulas {
+    width: 300px;
+    height: 300px;
+  }
+
+  .formula {
+    font-size: 16px;
+  }
+}

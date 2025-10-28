@@ -1,0 +1,264 @@
+/* Simple Chemistry Loader for inline use */
+.chemistry-loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.chemistry-loader-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Size variants */
+.chemistry-loader-small .simple-molecule {
+  width: 60px;
+  height: 60px;
+}
+
+.chemistry-loader-medium .simple-molecule {
+  width: 100px;
+  height: 100px;
+}
+
+.chemistry-loader-large .simple-molecule {
+  width: 150px;
+  height: 150px;
+}
+
+/* Simple Molecule Structure */
+.simple-molecule {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  animation: moleculeRotate 4s linear infinite;
+}
+
+@keyframes moleculeRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Center Molecule */
+.molecule-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+}
+
+.center-atom {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(118, 75, 162, 0.6),
+              0 0 30px rgba(102, 126, 234, 0.4);
+  animation: centerPulse 2s ease-in-out infinite;
+}
+
+@keyframes centerPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+/* Orbits */
+.orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border: 2px solid rgba(102, 126, 234, 0.4);
+  border-radius: 50%;
+  animation: orbitSpin 3s linear infinite;
+}
+
+.orbit-1 {
+  width: 50px;
+  height: 50px;
+  margin: -25px 0 0 -25px;
+}
+
+.orbit-2 {
+  width: 70px;
+  height: 70px;
+  margin: -35px 0 0 -35px;
+  animation-duration: 4s;
+  animation-direction: reverse;
+}
+
+@keyframes orbitSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.orbit-electron {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #fff;
+  border-radius: 50%;
+  top: -3px;
+  left: 50%;
+  margin-left: -3px;
+  box-shadow: 0 0 8px #fff, 0 0 15px rgba(102, 126, 234, 0.8);
+  animation: electronBlink 1s ease-in-out infinite alternate;
+}
+
+@keyframes electronBlink {
+  from {
+    opacity: 0.6;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Outer Atoms */
+.outer-atom {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  background: linear-gradient(135deg, #52c41a, #faad14);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(250, 173, 20, 0.5);
+  animation: outerFloat 2s ease-in-out infinite;
+}
+
+.atom-top {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  animation-delay: 0s;
+}
+
+.atom-right {
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  animation-delay: 0.5s;
+}
+
+.atom-bottom {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  animation-delay: 1s;
+}
+
+.atom-left {
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  animation-delay: 1.5s;
+}
+
+@keyframes outerFloat {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(0, -5px) scale(1.1);
+  }
+}
+
+/* Loader Text */
+.loader-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #667eea;
+  text-align: center;
+  animation: textFade 1.5s ease-in-out infinite;
+}
+
+@keyframes textFade {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Size adjustments for atoms */
+.chemistry-loader-small .center-atom {
+  width: 20px;
+  height: 20px;
+}
+
+.chemistry-loader-small .orbit-1 {
+  width: 35px;
+  height: 35px;
+  margin: -17.5px 0 0 -17.5px;
+}
+
+.chemistry-loader-small .orbit-2 {
+  width: 50px;
+  height: 50px;
+  margin: -25px 0 0 -25px;
+}
+
+.chemistry-loader-small .outer-atom {
+  width: 10px;
+  height: 10px;
+}
+
+.chemistry-loader-small .loader-text {
+  font-size: 12px;
+}
+
+.chemistry-loader-large .center-atom {
+  width: 40px;
+  height: 40px;
+}
+
+.chemistry-loader-large .orbit-1 {
+  width: 70px;
+  height: 70px;
+  margin: -35px 0 0 -35px;
+}
+
+.chemistry-loader-large .orbit-2 {
+  width: 100px;
+  height: 100px;
+  margin: -50px 0 0 -50px;
+}
+
+.chemistry-loader-large .outer-atom {
+  width: 20px;
+  height: 20px;
+}
+
+.chemistry-loader-large .loader-text {
+  font-size: 16px;
+}
+
+/* Light theme variant */
+.chemistry-loader.light .loader-text {
+  color: #764ba2;
+}
+
+.chemistry-loader.light .center-atom {
+  background: linear-gradient(135deg, #1890ff, #52c41a);
+  box-shadow: 0 0 20px rgba(24, 144, 255, 0.6);
+}
+
+.chemistry-loader.light .orbit {
+  border-color: rgba(24, 144, 255, 0.4);
+}
