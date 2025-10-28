@@ -40,7 +40,7 @@ namespace LessonPlanExam.Services.Services
             return new BaseResponse
             {
                 StatusCode = 201,
-                Message = "LESSON_PLAN_CREATED_SUCCESSFULLY",
+                Message = "SUCCESS",
                 Data = lessonPlan.ToResponse()
             };
         }
@@ -120,7 +120,7 @@ namespace LessonPlanExam.Services.Services
             return new BaseResponse
             {
                 StatusCode = 200,
-                Message = "LESSON_PLAN_UPDATED_SUCCESSFULLY",
+                Message = "SUCCESS",
                 Data = updatedLessonPlan.ToResponse()
             };
         }
@@ -146,7 +146,7 @@ namespace LessonPlanExam.Services.Services
             return new BaseResponse
             {
                 StatusCode = 200,
-                Message = "LESSON_PLAN_DELETED_SUCCESSFULLY"
+                Message = "SUCCESS"
             };
         }
 
@@ -184,7 +184,7 @@ namespace LessonPlanExam.Services.Services
             return new BaseResponse<FileUploadResponse>
             {
                 StatusCode = 201,
-                Message = "LESSON_PLAN_FILE_UPLOADED_SUCCESSFULLY",
+                Message = "SUCCESS",
                 Data = fileUploadResponse.Data
             };
         }
@@ -209,7 +209,7 @@ namespace LessonPlanExam.Services.Services
             return new BaseResponse
             {
                 StatusCode = 200,
-                Message = "LESSON_PLAN_FILE_DELETED_SUCCESSFULLY"
+                Message = "SUCCESS"
             };
         }
     }
