@@ -27,7 +27,7 @@ import {
     ExperimentOutlined
 } from '@ant-design/icons';
 import '../styles/chemistryTheme.css';
-import './TeacherProfile.css';
+import '../styles/TeacherProfile.css';
 
 const { Title, Text, Paragraph } = Typography;
 

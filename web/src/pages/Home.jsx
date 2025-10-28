@@ -4,7 +4,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ExperimentOutlined, BulbOutlined, RocketOutlined } from '@ant-design/icons';
 import '../styles/chemistryTheme.css';
-import './Home.css';
+import '../styles/Home.css';
 
 function Home() {
   const navigate = useNavigate();

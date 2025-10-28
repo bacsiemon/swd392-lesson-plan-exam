@@ -3,7 +3,7 @@ import { Row, Col, Input, Button, Typography, Spin, Empty, message, Divider, Upl
 import { PlusOutlined, FolderOpenOutlined, FileTextOutlined, SaveOutlined, UploadOutlined, PrinterOutlined, MenuOutlined, ExperimentOutlined, BulbOutlined } from '@ant-design/icons';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import './CreateLessonPlanPage.css';
+import '../styles/CreateLessonPlanPage.css';
 
 const { Title, Paragraph, Text } = Typography;
 

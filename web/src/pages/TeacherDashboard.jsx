@@ -1,13 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; 
-import { Card, Row, Col, Typography, Button, Space } from 'antd';
+import { Card, Row, Col, Typography, Button, Space, Statistic, Progress, List, Tag, Spin } from 'antd';
 import {
   FileTextOutlined,
   ProjectOutlined,
   QuestionCircleOutlined,
   TableOutlined,
   AreaChartOutlined,
+  BookOutlined,
+  UserOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  TrophyOutlined,
+  RiseOutlined,
+  FallOutlined,
 } from '@ant-design/icons';
+import dashboardService from '../services/dashboardService';
 
 // Add CSS for liquid glass animations
 const liquidGlassStyles = `
@@ -77,6 +85,35 @@ const managementTools = [
 const TeacherDashboard = () => {
   const navigate = useNavigate();
   const [currentTime] = useState(new Date().toLocaleDateString('vi-VN'));
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [recentSubmissions, setRecentSubmissions] = useState([]);
+  
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    setLoading(true);
+    try {
+      const [statsResponse, submissionsResponse] = await Promise.all([
+        dashboardService.getTeacherStats(),
+        dashboardService.getRecentSubmissions(5)
+      ]);
+      
+      if (statsResponse.success) {
+        setStats(statsResponse.data);
+      }
+      
+      if (submissionsResponse.success) {
+        setRecentSubmissions(submissionsResponse.data);
+      }
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const handleToolClick = (link) => {
     navigate(link); 
@@ -182,9 +219,230 @@ const TeacherDashboard = () => {
             Chào mừng, Giáo viên! 👋
           </Title>
           <Text style={{ fontSize: '16px', color: 'rgba(255, 255, 255, 0.8)' }}>
-            Hôm nay là {currentTime} - Chọn một công cụ dưới đây để bắt đầu tạo tài nguyên dạy học và quản lý lớp học Hóa học.
+            Hôm nay là {currentTime} - Tổng quan hoạt động giảng dạy của bạn
           </Text>
         </div>
+
+        {/* Statistics Overview */}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Spin size="large" />
+          </div>
+        ) : (
+          <>
+            <div style={{ marginBottom: 32 }}>
+              <Title level={3} style={{ 
+                borderBottom: '2px solid rgba(255, 255, 255, 0.2)', 
+                paddingBottom: 10, 
+                color: 'rgba(255, 255, 255, 0.95)',
+                textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+              }}>
+                📈 Thống kê Tổng quan
+              </Title>
+              <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card
+                    style={{
+                      borderRadius: 16,
+                      background: 'rgba(255, 255, 255, 0.15)',
+                      backdropFilter: 'blur(15px)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      borderLeft: `4px solid ${BRAND_COLORS.LESSON}`,
+                    }}
+                  >
+                    <Statistic
+                      title={<span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Bài giảng</span>}
+                      value={stats?.totalLessonPlans || 0}
+                      prefix={<BookOutlined style={{ color: BRAND_COLORS.LESSON }} />}
+                      valueStyle={{ color: 'rgba(255, 255, 255, 0.95)', fontWeight: 'bold' }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card
+                    style={{
+                      borderRadius: 16,
+                      background: 'rgba(255, 255, 255, 0.15)',
+                      backdropFilter: 'blur(15px)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      borderLeft: `4px solid ${BRAND_COLORS.QUESTION}`,
+                    }}
+                  >
+                    <Statistic
+                      title={<span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Câu hỏi</span>}
+                      value={stats?.totalQuestions || 0}
+                      prefix={<QuestionCircleOutlined style={{ color: BRAND_COLORS.QUESTION }} />}
+                      valueStyle={{ color: 'rgba(255, 255, 255, 0.95)', fontWeight: 'bold' }}
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card
+                    style={{
+                      borderRadius: 16,
+                      background: 'rgba(255, 255, 255, 0.15)',
+                      backdropFilter: 'blur(15px)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      borderLeft: `4px solid ${BRAND_COLORS.TEST}`,
+                    }}
+                  >
+                    <Statistic
+                      title={<span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Đề kiểm tra</span>}
+                      value={stats?.totalTests || 0}
+                      prefix={<TableOutlined style={{ color: BRAND_COLORS.TEST }} />}
+                      valueStyle={{ color: 'rgba(255, 255, 255, 0.95)', fontWeight: 'bold' }}
+                      suffix={
+                        <span style={{ fontSize: '14px', color: 'rgba(255, 255, 255, 0.7)' }}>
+                          ({stats?.publishedTests || 0} đã đăng)
+                        </span>
+                      }
+                    />
+                  </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                  <Card
+                    style={{
+                      borderRadius: 16,
+                      background: 'rgba(255, 255, 255, 0.15)',
+                      backdropFilter: 'blur(15px)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      borderLeft: `4px solid ${BRAND_COLORS.SLIDE}`,
+                    }}
+                  >
+                    <Statistic
+                      title={<span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Học sinh</span>}
+                      value={stats?.totalStudents || 0}
+                      prefix={<UserOutlined style={{ color: BRAND_COLORS.SLIDE }} />}
+                      valueStyle={{ color: 'rgba(255, 255, 255, 0.95)', fontWeight: 'bold' }}
+                    />
+                  </Card>
+                </Col>
+              </Row>
+            </div>
+
+            {/* Test Completion Stats */}
+            <Row gutter={[16, 16]} style={{ marginBottom: 32 }}>
+              <Col xs={24} lg={12}>
+                <Card
+                  title={
+                    <span style={{ color: 'rgba(255, 255, 255, 0.95)', fontSize: '16px', fontWeight: 'bold' }}>
+                      📊 Thống kê Làm bài
+                    </span>
+                  }
+                  style={{
+                    borderRadius: 16,
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    backdropFilter: 'blur(15px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                  }}
+                  headStyle={{ borderBottom: '1px solid rgba(255, 255, 255, 0.2)' }}
+                >
+                  <Space direction="vertical" style={{ width: '100%' }} size="large">
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <Text style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Đã hoàn thành</Text>
+                        <Text strong style={{ color: 'rgba(255, 255, 255, 0.95)' }}>
+                          {stats?.completedTests || 0} bài
+                        </Text>
+                      </div>
+                      <Progress 
+                        percent={((stats?.completedTests || 0) / ((stats?.completedTests || 0) + (stats?.pendingTests || 1)) * 100).toFixed(0)} 
+                        strokeColor={BRAND_COLORS.LESSON}
+                        trailColor="rgba(255, 255, 255, 0.2)"
+                      />
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <Text style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Đang chờ</Text>
+                        <Text strong style={{ color: 'rgba(255, 255, 255, 0.95)' }}>
+                          {stats?.pendingTests || 0} bài
+                        </Text>
+                      </div>
+                      <Progress 
+                        percent={((stats?.pendingTests || 0) / ((stats?.completedTests || 0) + (stats?.pendingTests || 1)) * 100).toFixed(0)} 
+                        strokeColor={BRAND_COLORS.QUESTION}
+                        trailColor="rgba(255, 255, 255, 0.2)"
+                      />
+                    </div>
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.1)',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}>
+                      <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                        <TrophyOutlined style={{ marginRight: 8, color: BRAND_COLORS.QUESTION }} />
+                        Điểm trung bình
+                      </span>
+                      <Text strong style={{ fontSize: '20px', color: 'rgba(255, 255, 255, 0.95)' }}>
+                        {stats?.avgTestScore || 0}/10
+                      </Text>
+                    </div>
+                  </Space>
+                </Card>
+              </Col>
+              <Col xs={24} lg={12}>
+                <Card
+                  title={
+                    <span style={{ color: 'rgba(255, 255, 255, 0.95)', fontSize: '16px', fontWeight: 'bold' }}>
+                      🕒 Hoạt động Gần đây
+                    </span>
+                  }
+                  style={{
+                    borderRadius: 16,
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    backdropFilter: 'blur(15px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                  }}
+                  headStyle={{ borderBottom: '1px solid rgba(255, 255, 255, 0.2)' }}
+                >
+                  <List
+                    dataSource={recentSubmissions}
+                    renderItem={(item) => (
+                      <List.Item
+                        style={{
+                          borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                          padding: '12px 0'
+                        }}
+                      >
+                        <List.Item.Meta
+                          avatar={
+                            item.status === 'graded' ? 
+                            <CheckCircleOutlined style={{ fontSize: '20px', color: BRAND_COLORS.LESSON }} /> :
+                            <ClockCircleOutlined style={{ fontSize: '20px', color: BRAND_COLORS.QUESTION }} />
+                          }
+                          title={
+                            <Text style={{ color: 'rgba(255, 255, 255, 0.95)', fontWeight: '500' }}>
+                              {item.studentName}
+                            </Text>
+                          }
+                          description={
+                            <div>
+                              <Text style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px' }}>
+                                {item.testTitle}
+                              </Text>
+                              {item.score !== null && (
+                                <div>
+                                  <Tag color={item.score >= 8 ? 'success' : item.score >= 5 ? 'warning' : 'error'}
+                                    style={{ marginTop: 4 }}
+                                  >
+                                    Điểm: {item.score}
+                                  </Tag>
+                                </div>
+                              )}
+                            </div>
+                          }
+                        />
+                      </List.Item>
+                    )}
+                  />
+                </Card>
+              </Col>
+            </Row>
+          </>
+        )}
 
         {/* AI Tools Section */}
         <div style={{ marginBottom: 32 }}>

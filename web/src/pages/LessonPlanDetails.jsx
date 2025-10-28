@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Card, Typography, Button, List, Divider, Progress, Space, Switch, notification } from 'antd';
 import { ExperimentOutlined, BookOutlined, PlayCircleOutlined, CheckCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import '../styles/chemistryTheme.css';
-import './LessonPlanDetails.css';
+import '../styles/LessonPlanDetails.css';
 
 const { Title, Paragraph, Text } = Typography;
 

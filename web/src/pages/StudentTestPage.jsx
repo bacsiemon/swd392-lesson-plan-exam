@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, Typography, Button, Radio, Space } from 'antd';
 import { ExperimentOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import '../styles/chemistryTheme.css';
-import './Home.css';
+import '../styles/Home.css';
 
 const { Title, Text } = Typography;
 
