@@ -49,7 +49,8 @@ namespace LessonPlanExam.Services.Services
         {
             // Using strongly typed include for GetByIdAsync
             var lessonPlan = await _unitOfWork.LessonPlanRepository.GetByIdAsync(
-                id
+                id,
+                e => e.LessonPlanFiles
             );
 
             if (lessonPlan == null || lessonPlan.DeletedAt != null)
