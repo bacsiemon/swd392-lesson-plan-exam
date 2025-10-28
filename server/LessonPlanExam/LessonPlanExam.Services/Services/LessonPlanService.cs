@@ -1,9 +1,11 @@
 using App.Infrastructure.BaseClasses;
+using LessonPlanExam.Repositories.DTOs.FileUploadDTOs;
 using LessonPlanExam.Repositories.DTOs.LessonPlanDTOs;
 using LessonPlanExam.Repositories.Models;
 using LessonPlanExam.Repositories.UoW;
 using LessonPlanExam.Services.Interfaces;
 using LessonPlanExam.Services.Mapping;
+using Microsoft.AspNetCore.Http;
 using System.Linq.Expressions;
 
 namespace LessonPlanExam.Services.Services
@@ -12,11 +14,13 @@ namespace LessonPlanExam.Services.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IAccountService _accountService;
+        private readonly IFileUploadService _fileUploadService;
 
-        public LessonPlanService(IUnitOfWork unitOfWork, IAccountService accountService)
+        public LessonPlanService(IUnitOfWork unitOfWork, IAccountService accountService, IFileUploadService fileUploadService)
         {
             _unitOfWork = unitOfWork;
             _accountService = accountService;
+            _fileUploadService = fileUploadService;
         }
 
         public async Task<BaseResponse> CreateLessonPlanAsync(CreateLessonPlanRequest request)
@@ -53,7 +57,7 @@ namespace LessonPlanExam.Services.Services
                 return new BaseResponse
                 {
                     StatusCode = 404,
-                    Message = "LESSON_PLAN_NOT_FOUND"
+                    Errors = "LESSON_PLAN_NOT_FOUND"
                 };
             }
 
@@ -98,7 +102,7 @@ namespace LessonPlanExam.Services.Services
                 return new BaseResponse
                 {
                     StatusCode = 404,
-                    Message = "LESSON_PLAN_NOT_FOUND"
+                    Errors = "LESSON_PLAN_NOT_FOUND"
                 };
             }
 
@@ -129,7 +133,7 @@ namespace LessonPlanExam.Services.Services
                 return new BaseResponse
                 {
                     StatusCode = 404,
-                    Message = "LESSON_PLAN_NOT_FOUND"
+                    Errors = "LESSON_PLAN_NOT_FOUND"
                 };
             }
 
@@ -142,6 +146,45 @@ namespace LessonPlanExam.Services.Services
             {
                 StatusCode = 200,
                 Message = "LESSON_PLAN_DELETED_SUCCESSFULLY"
+            };
+        }
+
+        public async Task<BaseResponse<FileUploadResponse>> UploadFileAsync(int lessonPlanId, IFormFile file)
+        {
+            // Check if lesson plan exists
+            var lessonPlan = await _unitOfWork.LessonPlanRepository.GetByIdAsync(lessonPlanId);
+            if (lessonPlan == null || lessonPlan.DeletedAt != null)
+            {
+                return new BaseResponse<FileUploadResponse>
+                {
+                    StatusCode = 404,
+                    Errors = "LESSON_PLAN_NOT_FOUND"
+                };
+            }
+
+            // Upload the file using FileUploadService
+            var fileUploadResponse = await _fileUploadService.UploadFileAsync(file);
+            if (fileUploadResponse.StatusCode != 201)
+            {
+                return fileUploadResponse;
+            }
+
+            // Create LessonPlanFile record to link the uploaded file to the lesson plan
+            var lessonPlanFile = new LessonPlanFile
+            {
+                LessonPlanId = lessonPlanId,
+                FileUrl = fileUploadResponse.Data.FileUrl,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            _unitOfWork.LessonPlanFileRepository.Create(lessonPlanFile);
+            await _unitOfWork.SaveChangesAsync();
+
+            return new BaseResponse<FileUploadResponse>
+            {
+                StatusCode = 201,
+                Message = "LESSON_PLAN_FILE_UPLOADED_SUCCESSFULLY",
+                Data = fileUploadResponse.Data
             };
         }
     }

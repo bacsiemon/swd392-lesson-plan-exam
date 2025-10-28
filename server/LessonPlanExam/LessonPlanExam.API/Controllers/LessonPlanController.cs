@@ -54,5 +54,17 @@ namespace LessonPlanExam.API.Controllers
             var response = await _lessonPlanService.DeleteLessonPlanAsync(id);
             return StatusCode(response.StatusCode, response);
         }
+
+        [HttpPost("{id}/upload-file")]
+        public async Task<IActionResult> UploadFileAsync(int id, IFormFile file)
+        {
+            if (file == null)
+            {
+                return BadRequest(new { StatusCode = 400, Message = "FILE_REQUIRED" });
+            }
+
+            var response = await _lessonPlanService.UploadFileAsync(id, file);
+            return StatusCode(response.StatusCode, response);
+        }
     }
 }

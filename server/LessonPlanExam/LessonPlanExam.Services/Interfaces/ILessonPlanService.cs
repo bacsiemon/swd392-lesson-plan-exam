@@ -1,5 +1,7 @@
 using App.Infrastructure.BaseClasses;
+using LessonPlanExam.Repositories.DTOs.FileUploadDTOs;
 using LessonPlanExam.Repositories.DTOs.LessonPlanDTOs;
+using Microsoft.AspNetCore.Http;
 
 namespace LessonPlanExam.Services.Interfaces
 {
@@ -10,5 +12,6 @@ namespace LessonPlanExam.Services.Interfaces
         Task<BaseResponse> DeleteLessonPlanAsync(int id);
         Task<BaseResponse> GetLessonPlanByIdAsync(int id);
         Task<BaseResponse> GetByCurrentTeacherAsync(int page, int size);
+        Task<BaseResponse<FileUploadResponse>> UploadFileAsync(int lessonPlanId, IFormFile file);
     }
 }
