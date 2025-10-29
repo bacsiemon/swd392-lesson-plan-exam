@@ -16,6 +16,8 @@ import LessonPlanDetails from './pages/LessonPlanDetails';
 import TeacherProfile from './pages/TeacherProfile';
 import StudentTestPage from './pages/StudentTestPage';
 import StudentTestResultPage from './pages/StudentTestResultPage';
+import StudentTestAnalytics from './pages/StudentTestAnalytics';
+import StudentTestAnalyticsList from './pages/StudentTestAnalyticsList';
 import StudentTestListPage from './pages/StudentTestListPage';
 import CalendarPage from './pages/CalendarPage';
 import TestScoresPage from './pages/TestScoresPage';
@@ -62,6 +64,8 @@ function App() {
               <Route path="/exams" element={<StudentTestListPage />} />
               <Route path="/student-test" element={<StudentTestPage />} />
               <Route path="/student-test/result" element={<StudentTestResultPage />} />
+              <Route path="/student-test/analytics" element={<StudentTestAnalyticsList />} />
+              <Route path="/student-test/analytics/:id" element={<StudentTestAnalytics />} />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/test-scores" element={<TestScoresPage />} />
               <Route path="/admin/activity-status" element={<AdminActivityStatus />} />

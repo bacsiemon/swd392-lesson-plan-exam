@@ -77,7 +77,7 @@ const managementTools = [
         title: 'Phân tích Kết quả Học tập',
         description: 'Theo dõi tiến độ, điểm số và các lĩnh vực cần cải thiện của học sinh.',
         icon: <AreaChartOutlined style={{ fontSize: '36px', color: BRAND_COLORS.ANALYTICS }} />,
-        link: '/manage-tests',
+        link: '/student-test/analytics',
         color: BRAND_COLORS.ANALYTICS,
     },
 ];

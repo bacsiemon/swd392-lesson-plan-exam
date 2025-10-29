@@ -9,6 +9,69 @@ class StudentTestService {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
+    // ----- Analytics (Mock) -----
+    async getAnalyticsList() {
+        await this.delay(500);
+        // Mock list of tests/lessons with brief analytics summary
+        const items = [
+            { id: 'chem_midterm_inorganic', title: 'Giữa kỳ - Hóa vô cơ', type: 'test', totalStudents: 120, viewed: 108, completed: 92, avgScore: 7.8, attempts: 1.4 },
+            { id: 'quiz_periodic_table', title: 'Quiz - Bảng tuần hoàn', type: 'quiz', totalStudents: 120, viewed: 112, completed: 105, avgScore: 8.3, attempts: 1.6 },
+            { id: 'lesson_organic_reactions', title: 'Bài học - Phản ứng hữu cơ', type: 'lesson', totalStudents: 120, viewed: 98, completed: 74, avgScore: 7.1, attempts: 1.2 },
+            { id: 'final_exam_overview', title: 'Cuối kỳ - Tổng hợp', type: 'test', totalStudents: 120, viewed: 120, completed: 118, avgScore: 7.5, attempts: 1.1 }
+        ];
+        return { success: true, data: items };
+    }
+
+    async getAnalyticsById(id) {
+        await this.delay(500);
+        // Mock per-item analytics data
+        const catalog = {
+            chem_midterm_inorganic: {
+                id: 'chem_midterm_inorganic',
+                type: 'test',
+                title: 'Giữa kỳ - Hóa vô cơ',
+                totalStudents: 120,
+                viewed: 108,
+                completed: 92,
+                attempts: [ { x: 1, y: 92 }, { x: 2, y: 24 }, { x: 3, y: 6 } ],
+                scores: [9.5, 8.0, 7.0, 6.5, 7.5, 8.5, 9.0, 5.0, 4.5, 6.0, 9.5, 10.0, 3.5, 8.2, 7.8, 6.9, 8.9, 9.3, 5.7, 6.1, 7.4, 8.6, 9.9, 4.8, 5.2, 6.8, 7.1, 8.0, 8.1, 7.2, 6.3, 5.9, 9.1, 9.4, 7.7, 8.8, 6.4, 5.6, 4.2, 3.9, 2.8, 9.0, 8.7, 7.6, 6.2, 5.1, 4.7, 7.9, 8.3, 9.2, 5.8, 6.7, 7.3, 8.4, 9.6 ]
+            },
+            quiz_periodic_table: {
+                id: 'quiz_periodic_table',
+                type: 'quiz',
+                title: 'Quiz - Bảng tuần hoàn',
+                totalStudents: 120,
+                viewed: 112,
+                completed: 105,
+                attempts: [ { x: 1, y: 100 }, { x: 2, y: 45 }, { x: 3, y: 10 } ],
+                scores: [8.5, 8.1, 8.0, 8.2, 7.9, 9.0, 8.7, 9.2, 8.9, 8.6, 7.5, 7.2, 7.8, 8.3, 8.8, 9.1, 8.4, 8.0, 7.6, 8.2]
+            },
+            lesson_organic_reactions: {
+                id: 'lesson_organic_reactions',
+                type: 'lesson',
+                title: 'Bài học - Phản ứng hữu cơ',
+                totalStudents: 120,
+                viewed: 98,
+                // Lessons should not track score/attempts
+                attempts: [],
+                scores: []
+            },
+            final_exam_overview: {
+                id: 'final_exam_overview',
+                type: 'test',
+                title: 'Cuối kỳ - Tổng hợp',
+                totalStudents: 120,
+                viewed: 120,
+                completed: 118,
+                attempts: [ { x: 1, y: 118 }, { x: 2, y: 30 }, { x: 3, y: 8 } ],
+                scores: [7.5, 7.4, 7.6, 7.5, 7.3, 7.7, 7.5, 7.8, 7.2, 7.1, 7.9, 8.0, 6.9, 6.8, 8.1]
+            }
+        };
+        const item = catalog[id];
+        if (!item) return { success: false, message: 'Not found' };
+        return { success: true, data: item };
+    }
+
     // Get available tests for student
     async getAvailableTests() {
         await this.delay(600);
