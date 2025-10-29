@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, Typography, Button, Radio, Space } from 'antd';
 import { ExperimentOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import '../styles/chemistryTheme.css';
@@ -20,7 +21,8 @@ const mockTest = {
         'Một loại phân tử',
         'Một loại ion',
         'Một loại hợp chất'
-      ]
+      ],
+      correctIndex: 0
     },
     {
       id: 2,
@@ -31,7 +33,8 @@ const mockTest = {
         'Natri',
         'Clo',
         'Magie'
-      ]
+      ],
+      correctIndex: 2
     },
     {
       id: 3,
@@ -42,7 +45,8 @@ const mockTest = {
         'Sự phân hủy của nguyên tử',
         'Sự chuyển động của electron',
         'Sự kết hợp giữa proton và neutron'
-      ]
+      ],
+      correctIndex: 0
     }
   ]
 };
@@ -50,6 +54,7 @@ const mockTest = {
 function StudentTestPage() {
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const navigate = useNavigate();
 
   const handleOptionChange = (qid, idx) => {
     setAnswers({ ...answers, [qid]: idx });
@@ -58,7 +63,22 @@ function StudentTestPage() {
   const handleSubmit = (e) => {
     e.preventDefault();
     setSubmitted(true);
-    // TODO: Gửi đáp án lên server hoặc xử lý kết quả
+    // Tính điểm và chuyển đến trang kết quả
+    const totalQuestions = mockTest.questions.length;
+    const correctCount = mockTest.questions.reduce((acc, q) => {
+      const chosen = answers[q.id];
+      return acc + (chosen === q.correctIndex ? 1 : 0);
+    }, 0);
+
+    navigate('/student-test/result', {
+      state: {
+        score: correctCount,
+        totalQuestions,
+        answers,
+        questions: mockTest.questions,
+        testTitle: mockTest.title
+      }
+    });
   };
 
   return (
