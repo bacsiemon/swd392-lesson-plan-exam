@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Logo from '../Assets/Logo.png';
-import { Layout, Typography, Dropdown, Menu, Space, Avatar, Badge } from 'antd';
+import { Layout, Typography, Dropdown, Menu, Space, Avatar, Badge, Button, Drawer, Grid } from 'antd';
 import '../styles/chemistryTheme.css';
 import './Header.css';
 import {
@@ -13,7 +13,8 @@ import {
   FileTextOutlined,
   ExperimentOutlined,
   CalendarOutlined,
-  TrophyOutlined
+  TrophyOutlined,
+  MenuOutlined
 } from '@ant-design/icons';
 
 const { Header } = Layout;
@@ -23,6 +24,8 @@ const StudentHeader = ({ userName = 'Học sinh' }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const screens = Grid.useBreakpoint();
 
   useEffect(() => {
     let ticking = false;
@@ -103,7 +106,7 @@ const StudentHeader = ({ userName = 'Học sinh' }) => {
       label: 'Bài học'
     },
     {
-      key: '/student-test',
+      key: '/exams',
       icon: <FileTextOutlined />,
       label: 'Bài kiểm tra'
     },
@@ -114,12 +117,15 @@ const StudentHeader = ({ userName = 'Học sinh' }) => {
     }
   ];
 
+  const headerPadding = screens.md ? '0 50px' : '0 16px';
+  const logoHeight = screens.md ? '96px' : '56px';
+
   return (
     <Header
       className={`sticky-header chemistry-header ${isScrolled ? 'scrolled' : ''}`}
       style={{
         background: 'linear-gradient(135deg, rgba(232, 213, 242, 0.95) 0%, rgba(213, 232, 247, 0.95) 100%)',
-        padding: '0 50px',
+        padding: headerPadding,
         borderBottom: '2px solid rgba(177, 156, 217, 0.3)',
         height: 64,
         display: 'flex',
@@ -144,7 +150,7 @@ const StudentHeader = ({ userName = 'Học sinh' }) => {
           src={Logo} 
           alt="Logo" 
           style={{ 
-            height: '96px',
+            height: logoHeight,
             marginRight: 12,
             objectFit: 'contain'
           }} 
@@ -159,58 +165,95 @@ const StudentHeader = ({ userName = 'Học sinh' }) => {
         </Title>
       </div>
 
-      {/* Navigation Menu */}
-      <Menu
-        className="chemistry-nav-menu"
-        theme="light"
-        mode="horizontal"
-        selectedKeys={[location.pathname]}
-        items={menuItems}
-        onClick={({ key }) => handleNavigation(key)}
-        style={{ 
-          flexGrow: 1, 
-          minWidth: 0, 
-          borderBottom: 'none', 
-          lineHeight: '62px', 
-          justifyContent: 'center',
-          background: 'transparent',
-          fontWeight: 600
-        }}
-      />
-
-      {/* User Account */}
-      <Dropdown 
-        overlay={accountMenu} 
-        trigger={['click']} 
-        placement="bottomRight"
-      >
-        <Space 
-          className="chemistry-user-section"
-          style={{ 
-            cursor: 'pointer',
-            padding: '8px 16px',
-            borderRadius: '12px',
-            transition: 'all 0.3s ease'
-          }}
-        >
-          <Badge dot color="var(--chem-blue)">
-            <Avatar
-              icon={<UserOutlined />}
+      {screens.md ? (
+        <>
+          {/* Desktop */}
+          <Menu
+            className="chemistry-nav-menu"
+            theme="light"
+            mode="horizontal"
+            selectedKeys={[location.pathname]}
+            items={menuItems}
+            onClick={({ key }) => handleNavigation(key)}
+            style={{ 
+              flexGrow: 1, 
+              minWidth: 0, 
+              borderBottom: 'none', 
+              lineHeight: '62px', 
+              justifyContent: 'center',
+              background: 'transparent',
+              fontWeight: 600
+            }}
+          />
+          <Dropdown 
+            overlay={accountMenu} 
+            trigger={['click']} 
+            placement="bottomRight"
+          >
+            <Space 
+              className="chemistry-user-section"
               style={{ 
-                background: 'linear-gradient(135deg, var(--chem-purple), var(--chem-blue))',
-                boxShadow: '0 2px 8px rgba(138, 109, 184, 0.3)'
+                cursor: 'pointer',
+                padding: '8px 16px',
+                borderRadius: '12px',
+                transition: 'all 0.3s ease'
               }}
+            >
+              <Badge dot color="var(--chem-blue)">
+                <Avatar
+                  icon={<UserOutlined />}
+                  style={{ 
+                    background: 'linear-gradient(135deg, var(--chem-purple), var(--chem-blue))',
+                    boxShadow: '0 2px 8px rgba(138, 109, 184, 0.3)'
+                  }}
+                />
+              </Badge>
+              <span style={{ 
+                color: 'var(--chem-purple-dark)', 
+                fontWeight: 600,
+                fontSize: '14px'
+              }}>
+                {userName}
+              </span>
+            </Space>
+          </Dropdown>
+        </>
+      ) : (
+        <>
+          {/* Mobile */}
+          <Button
+            aria-label="Open menu"
+            type="text"
+            icon={<MenuOutlined />}
+            onClick={() => setIsDrawerOpen(true)}
+            style={{ color: 'var(--chem-purple-dark)' }}
+          />
+          <Drawer
+            placement="right"
+            open={isDrawerOpen}
+            onClose={() => setIsDrawerOpen(false)}
+            width={280}
+            title={
+              <Space>
+                <Avatar size="small" icon={<UserOutlined />} />
+                <span>{userName}</span>
+              </Space>
+            }
+          >
+            <Menu
+              mode="inline"
+              selectedKeys={[location.pathname]}
+              items={menuItems}
+              onClick={({ key }) => {
+                setIsDrawerOpen(false);
+                handleNavigation(key);
+              }}
+              style={{ borderRight: 'none', marginBottom: 16 }}
             />
-          </Badge>
-          <span style={{ 
-            color: 'var(--chem-purple-dark)', 
-            fontWeight: 600,
-            fontSize: '14px'
-          }}>
-            {userName}
-          </span>
-        </Space>
-      </Dropdown>
+            {accountMenu}
+          </Drawer>
+        </>
+      )}
     </Header>
   );
 };
