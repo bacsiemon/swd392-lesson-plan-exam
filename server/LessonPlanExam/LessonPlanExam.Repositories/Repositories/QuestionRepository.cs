@@ -57,7 +57,7 @@ namespace LessonPlanExam.Repositories.Repositories {
             return entity;
         }
 
-        public async Task<IEnumerable<Question>> QueryAsync(int? bankId, int? type, int? difficultyId, string _ignoreDomain, bool? active, string q, CancellationToken ct = default) {
+        public async Task<IEnumerable<Question>> QueryAsync(int? bankId, int? type, int? difficultyId, bool? active, string q, CancellationToken ct = default) {
             var query = _db.Questions.AsNoTracking().AsQueryable();
             if (bankId.HasValue) query = query.Where(x => x.QuestionBankId == bankId.Value);
             if (type.HasValue) query = query.Where(x => (int)x.QuestionTypeEnum == type.Value);

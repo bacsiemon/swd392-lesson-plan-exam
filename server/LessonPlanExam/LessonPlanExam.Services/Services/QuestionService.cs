@@ -48,8 +48,8 @@ namespace LessonPlanExam.Services.Services {
             entity = await _repo.GetWithAnswersAsync(entity.Id, ct);
             return MapResponse(entity);
         }
-        public async Task<IEnumerable<QuestionResponse>> QueryAsync(int? bankId, int? type, int? difficultyId, string _ignoreDomain, bool? active, string q, CancellationToken ct = default) {
-            var lst = await _repo.QueryAsync(bankId, type, difficultyId, _ignoreDomain, active, q, ct);
+        public async Task<IEnumerable<QuestionResponse>> QueryAsync(int? bankId, int? type, int? difficultyId, bool? active, string q, CancellationToken ct = default) {
+            var lst = await _repo.QueryAsync(bankId, type, difficultyId, active, q, ct);
             // Nạp answers từng cái
             var result = new List<QuestionResponse>();
             foreach (var qitem in lst) {
