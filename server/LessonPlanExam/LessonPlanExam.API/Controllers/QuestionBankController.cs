@@ -18,9 +18,6 @@ namespace LessonPlanExam.API.Controllers
 
 		/// <summary>
 		/// Create a new question bank.
-		/// Requires: name, gradeLevel, teacherId, description in the request body.
-		/// Returns the newly created question bank info.
-		/// Example: POST /api/question-banks { "name": "Chemistry Bank", "gradeLevel": 10, ... }
 		/// </summary>
 		[HttpPost]
 		public async Task<IActionResult> CreateAsync([FromBody] CreateQuestionBankRequest request)
@@ -31,9 +28,7 @@ namespace LessonPlanExam.API.Controllers
 		}
 
 		/// <summary>
-		/// Get a list of question banks with optional filters (teacherId, gradeLevel, status, keyword q, paging).
-		/// Returns array of question banks with pagination info.
-		/// Example: GET /api/question-banks?teacherId=1&gradeLevel=10&q=chem&page=1&size=10
+		/// Get a list of question banks with optional filters
 		/// </summary>
 		[HttpGet]
 		public async Task<IActionResult> QueryAsync([FromQuery] int? teacherId, [FromQuery] int? gradeLevel, [FromQuery] EQuestionBankStatus? status, [FromQuery] string q, [FromQuery] int page = 1, [FromQuery] int size = 10)
@@ -45,7 +40,6 @@ namespace LessonPlanExam.API.Controllers
 
 		/// <summary>
 		/// Get details of a question bank by its ID.
-		/// Returns bank info or error if not found.
 		/// </summary>
 		[HttpGet("{id}")]
 		public async Task<IActionResult> GetByIdAsync([FromRoute] int id)
@@ -56,8 +50,7 @@ namespace LessonPlanExam.API.Controllers
 		}
 
 		/// <summary>
-		/// Update a question bank's info (name, gradeLevel, description).
-		/// PUT /api/question-banks/{id}
+		/// Update a question bank's info
 		/// </summary>
 		[HttpPut("{id}")]
 		public async Task<IActionResult> UpdateAsync([FromRoute] int id, [FromBody] UpdateQuestionBankRequest request)
@@ -67,9 +60,7 @@ namespace LessonPlanExam.API.Controllers
 		}
 
 		/// <summary>
-		/// Update the status of a question bank (Draft, Active, Archived).
-		/// Pass {"statusEnum": "Active"} in body.
-		/// PATCH /api/question-banks/{id}/status
+		/// Update the status of a question bank 
 		/// </summary>
 		[HttpPatch("{id}/status")]
 		public async Task<IActionResult> UpdateStatusAsync([FromRoute] int id, [FromBody] UpdateQuestionBankStatusRequest request)
@@ -80,8 +71,7 @@ namespace LessonPlanExam.API.Controllers
 		}
 
 		/// <summary>
-		/// Get statistics of questions inside the bank: count by type, by difficulty, by domain.
-		/// Example: GET /api/question-banks/{id}/stats
+		/// Get statistics of questions inside the bank
 		/// </summary>
 		[HttpGet("{id}/stats")]
 		public async Task<IActionResult> StatsAsync([FromRoute] int id)
@@ -92,9 +82,7 @@ namespace LessonPlanExam.API.Controllers
 		}
 
 		/// <summary>
-		/// Bulk import multiple questions into the bank (support MultipleChoice or FillBlank).
-		/// Pass an array of items in the request body.
-		/// POST /api/question-banks/{id}/import
+		/// Bulk import multiple questions into the bank
 		/// </summary>
 		[HttpPost("{id}/import")]
 		public async Task<IActionResult> ImportAsync([FromRoute] int id, [FromBody] ImportQuestionBankItemsRequest request)
@@ -106,8 +94,7 @@ namespace LessonPlanExam.API.Controllers
 		}
 
 		/// <summary>
-		/// Export all questions in the bank as JSON (including answer data).
-		/// GET /api/question-banks/{id}/export
+		/// Export all questions in the bank as JSON
 		/// </summary>
 		[HttpGet("{id}/export")]
 		public async Task<IActionResult> ExportAsync([FromRoute] int id)
