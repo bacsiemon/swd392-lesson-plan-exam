@@ -4,6 +4,7 @@
    "ContextNamespace": null,
    "FilterSchemas": false,
    "IncludeConnectionString": false,
+   "MinimumProductVersion": "2.6.1186",
    "ModelNamespace": null,
    "OutputContextPath": null,
    "OutputPath": "Models",
@@ -20,18 +21,6 @@
       },
       {
          "Name": "public.admins",
-         "ObjectType": 0
-      },
-      {
-         "Name": "public.class_enrollments",
-         "ObjectType": 0
-      },
-      {
-         "Name": "public.class_slots",
-         "ObjectType": 0
-      },
-      {
-         "Name": "public.classes",
          "ObjectType": 0
       },
       {
@@ -60,6 +49,10 @@
       },
       {
          "Name": "public.file_uploads",
+         "ObjectType": 0
+      },
+      {
+         "Name": "public.lesson_plan_files",
          "ObjectType": 0
       },
       {

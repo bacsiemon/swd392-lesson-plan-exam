@@ -12,9 +12,11 @@ public partial class Exam
 
     public string Title { get; set; }
 
-    public int ClassId { get; set; }
+    public int CreatedByTeacher { get; set; }
 
     public int? ExamMatrixId { get; set; }
+
+    public int? GradeLevel { get; set; }
 
     public string Description { get; set; }
 
@@ -52,7 +54,7 @@ public partial class Exam
 
     public DateTime? DeletedAt { get; set; }
 
-    public virtual Class Class { get; set; }
+    public virtual Teacher CreatedByTeacherNavigation { get; set; }
 
     public virtual ICollection<ExamAttempt> ExamAttempts { get; set; } = new List<ExamAttempt>();
 

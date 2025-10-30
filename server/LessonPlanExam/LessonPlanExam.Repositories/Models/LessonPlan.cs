@@ -2,7 +2,6 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
-using LessonPlanExam.Repositories.Enums;
 
 namespace LessonPlanExam.Repositories.Models;
 
@@ -18,21 +17,19 @@ public partial class LessonPlan
 
     public string Description { get; set; }
 
-    public EApprovalStatus? StatusEnum { get; set; }
-
-    public int? ApprovedBy { get; set; }
-
-    public DateTime? ApprovedAt { get; set; }
-
     public DateTime? CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
 
     public DateTime? DeletedAt { get; set; }
 
-    public virtual Admin ApprovedByNavigation { get; set; }
+    public string ImageUrl { get; set; }
+
+    public int GradeLevel { get; set; }
 
     public virtual Teacher CreatedByTeacherNavigation { get; set; }
+
+    public virtual ICollection<LessonPlanFile> LessonPlanFiles { get; set; } = new List<LessonPlanFile>();
 
     public virtual ICollection<SlotPlan> SlotPlans { get; set; } = new List<SlotPlan>();
 }

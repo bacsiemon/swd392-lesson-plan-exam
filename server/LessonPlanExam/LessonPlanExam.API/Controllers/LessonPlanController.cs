@@ -1,0 +1,265 @@
+using LessonPlanExam.Repositories.DTOs.LessonPlanDTOs;
+using LessonPlanExam.Services.Interfaces;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+
+namespace LessonPlanExam.API.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class LessonPlanController : ControllerBase
+    {
+        private readonly ILessonPlanService _lessonPlanService;
+
+        public LessonPlanController(ILessonPlanService lessonPlanService)
+        {
+            _lessonPlanService = lessonPlanService;
+        }
+
+        /// <summary>User</summary>
+        /// <remarks>
+        /// 
+        /// Create a new lesson plan.
+        /// 
+        /// Parameters:
+        /// title: Required, maximum 255 characters.  
+        /// createdByTeacher: Required, must be a valid teacher ID.  
+        /// objectives: Required, lesson objectives and learning outcomes.  
+        /// description: Required, detailed lesson description.  
+        /// imageUrl: Optional, URL to lesson plan cover image.  
+        /// gradeLevel: Required, target grade level for the lesson.  
+        /// 
+        /// Sample request:
+        /// ```
+        /// POST /api/lessonplan  
+        /// {  
+        /// "title": "Introduction to Mathematics",  
+        /// "createdByTeacher": 1,  
+        /// "objectives": "Students will learn basic arithmetic operations",  
+        /// "description": "This lesson covers addition, subtraction, multiplication and division",  
+        /// "imageUrl": "https://example.com/math-cover.jpg",  
+        /// "gradeLevel": 5  
+        /// }
+        /// ```
+        /// </remarks>
+        /// <param name="request">Lesson plan creation request containing all required lesson information</param>
+        /// <response code="201">Lesson plan created successfully. Returns the created lesson plan with assigned ID and timestamps.</response>
+        /// <response code="400">Validation error. Possible messages:
+        /// - TITLE_REQUIRED  
+        /// - TITLE_TOO_LONG  
+        /// - TEACHER_ID_REQUIRED  
+        /// - OBJECTIVES_REQUIRED  
+        /// - DESCRIPTION_REQUIRED  
+        /// - GRADE_LEVEL_REQUIRED  
+        /// - INVALID_TEACHER_ID  
+        /// </response>
+        /// <response code="401">Unauthorized. User authentication required.</response>
+        /// <response code="500">Internal server error occurred during lesson plan creation. Handled by ExceptionMiddleware.</response>
+        [HttpPost]
+        public async Task<IActionResult> CreateLessonPlanAsync([FromBody] CreateLessonPlanRequest request)
+        {
+            var response = await _lessonPlanService.CreateLessonPlanAsync(request);
+            return StatusCode(response.StatusCode, response);
+        }
+
+        /// <summary>User</summary>
+        /// <remarks>
+        /// 
+        /// Get paginated list of lesson plans for the current authenticated teacher.
+        /// 
+        /// Returns lesson plans created by the currently logged-in teacher with pagination support.
+        /// Results are ordered by creation date (newest first).
+        /// 
+        /// Sample request:
+        /// ```
+        /// GET /api/lessonplan/current-teacher?page=1&amp;size=10
+        /// ```
+        /// </remarks>
+        /// <param name="page">Page number (default: 1). Must be greater than 0.</param>
+        /// <param name="size">Number of items per page (default: 10). Must be between 1 and 100.</param>
+        /// <response code="200">Lesson plans retrieved successfully. Returns paginated list with lesson plan details and pagination metadata.</response>
+        /// <response code="401">Unauthorized. User authentication required.</response>
+        /// <response code="403">Forbidden. User is not a teacher or does not have access to lesson plans.</response>
+        /// <response code="500">Internal server error occurred while retrieving lesson plans. Handled by ExceptionMiddleware.</response>
+        [HttpGet("current-teacher")]
+        public async Task<IActionResult> GetLessonPlansAsync([FromQuery] int page = 1, [FromQuery] int size = 10)
+        {
+            var response = await _lessonPlanService.GetByCurrentTeacherAsync(page, size);
+            return Ok(response);
+        }
+
+        /// <summary>User</summary>
+        /// <remarks>
+        /// 
+        /// Get detailed information about a specific lesson plan by ID.
+        /// 
+        /// Returns complete lesson plan details including associated slot plans and materials.
+        /// Access is restricted to the lesson plan creator and authorized users.
+        /// 
+        /// Sample request:
+        /// ```
+        /// GET /api/lessonplan/123
+        /// ```
+        /// </remarks>
+        /// <param name="id">The ID of the lesson plan to retrieve</param>
+        /// <response code="200">Lesson plan retrieved successfully. Returns detailed lesson plan information including title, objectives, description, grade level, and associated content.</response>
+        /// <response code="400">Invalid lesson plan ID provided.</response>
+        /// <response code="401">Unauthorized. User authentication required.</response>
+        /// <response code="403">Forbidden. User does not have access to this lesson plan.</response>
+        /// <response code="404">Lesson plan not found with the specified ID.</response>
+        /// <response code="500">Internal server error occurred while retrieving lesson plan. Handled by ExceptionMiddleware.</response>
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetLessonPlanByIdAsync(int id)
+        {
+            var response = await _lessonPlanService.GetLessonPlanByIdAsync(id);
+            return StatusCode(response.StatusCode, response);
+        }
+
+        /// <summary>User</summary>
+        /// <remarks>
+        /// 
+        /// Update an existing lesson plan.
+        /// 
+        /// Only the lesson plan creator can update their lesson plans.
+        /// All fields except ID can be modified. Timestamps are automatically updated.
+        /// 
+        /// Parameters:
+        /// title: Required, maximum 255 characters.  
+        /// objectives: Required, updated lesson objectives and learning outcomes.  
+        /// description: Required, updated detailed lesson description.  
+        /// imageUrl: Optional, URL to updated lesson plan cover image.  
+        /// gradeLevel: Required, updated target grade level for the lesson.  
+        /// 
+        /// Sample request:
+        /// ```
+        /// PUT /api/lessonplan/123  
+        /// {  
+        /// "title": "Advanced Mathematics Concepts",  
+        /// "objectives": "Students will master complex arithmetic and basic algebra",  
+        /// "description": "Extended lesson covering fractions, decimals, and introduction to variables",  
+        /// "imageUrl": "https://example.com/advanced-math-cover.jpg",  
+        /// "gradeLevel": 6  
+        /// }
+        /// ```
+        /// </remarks>
+        /// <param name="id">The ID of the lesson plan to update</param>
+        /// <param name="request">Updated lesson plan information</param>
+        /// <response code="200">Lesson plan updated successfully. Returns the updated lesson plan information.</response>
+        /// <response code="400">Validation error. Possible messages:
+        /// - TITLE_REQUIRED  
+        /// - TITLE_TOO_LONG  
+        /// - OBJECTIVES_REQUIRED  
+        /// - DESCRIPTION_REQUIRED  
+        /// - GRADE_LEVEL_REQUIRED  
+        /// - INVALID_LESSON_PLAN_ID  
+        /// </response>
+        /// <response code="401">Unauthorized. User authentication required.</response>
+        /// <response code="403">Forbidden. User does not have permission to update this lesson plan.</response>
+        /// <response code="404">Lesson plan not found with the specified ID.</response>
+        /// <response code="500">Internal server error occurred during lesson plan update. Handled by ExceptionMiddleware.</response>
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateLessonPlanAsync(int id, [FromBody] UpdateLessonPlanRequest request)
+        {
+            var response = await _lessonPlanService.UpdateLessonPlanAsync(id, request);
+            return StatusCode(response.StatusCode, response);
+        }
+
+        /// <summary>User</summary>
+        /// <remarks>
+        /// 
+        /// Delete a lesson plan permanently.
+        /// 
+        /// Only the lesson plan creator can delete their lesson plans.
+        /// This action is irreversible and will also remove all associated slot plans and materials.
+        /// 
+        /// Sample request:
+        /// ```
+        /// DELETE /api/lessonplan/123
+        /// ```
+        /// </remarks>
+        /// <param name="id">The ID of the lesson plan to delete</param>
+        /// <response code="200">Lesson plan deleted successfully.</response>
+        /// <response code="400">Invalid lesson plan ID provided.</response>
+        /// <response code="401">Unauthorized. User authentication required.</response>
+        /// <response code="403">Forbidden. User does not have permission to delete this lesson plan.</response>
+        /// <response code="404">Lesson plan not found with the specified ID.</response>
+        /// <response code="500">Internal server error occurred during lesson plan deletion. Handled by ExceptionMiddleware.</response>
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteLessonPlanAsync(int id)
+        {
+            var response = await _lessonPlanService.DeleteLessonPlanAsync(id);
+            return StatusCode(response.StatusCode, response);
+        }
+
+        /// <summary>User</summary>
+        /// <remarks>
+        /// 
+        /// Upload a file attachment to an existing lesson plan.
+        /// 
+        /// Allows teachers to attach supplementary materials, documents, images, or other resources to their lesson plans.
+        /// 
+        /// Maximum file size: 10MB  
+        /// Supported file types: PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, JPG, JPEG, PNG, GIF, TXT  
+        /// 
+        /// Sample request:
+        /// ```
+        /// POST /api/lessonplan/123/upload-file  
+        /// Content-Type: multipart/form-data  
+        /// ```
+        /// Form Data:  
+        /// - file: [Select file to upload]  
+        /// 
+        /// </remarks>
+        /// <param name="id">The ID of the lesson plan to attach the file to</param>
+        /// <param name="file">The file to upload and attach to the lesson plan</param>
+        /// <response code="201">File uploaded and attached successfully. Returns file information including ID, filename, MIME type, upload date, file size, and download URL.</response>
+        /// <response code="400">Validation error. Possible messages:
+        /// - FILE_REQUIRED  
+        /// - INVALID_FILE_EXTENSION  
+        /// - FILE_SIZE_EXCEEDS_LIMIT  
+        /// - INVALID_LESSON_PLAN_ID  
+        /// </response>
+        /// <response code="401">Unauthorized. User authentication required.</response>
+        /// <response code="403">Forbidden. User does not have permission to upload files to this lesson plan.</response>
+        /// <response code="404">Lesson plan not found with the specified ID.</response>
+        /// <response code="500">Internal server error occurred during file upload. Handled by ExceptionMiddleware.</response>
+        [HttpPost("{id}/upload-file")]
+        public async Task<IActionResult> UploadFileAsync(int id, IFormFile file)
+        {
+            if (file == null)
+            {
+                return BadRequest(new { StatusCode = 400, Message = "FILE_REQUIRED" });
+            }
+
+            var response = await _lessonPlanService.UploadFileAsync(id, file);
+            return StatusCode(response.StatusCode, response);
+        }
+
+        /// <summary>User</summary>
+        /// <remarks>
+        /// 
+        /// Delete a file attachment from a lesson plan.
+        /// 
+        /// Permanently removes a file that was previously attached to a lesson plan.
+        /// Only the lesson plan creator can delete files from their lesson plans.
+        /// 
+        /// Sample request:
+        /// ```
+        /// DELETE /api/lessonplan/files/456
+        /// ```
+        /// </remarks>
+        /// <param name="id">The ID of the file to delete from the lesson plan</param>
+        /// <response code="200">File deleted successfully from the lesson plan.</response>
+        /// <response code="400">Invalid file ID provided.</response>
+        /// <response code="401">Unauthorized. User authentication required.</response>
+        /// <response code="403">Forbidden. User does not have permission to delete this file.</response>
+        /// <response code="404">File not found with the specified ID.</response>
+        /// <response code="500">Internal server error occurred during file deletion. Handled by ExceptionMiddleware.</response>
+        [HttpDelete("files/{id}")]
+        public async Task<IActionResult> DeleteLessonPlanFileAsync(int id)
+        {
+            var response = await _lessonPlanService.DeleteLessonPlanFileAsync(id);
+            return StatusCode(response.StatusCode, response);
+        }
+    }
+}

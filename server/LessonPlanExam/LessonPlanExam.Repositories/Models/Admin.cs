@@ -14,6 +14,4 @@ public partial class Admin
     public DateTime? UpdatedAt { get; set; }
 
     public virtual Account Account { get; set; }
-
-    public virtual ICollection<LessonPlan> LessonPlans { get; set; } = new List<LessonPlan>();
 }

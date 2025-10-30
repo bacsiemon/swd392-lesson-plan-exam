@@ -11,7 +11,8 @@ CREATE SCHEMA public;
 -- exam_status_enum: 1=draft, 2=inactive, 3=active
 -- attempt_status_enum: 1=in_progress, 2=submitted, 3=graded, 4=expired
 -- scoring_method_enum: 1=average, 2=highest, 3=latest
--- approval_status_enum: 1=draft, 2=requested, 3=approved, 4=rejected
+-- question_bank_status_enum: 1=draft, 2=active, 3=archived
+-- =============================================================================
 
 
 
@@ -57,45 +58,6 @@ CREATE TABLE admins (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Classes table
-CREATE TABLE classes (
-    id SERIAL PRIMARY KEY,
-    class_name VARCHAR(100) NOT NULL,
-    grade_level INTEGER NOT NULL CHECK (grade_level BETWEEN 1 AND 12),
-    academic_year VARCHAR(10) NOT NULL, -- e.g., "2024-2025"
-    created_by_teacher INTEGER REFERENCES teachers(account_id) ON DELETE SET NULL,
-    description TEXT,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP WITH TIME ZONE
-);
-
--- Class enrollment (many-to-many relationship between students and classes)
-CREATE TABLE class_enrollments (
-    id SERIAL PRIMARY KEY,
-    student_id INTEGER NOT NULL REFERENCES students(account_id) ON DELETE CASCADE,
-    class_id INTEGER NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
-    enrollment_date DATE DEFAULT CURRENT_DATE,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(student_id, class_id)
-);
-
--- Time slots for class periods
-CREATE TABLE class_slots (
-    id SERIAL PRIMARY KEY,
-    class_id INTEGER NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
-    day_of_week INTEGER NOT NULL CHECK (day_of_week BETWEEN 1 AND 7), -- 1=Monday, 7=Sunday
-    start_time TIME NOT NULL,
-    end_time TIME NOT NULL,
-    description TEXT,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT valid_time_range CHECK (end_time > start_time)
-);
-
 -- =============================================================================
 -- LESSON PLANNING TABLES
 -- =============================================================================
@@ -107,12 +69,18 @@ CREATE TABLE lesson_plans (
     created_by_teacher INTEGER NOT NULL REFERENCES teachers(account_id) ON DELETE CASCADE,
     objectives TEXT, -- mục tiêu
     description TEXT,
-    status_enum INTEGER DEFAULT 1, -- 1=draft, 2=requested, 3=approved, 4=rejected
-    approved_by INTEGER REFERENCES admins(account_id),
-    approved_at TIMESTAMP WITH TIME ZONE,
+    image_url TEXT,
+    grade_level INTEGER NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE
+);
+
+create table lesson_plan_files (
+    id SERIAL PRIMARY KEY,
+    lesson_plan_id INTEGER NOT NULL REFERENCES lesson_plans(id) ON DELETE CASCADE,
+    file_url TEXT NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Individual lesson periods (Tiết học)
@@ -148,7 +116,7 @@ CREATE TABLE question_banks (
     grade_level INTEGER NOT NULL CHECK (grade_level BETWEEN 1 AND 12),
     teacher_id INTEGER NOT NULL REFERENCES teachers(account_id) ON DELETE CASCADE,
     description TEXT,
-    status_enum INTEGER DEFAULT 1, -- 1=draft, 2=requested, 3=approved, 4=rejected
+    status_enum INTEGER DEFAULT 1, -- 1=draft, 2=active, 3=archived
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP WITH TIME ZONE
@@ -226,8 +194,9 @@ CREATE TABLE exam_matrix_items (
 CREATE TABLE exams (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
-    class_id INTEGER NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+    created_by_teacher INTEGER NOT NULL REFERENCES teachers(account_id) ON DELETE CASCADE,
     exam_matrix_id INTEGER REFERENCES exam_matrices(id) ON DELETE SET NULL,
+    grade_level INTEGER CHECK (grade_level BETWEEN 1 AND 12), -- optional grade level
     description TEXT,
     
     -- Timing settings
@@ -346,70 +315,3 @@ CREATE TABLE file_uploads (
     mime_type VARCHAR(100) NOT NULL,
     uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-
--- =============================================================================
--- CHECK CONSTRAINTS FOR ENUM FIELDS
--- =============================================================================
-
--- Add CHECK constraints to ensure valid enum values
-ALTER TABLE accounts ADD CONSTRAINT chk_accounts_role_enum 
-    CHECK (role_enum IN (1, 2, 3)); -- 1=admin, 2=teacher, 3=student
-
-ALTER TABLE questions ADD CONSTRAINT chk_questions_question_type_enum 
-    CHECK (question_type_enum IN (1, 2)); -- 1=multiple_choice, 2=fill_blank
-
-ALTER TABLE lesson_plans ADD CONSTRAINT chk_lesson_plans_status_enum 
-    CHECK (status_enum IN (1, 2, 3, 4)); -- 1=draft, 2=requested, 3=approved, 4=rejected
-
-ALTER TABLE question_banks ADD CONSTRAINT chk_question_banks_status_enum 
-    CHECK (status_enum IN (1, 2, 3, 4)); -- 1=draft, 2=requested, 3=approved, 4=rejected
-
-ALTER TABLE exams ADD CONSTRAINT chk_exams_scoring_method_enum 
-    CHECK (scoring_method_enum IN (1, 2, 3)); -- 1=average, 2=highest, 3=latest
-
-ALTER TABLE exams ADD CONSTRAINT chk_exams_status_enum 
-    CHECK (status_enum IN (1, 2, 3)); -- 1=draft, 2=inactive, 3=active
-
-ALTER TABLE exam_attempts ADD CONSTRAINT chk_exam_attempts_status_enum 
-    CHECK (status_enum IN (1, 2, 3, 4)); -- 1=in_progress, 2=submitted, 3=graded, 4=expired
-
--- =============================================================================
--- DEPLOYMENT INSTRUCTIONS
--- =============================================================================
-
-/*
-DEPLOYMENT STEPS:
-
-1. Run this script as a PostgreSQL superuser (typically 'postgres')
-
-2. The script will:
-   - Drop the database 'lesson_plan_exam_db' if it exists
-   - Create a new database 'lesson_plan_exam_db' with UTF-8 encoding
-   - Create a dedicated schema 'lesson_plan_system'
-   - Create all tables, constraints, and indexes within the new schema
-
-3. After running this script, connect to the database using:
-   Database: lesson_plan_exam_db
-   Schema: lesson_plan_system
-
-4. Connection examples:
-   
-   PostgreSQL Command Line:
-   psql -U postgres -d lesson_plan_exam_db
-   
-   Application Connection String:
-   postgresql://username:password@localhost:5432/lesson_plan_exam_db
-   
-   Set search path in your application:
-   SET search_path TO lesson_plan_system, public;
-
-5. All tables are created in the 'lesson_plan_system' schema, so you can either:
-   - Set the search_path to include lesson_plan_system (recommended)
-   - Reference tables with full schema name: lesson_plan_system.accounts
-
-SCHEMA STRUCTURE:
-- Database: lesson_plan_exam_db
-- Schema: lesson_plan_system
-- All application tables are in the lesson_plan_system schema
-- This provides better organization and avoids conflicts with system tables
-*/

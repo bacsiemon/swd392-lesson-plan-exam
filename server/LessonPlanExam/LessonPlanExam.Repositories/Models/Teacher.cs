@@ -19,11 +19,11 @@ public partial class Teacher
 
     public virtual Account Account { get; set; }
 
-    public virtual ICollection<Class> Classes { get; set; } = new List<Class>();
-
     public virtual ICollection<ExamAttempt> ExamAttempts { get; set; } = new List<ExamAttempt>();
 
     public virtual ICollection<ExamMatrix> ExamMatrices { get; set; } = new List<ExamMatrix>();
+
+    public virtual ICollection<Exam> Exams { get; set; } = new List<Exam>();
 
     public virtual ICollection<LessonPlan> LessonPlans { get; set; } = new List<LessonPlan>();
 
