@@ -16,6 +16,8 @@ namespace LessonPlanExam.Services
         public static IServiceCollection AddServiceConfigurations(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<FileUploadConfiguration>(configuration.GetSection(FileUploadConfiguration.SectionName));
+            services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
+            services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
             services.AddHttpContextAccessor(); // Required for AccountService JWT functionality
             services.AddDependencyInjection();
             return services;
@@ -24,6 +26,8 @@ namespace LessonPlanExam.Services
         public static void AddDependencyInjection(this IServiceCollection services)
         {
             services.AddScoped<IAccountService, AccountService>();
+            services.AddScoped<IJwtService, JwtService>();
+            services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IFileUploadService, FileUploadService>();
             services.AddScoped<ILessonPlanService, LessonPlanService>();
             // Removed IUserService registration as functionality moved to AccountService

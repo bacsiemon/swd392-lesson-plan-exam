@@ -1,0 +1,195 @@
+### Authentication APIs Test File
+### Base URL
+@baseUrl = https://localhost:7203/api
+
+### Variables
+@email = testuser@example.com
+@password = TestPass123!
+@accessToken = {{login_response.response.body.data.accessToken}}
+
+###
+# Register a new account
+POST {{baseUrl}}/account/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}",
+  "confirmPassword": "{{password}}",
+  "fullName": "Test User",
+  "role": 1,
+  "phoneNumber": "+1234567890",
+  "dateOfBirth": "1990-01-01",
+  "bio": "Test user account"
+}
+
+###
+# Login with credentials
+# @name login_response
+POST {{baseUrl}}/account/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+###
+# Get current user profile (requires JWT token)
+GET {{baseUrl}}/account/profile
+Authorization: Bearer {{accessToken}}
+
+###
+# Change password (requires JWT token)
+POST {{baseUrl}}/account/change-password
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "currentPassword": "{{password}}",
+  "newPassword": "NewTestPass456!",
+  "confirmPassword": "NewTestPass456!"
+}
+
+###
+# Forgot password request
+POST {{baseUrl}}/account/forgot-password
+Content-Type: application/json
+
+{
+  "email": "{{email}}"
+}
+
+###
+# Reset password (requires reset token from email)
+POST {{baseUrl}}/account/reset-password
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "resetToken": "RESET_TOKEN_FROM_EMAIL",
+  "newPassword": "ResetPass789!",
+  "confirmPassword": "ResetPass789!"
+}
+
+###
+# Refresh JWT token
+POST {{baseUrl}}/account/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "REFRESH_TOKEN_FROM_LOGIN"
+}
+
+###
+# Logout (requires JWT token)
+POST {{baseUrl}}/account/logout
+Authorization: Bearer {{accessToken}}
+
+###
+# Get all accounts (Admin only)
+GET {{baseUrl}}/account?page=1&size=10
+Authorization: Bearer {{accessToken}}
+
+###
+# Test endpoint to verify JWT token
+GET {{baseUrl}}/test/current-user
+Authorization: Bearer {{accessToken}}
+
+### Alternative registration with different role
+POST {{baseUrl}}/account/register
+Content-Type: application/json
+
+{
+  "email": "teacher@example.com",
+  "password": "TeacherPass123!",
+  "confirmPassword": "TeacherPass123!",
+  "fullName": "Teacher User",
+  "role": 2,
+  "phoneNumber": "+1234567891"
+}
+
+### Alternative registration for Admin
+POST {{baseUrl}}/account/register
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "AdminPass123!",
+  "confirmPassword": "AdminPass123!",
+  "fullName": "Admin User",
+  "role": 0,
+  "phoneNumber": "+1234567892"
+}
+
+### Test Login with different users
+POST {{baseUrl}}/account/login
+Content-Type: application/json
+
+{
+  "email": "teacher@example.com",
+  "password": "TeacherPass123!"
+}
+
+###
+POST {{baseUrl}}/account/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "AdminPass123!"
+}
+
+### Error Testing - Invalid email format
+POST {{baseUrl}}/account/register
+Content-Type: application/json
+
+{
+  "email": "invalid-email",
+  "password": "TestPass123!",
+  "confirmPassword": "TestPass123!",
+  "fullName": "Test User",
+  "role": 1
+}
+
+### Error Testing - Weak password
+POST {{baseUrl}}/account/register
+Content-Type: application/json
+
+{
+  "email": "weakpass@example.com",
+  "password": "123",
+  "confirmPassword": "123",
+  "fullName": "Test User",
+  "role": 1
+}
+
+### Error Testing - Password mismatch
+POST {{baseUrl}}/account/register
+Content-Type: application/json
+
+{
+  "email": "mismatch@example.com",
+  "password": "TestPass123!",
+  "confirmPassword": "DifferentPass456!",
+  "fullName": "Test User",
+  "role": 1
+}
+
+### Error Testing - Invalid login credentials
+POST {{baseUrl}}/account/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "wrongpassword"
+}
+
+### Error Testing - Non-existent user login
+POST {{baseUrl}}/account/login
+Content-Type: application/json
+
+{
+  "email": "nonexistent@example.com",
+  "password": "AnyPassword123!"
+}

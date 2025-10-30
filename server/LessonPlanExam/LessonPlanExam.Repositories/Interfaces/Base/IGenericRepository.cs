@@ -44,8 +44,8 @@ namespace LessonPlanExam.Repositories.Interfaces.Base
             int page, 
             int size, 
             int firstPage = 1, 
-            Expression<Func<T, bool>> predicate = null, 
-            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, 
+            Expression<Func<T, bool>>? predicate = null, 
+            Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null, 
             params string[] includeProperties);
             
         /// <summary>
@@ -62,8 +62,8 @@ namespace LessonPlanExam.Repositories.Interfaces.Base
             int page, 
             int size, 
             int firstPage = 1, 
-            Expression<Func<T, bool>> predicate = null, 
-            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, 
+            Expression<Func<T, bool>>? predicate = null, 
+            Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null, 
             params Expression<Func<T, object>>[] includeProperties);
             
         /// <summary>
@@ -72,13 +72,11 @@ namespace LessonPlanExam.Repositories.Interfaces.Base
         Task<PaginatedList<TResult>> GetPaginatedAsync<TResult>(
             int page, 
             int size, 
-            Expression<Func<T, TResult>> projection, 
+            Expression<Func<T, TResult>> projection,
             int firstPage = 1, 
-            Expression<Func<T, bool>> predicate = null, 
-            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, 
-            params string[] includeProperties);
-            
-        /// <summary>
+            Expression<Func<T, bool>>? predicate = null, 
+            Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null, 
+            params string[] includeProperties);        /// <summary>
         /// Get paginated projected results with strongly typed include properties
         /// </summary>
         /// <param name="page">Page number</param>
@@ -92,13 +90,11 @@ namespace LessonPlanExam.Repositories.Interfaces.Base
         Task<PaginatedList<TResult>> GetPaginatedAsync<TResult>(
             int page, 
             int size, 
-            Expression<Func<T, TResult>> projection, 
+            Expression<Func<T, TResult>> projection,
             int firstPage = 1, 
-            Expression<Func<T, bool>> predicate = null, 
-            Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, 
-            params Expression<Func<T, object>>[] includeProperties);
-        
-        bool Remove(T entity);
+            Expression<Func<T, bool>>? predicate = null, 
+            Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null, 
+            params Expression<Func<T, object>>[] includeProperties);        bool Remove(T entity);
         void RemoveRange(List<T> entities);
         void Update(T entity);
         void UpdateRange(List<T> entities);
