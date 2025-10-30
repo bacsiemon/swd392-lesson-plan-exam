@@ -26,6 +26,7 @@ namespace LessonPlanExam.Services
             services.AddScoped<IAccountService, AccountService>();
             services.AddScoped<IFileUploadService, FileUploadService>();
             services.AddScoped<ILessonPlanService, LessonPlanService>();
+            services.AddScoped<IQuestionBankService, QuestionBankService>();
             // Removed IUserService registration as functionality moved to AccountService
         }
     }
