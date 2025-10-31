@@ -612,6 +612,84 @@ namespace LessonPlanExam.Services.Services
             }
         }
 
+        /// <summary>
+        /// Lấy danh sách tất cả accounts phân loại theo role - chỉ dành cho Admin
+        /// Trả về danh sách Teachers và Students (không bao gồm Admin)
+        /// </summary>
+        /// <returns>BaseResponse chứa AllAccountsResponse với danh sách phân loại theo role</returns>
+        public async Task<BaseResponse> GetAllAccountsAsync()
+        {
+            try
+            {
+                // Lấy tất cả accounts
+                var allAccounts = await _unitOfWork.AccountRepository.GetAllAsync();
+
+                // Filter accounts: chưa bị xóa và không phải Admin (role != 0)
+                var activeAccounts = allAccounts
+                    .Where(account => account.DeletedAt == null && (int)account.RoleEnum != 0)
+                    .OrderBy(x => x.RoleEnum)
+                    .ThenBy(x => x.FullName)
+                    .ToList();
+
+                // Phân loại accounts theo role
+                var teachers = activeAccounts
+                    .Where(account => (int)account.RoleEnum == 1) // Teachers
+                    .Select(account => new AccountSummary
+                    {
+                        Id = account.Id,
+                        Email = account.Email,
+                        FullName = account.FullName,
+                        Phone = account.Phone,
+                        Role = account.RoleEnum,
+                        IsActive = account.IsActive,
+                        EmailVerified = account.EmailVerified,
+                        CreatedAt = account.CreatedAt,
+                        UpdatedAt = account.UpdatedAt
+                    })
+                    .ToList();
+
+                var students = activeAccounts
+                    .Where(account => (int)account.RoleEnum == 2) // Students
+                    .Select(account => new AccountSummary
+                    {
+                        Id = account.Id,
+                        Email = account.Email,
+                        FullName = account.FullName,
+                        Phone = account.Phone,
+                        Role = account.RoleEnum,
+                        IsActive = account.IsActive,
+                        EmailVerified = account.EmailVerified,
+                        CreatedAt = account.CreatedAt,
+                        UpdatedAt = account.UpdatedAt
+                    })
+                    .ToList();
+
+                // Tạo response object
+                var response = new AllAccountsResponse
+                {
+                    Teachers = teachers,
+                    Students = students,
+                    TotalTeachers = teachers.Count,
+                    TotalStudents = students.Count
+                };
+
+                return new BaseResponse
+                {
+                    StatusCode = 200,
+                    Message = $"Lấy danh sách thành công. Có {response.TotalTeachers} giáo viên và {response.TotalStudents} học sinh.",
+                    Data = response
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 500,
+                    Message = $"GET_ALL_ACCOUNTS_ERROR: {ex.Message}"
+                };
+            }
+        }
+
         #endregion
     }
 }

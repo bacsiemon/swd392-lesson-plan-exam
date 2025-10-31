@@ -13,6 +13,13 @@ namespace LessonPlanExam.Services.Interfaces
         /// <param name="accountId">ID của tài khoản cần xóa</param>
         /// <returns>Kết quả xóa tài khoản</returns>
         Task<BaseResponse> DeleteAccountAsync(int accountId);
+
+        /// <summary>
+        /// Lấy danh sách tất cả accounts phân loại theo role - chỉ dành cho Admin
+        /// Trả về danh sách Teachers và Students (không bao gồm Admin)
+        /// </summary>
+        /// <returns>BaseResponse chứa AllAccountsResponse với danh sách phân loại theo role</returns>
+        Task<BaseResponse> GetAllAccountsAsync();
         
         /// <summary>
         /// Extracts the user ID from the current JWT token in the HTTP context

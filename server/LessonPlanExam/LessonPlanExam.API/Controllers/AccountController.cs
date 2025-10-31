@@ -184,6 +184,21 @@ namespace LessonPlanExam.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
+        /// <summary>
+        /// API xem tất cả tài khoản phân loại theo role (Chỉ dành cho Admin - Role = 0)
+        /// Trả về danh sách Teachers và Students, không bao gồm Admin accounts
+        /// </summary>
+        /// <returns>Danh sách tài khoản được phân loại theo role: Teachers và Students</returns>
+        [HttpGet("all")]
+        [Authorize(Roles = "Admin")] // Chỉ Admin (role = 0) mới được xem tất cả tài khoản
+        public async Task<IActionResult> GetAllAccountsAsync()
+        {
+            // Gọi service để lấy danh sách tất cả tài khoản phân loại theo role
+            var response = await _accountService.GetAllAccountsAsync();
+            // Trả về danh sách tài khoản với status code tương ứng
+            return StatusCode(response.StatusCode, response);
+        }
+
         #endregion
     }
 }
