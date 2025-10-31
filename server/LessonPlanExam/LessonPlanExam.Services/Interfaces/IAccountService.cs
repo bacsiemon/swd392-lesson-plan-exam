@@ -1,4 +1,5 @@
 ﻿using App.Infrastructure.BaseClasses;
+using LessonPlanExam.Repositories.DTOs.AccountDTOs;
 
 namespace LessonPlanExam.Services.Interfaces
 {
@@ -12,5 +13,15 @@ namespace LessonPlanExam.Services.Interfaces
         /// <returns>The user ID if the token is valid and present</returns>
         /// <exception cref="App.Infrastructure.Exceptions.UnauthorizedException">Thrown when no token is found or token is invalid</exception>
         int GetCurrentUserId();
+
+        // Authentication methods
+        Task<BaseResponse> LoginAsync(LoginRequest request);
+        Task<BaseResponse> RegisterAsync(RegisterRequest request);
+        Task<BaseResponse> ForgotPasswordAsync(ForgotPasswordRequest request);
+        Task<BaseResponse> ResetPasswordAsync(ResetPasswordRequest request);
+        Task<BaseResponse> ChangePasswordAsync(ChangePasswordRequest request);
+        Task<BaseResponse> RefreshTokenAsync(RefreshTokenRequest request);
+        Task<BaseResponse> LogoutAsync();
+        Task<BaseResponse> GetCurrentUserProfileAsync();
     }
 }

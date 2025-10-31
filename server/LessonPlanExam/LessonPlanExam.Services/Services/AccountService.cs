@@ -1,9 +1,14 @@
 ﻿using App.Infrastructure.BaseClasses;
 using App.Infrastructure.Exceptions;
+using App.Infrastructure.Helpers;
+using LessonPlanExam.Repositories.DTOs.AccountDTOs;
 using LessonPlanExam.Repositories.UoW;
+using LessonPlanExam.Services.Configuration;
 using LessonPlanExam.Services.Interfaces;
 using LessonPlanExam.Services.Mapping;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Linq.Expressions;
@@ -16,11 +21,22 @@ namespace LessonPlanExam.Services.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IJwtService _jwtService;
+        private readonly IEmailService _emailService;
+        private readonly JwtSettings _jwtSettings;
 
-        public AccountService(IUnitOfWork unitOfWork, IHttpContextAccessor httpContextAccessor)
+        public AccountService(
+            IUnitOfWork unitOfWork, 
+            IHttpContextAccessor httpContextAccessor,
+            IJwtService jwtService,
+            IEmailService emailService,
+            IOptions<JwtSettings> jwtSettings)
         {
             _unitOfWork = unitOfWork;
             _httpContextAccessor = httpContextAccessor;
+            _jwtService = jwtService;
+            _emailService = emailService;
+            _jwtSettings = jwtSettings.Value;
         }
 
         public async Task<BaseResponse> GetAccountsAsync(int page, int size)
@@ -30,7 +46,6 @@ namespace LessonPlanExam.Services.Services
                 page, 
                 size, 
                 firstPage: 1, 
-                predicate: (Expression<Func<LessonPlanExam.Repositories.Models.Account, bool>>)null, 
                 orderBy: q => q.OrderByDescending(x => x.Id),
                 includeProperties: new string[0]); // Empty string array
             
@@ -137,5 +152,388 @@ namespace LessonPlanExam.Services.Services
                 throw new UnauthorizedException("INVALID_JWT_TOKEN");
             }
         }
+
+        #region Authentication Methods
+
+        public async Task<BaseResponse> LoginAsync(LoginRequest request)
+        {
+            try
+            {
+                // Find user by email
+                var accounts = await _unitOfWork.AccountRepository.GetAllAsync();
+                var account = accounts.FirstOrDefault(x => x.NormalizedEmail == request.Email.ToUpperInvariant());
+
+                if (account == null)
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 401,
+                        Message = "INVALID_EMAIL_OR_PASSWORD"
+                    };
+                }
+
+                // Verify password
+                if (!PasswordHelper.VerifyPassword(request.Password, account.PasswordHash))
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 401,
+                        Message = "INVALID_EMAIL_OR_PASSWORD"
+                    };
+                }
+
+                // Check if account is active
+                if (account.IsActive != true || account.DeletedAt.HasValue)
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 401,
+                        Message = "ACCOUNT_DISABLED"
+                    };
+                }
+
+                // Generate tokens
+                var accessToken = _jwtService.GenerateAccessToken(account);
+                var refreshToken = _jwtService.GenerateRefreshToken();
+                var tokenExpiry = DateTime.UtcNow.AddMinutes(_jwtSettings.AccessTokenExpireMinutes);
+                var refreshTokenExpiry = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpireDays);
+
+                // Save refresh token
+                await _jwtService.SaveRefreshTokenAsync(account.Id, refreshToken, refreshTokenExpiry);
+
+                // Update last login
+                account.UpdatedAt = DateTime.UtcNow;
+                await _unitOfWork.SaveChangesAsync();
+
+                var loginResponse = account.ToLoginResponse(accessToken, refreshToken, tokenExpiry, refreshTokenExpiry);
+
+                return new BaseResponse
+                {
+                    StatusCode = 200,
+                    Message = "LOGIN_SUCCESS",
+                    Data = loginResponse
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 500,
+                    Message = $"LOGIN_ERROR: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<BaseResponse> RegisterAsync(RegisterRequest request)
+        {
+            try
+            {
+                // Check if email already exists
+                var accounts = await _unitOfWork.AccountRepository.GetAllAsync();
+                var existingAccount = accounts.FirstOrDefault(x => x.NormalizedEmail == request.Email.ToUpperInvariant());
+
+                if (existingAccount != null)
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 400,
+                        Message = "EMAIL_ALREADY_EXISTS"
+                    };
+                }
+
+                // Validate password strength
+                if (!PasswordHelper.IsStrongPassword(request.Password))
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 400,
+                        Message = "PASSWORD_NOT_STRONG_ENOUGH"
+                    };
+                }
+
+                // Create new account
+                var account = request.ToEntity();
+                account.PasswordHash = PasswordHelper.HashPassword(request.Password);
+
+                _unitOfWork.AccountRepository.Create(account);
+                await _unitOfWork.SaveChangesAsync();
+
+                // Send welcome email
+                try
+                {
+                    await _emailService.SendWelcomeEmailAsync(account.Email, account.FullName ?? account.Email);
+                }
+                catch (Exception emailEx)
+                {
+                    // Log email error but don't fail registration
+                    Console.WriteLine($"Failed to send welcome email: {emailEx.Message}");
+                }
+
+                var registerResponse = account.ToRegisterResponse();
+
+                return new BaseResponse
+                {
+                    StatusCode = 201,
+                    Message = "REGISTRATION_SUCCESS",
+                    Data = registerResponse
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 500,
+                    Message = $"REGISTRATION_ERROR: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<BaseResponse> ForgotPasswordAsync(ForgotPasswordRequest request)
+        {
+            try
+            {
+                // Find user by email
+                var accounts = await _unitOfWork.AccountRepository.GetAllAsync();
+                var account = accounts.FirstOrDefault(x => x.NormalizedEmail == request.Email.ToUpperInvariant());
+
+                if (account == null)
+                {
+                    // Return success even if email doesn't exist (security best practice)
+                    return new BaseResponse
+                    {
+                        StatusCode = 200,
+                        Message = "PASSWORD_RESET_EMAIL_SENT"
+                    };
+                }
+
+                // Check if account is active
+                if (account.IsActive != true || account.DeletedAt.HasValue)
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 400,
+                        Message = "ACCOUNT_DISABLED"
+                    };
+                }
+
+                // Generate reset token
+                var resetToken = PasswordHelper.GenerateRandomToken(6);
+                
+                // Store reset token and expiry (you need to add these fields to Account model)
+                // account.PasswordResetToken = PasswordHelper.HashPassword(resetToken);
+                // account.PasswordResetExpiry = DateTime.UtcNow.AddMinutes(15); // 15 minutes expiry
+                account.UpdatedAt = DateTime.UtcNow;
+
+                await _unitOfWork.SaveChangesAsync();
+
+                // Send reset email
+                try
+                {
+                    await _emailService.SendPasswordResetEmailAsync(account.Email, resetToken, account.FullName ?? account.Email);
+                }
+                catch (Exception emailEx)
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 500,
+                        Message = $"FAILED_TO_SEND_EMAIL: {emailEx.Message}"
+                    };
+                }
+
+                return new BaseResponse
+                {
+                    StatusCode = 200,
+                    Message = "PASSWORD_RESET_EMAIL_SENT"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 500,
+                    Message = $"FORGOT_PASSWORD_ERROR: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<BaseResponse> ResetPasswordAsync(ResetPasswordRequest request)
+        {
+            // Note: This feature requires PasswordResetToken and PasswordResetExpiry fields in Account model
+            return new BaseResponse
+            {
+                StatusCode = 501,
+                Message = "RESET_PASSWORD_FEATURE_NOT_IMPLEMENTED_YET - Need to add PasswordResetToken and PasswordResetExpiry fields to Account model"
+            };
+        }
+
+        public async Task<BaseResponse> ChangePasswordAsync(ChangePasswordRequest request)
+        {
+            try
+            {
+                var currentUserId = GetCurrentUserId();
+                
+                var accounts = await _unitOfWork.AccountRepository.GetAllAsync();
+                var account = accounts.FirstOrDefault(x => x.Id == currentUserId);
+
+                if (account == null)
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 404,
+                        Message = "ACCOUNT_NOT_FOUND"
+                    };
+                }
+
+                // Verify current password
+                if (!PasswordHelper.VerifyPassword(request.CurrentPassword, account.PasswordHash))
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 400,
+                        Message = "INVALID_CURRENT_PASSWORD"
+                    };
+                }
+
+                // Validate new password strength
+                if (!PasswordHelper.IsStrongPassword(request.NewPassword))
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 400,
+                        Message = "PASSWORD_NOT_STRONG_ENOUGH"
+                    };
+                }
+
+                // Update password
+                account.PasswordHash = PasswordHelper.HashPassword(request.NewPassword);
+                account.UpdatedAt = DateTime.UtcNow;
+
+                await _unitOfWork.SaveChangesAsync();
+
+                // Revoke all refresh tokens for security
+                await _jwtService.RevokeAllRefreshTokensAsync(account.Id);
+
+                return new BaseResponse
+                {
+                    StatusCode = 200,
+                    Message = "PASSWORD_CHANGED_SUCCESS"
+                };
+            }
+            catch (UnauthorizedException)
+            {
+                throw; // Re-throw unauthorized exceptions
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 500,
+                    Message = $"CHANGE_PASSWORD_ERROR: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<BaseResponse> RefreshTokenAsync(RefreshTokenRequest request)
+        {
+            try
+            {
+                // Validate refresh token (implement proper validation in JwtService)
+                if (!_jwtService.ValidateRefreshToken(request.RefreshToken, 0)) // You'll need to modify this
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 401,
+                        Message = "INVALID_REFRESH_TOKEN"
+                    };
+                }
+
+                // For now, return error since refresh token validation needs proper implementation
+                return new BaseResponse
+                {
+                    StatusCode = 501,
+                    Message = "REFRESH_TOKEN_FEATURE_NOT_IMPLEMENTED"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 500,
+                    Message = $"REFRESH_TOKEN_ERROR: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<BaseResponse> LogoutAsync()
+        {
+            try
+            {
+                var currentUserId = GetCurrentUserId();
+                
+                // Revoke all refresh tokens for the user
+                await _jwtService.RevokeAllRefreshTokensAsync(currentUserId);
+
+                return new BaseResponse
+                {
+                    StatusCode = 200,
+                    Message = "LOGOUT_SUCCESS"
+                };
+            }
+            catch (UnauthorizedException)
+            {
+                throw; // Re-throw unauthorized exceptions
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 500,
+                    Message = $"LOGOUT_ERROR: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<BaseResponse> GetCurrentUserProfileAsync()
+        {
+            try
+            {
+                var currentUserId = GetCurrentUserId();
+                
+                var accounts = await _unitOfWork.AccountRepository.GetAllAsync();
+                var account = accounts.FirstOrDefault(x => x.Id == currentUserId);
+
+                if (account == null)
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 404,
+                        Message = "ACCOUNT_NOT_FOUND"
+                    };
+                }
+
+                var profileResponse = account.ToProfileResponse();
+
+                return new BaseResponse
+                {
+                    StatusCode = 200,
+                    Message = "SUCCESS",
+                    Data = profileResponse
+                };
+            }
+            catch (UnauthorizedException)
+            {
+                throw; // Re-throw unauthorized exceptions
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 500,
+                    Message = $"GET_PROFILE_ERROR: {ex.Message}"
+                };
+            }
+        }
+
+        #endregion
     }
 }
