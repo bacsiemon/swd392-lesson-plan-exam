@@ -168,6 +168,22 @@ namespace LessonPlanExam.API.Controllers
             return Ok(response);
         }
 
+        /// <summary>
+        /// API xóa tài khoản theo ID (Chỉ dành cho Admin - Role = 0)
+        /// Thực hiện soft delete - đánh dấu tài khoản là đã xóa thay vì xóa hẳn
+        /// </summary>
+        /// <param name="id">ID của tài khoản cần xóa</param>
+        /// <returns>Xác nhận đã xóa tài khoản thành công</returns>
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")] // Chỉ Admin (role = 0) mới được xóa tài khoản
+        public async Task<IActionResult> DeleteAccountAsync(int id)
+        {
+            // Gọi service để xóa tài khoản (soft delete)
+            var response = await _accountService.DeleteAccountAsync(id);
+            // Trả về kết quả xóa tài khoản
+            return StatusCode(response.StatusCode, response);
+        }
+
         #endregion
     }
 }

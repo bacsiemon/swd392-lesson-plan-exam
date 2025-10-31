@@ -534,6 +534,84 @@ namespace LessonPlanExam.Services.Services
             }
         }
 
+        /// <summary>
+        /// Xóa tài khoản theo ID (Chỉ dành cho Admin)
+        /// Soft delete - đánh dấu tài khoản là đã xóa thay vì xóa hẳn khỏi database
+        /// </summary>
+        /// <param name="accountId">ID của tài khoản cần xóa</param>
+        /// <returns>Kết quả xóa tài khoản</returns>
+        public async Task<BaseResponse> DeleteAccountAsync(int accountId)
+        {
+            try
+            {
+                // Kiểm tra tài khoản có tồn tại không
+                var existingAccount = await _unitOfWork.AccountRepository.GetByIdAsync(accountId);
+                if (existingAccount == null)
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 404,
+                        Message = "ACCOUNT_NOT_FOUND"
+                    };
+                }
+
+                // Kiểm tra tài khoản đã bị xóa trước đó chưa
+                if (existingAccount.DeletedAt.HasValue)
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 400,
+                        Message = "ACCOUNT_ALREADY_DELETED"
+                    };
+                }
+
+                // Không cho phép xóa chính tài khoản Admin đang thực hiện thao tác
+                var currentUserId = GetCurrentUserId();
+                if (existingAccount.Id == currentUserId)
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 400,
+                        Message = "CANNOT_DELETE_YOUR_OWN_ACCOUNT"
+                    };
+                }
+
+                // Thực hiện soft delete - đánh dấu là đã xóa
+                existingAccount.DeletedAt = DateTime.UtcNow;
+                existingAccount.IsActive = false;
+                existingAccount.UpdatedAt = DateTime.UtcNow;
+
+                // Cập nhật vào database
+                _unitOfWork.AccountRepository.Update(existingAccount);
+                await _unitOfWork.SaveChangesAsync();
+
+                return new BaseResponse
+                {
+                    StatusCode = 200,
+                    Message = "ACCOUNT_DELETED_SUCCESSFULLY",
+                    Data = new
+                    {
+                        Id = existingAccount.Id,
+                        Email = existingAccount.Email,
+                        FullName = existingAccount.FullName,
+                        DeletedAt = existingAccount.DeletedAt
+                    }
+                };
+            }
+            catch (UnauthorizedException)
+            {
+                throw; // Re-throw unauthorized exceptions
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 500,
+                    Message = $"DELETE_ACCOUNT_ERROR: {ex.Message}"
+                };
+            }
+        }
+
         #endregion
     }
 }

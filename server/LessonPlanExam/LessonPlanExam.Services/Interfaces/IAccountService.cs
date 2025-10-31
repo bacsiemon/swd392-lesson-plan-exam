@@ -8,6 +8,13 @@ namespace LessonPlanExam.Services.Interfaces
         Task<BaseResponse> GetAccountsAsync(int page, int size);
         
         /// <summary>
+        /// Delete account by ID (Admin only)
+        /// </summary>
+        /// <param name="accountId">ID của tài khoản cần xóa</param>
+        /// <returns>Kết quả xóa tài khoản</returns>
+        Task<BaseResponse> DeleteAccountAsync(int accountId);
+        
+        /// <summary>
         /// Extracts the user ID from the current JWT token in the HTTP context
         /// </summary>
         /// <returns>The user ID if the token is valid and present</returns>
