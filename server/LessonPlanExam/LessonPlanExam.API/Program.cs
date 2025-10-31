@@ -103,8 +103,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// TODO: Uncomment after JWT configuration is enabled
-// app.UseAuthentication(); // Add authentication middleware
+app.UseAuthentication(); // Add authentication middleware
 app.UseAuthorization();
 
 app.MapControllers();
