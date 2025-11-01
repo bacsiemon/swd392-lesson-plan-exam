@@ -1,0 +1,290 @@
+/* ========================================
+   SHARED CHEMISTRY THEME STYLES
+   Light Purple to Light Blue Color Scheme
+   ======================================== */
+
+:root {
+  /* Chemistry color palette */
+  --chem-purple-light: #e8d5f2;
+  --chem-purple: #b19cd9;
+  --chem-purple-dark: #8a6db8;
+  --chem-blue-light: #d5e8f7;
+  --chem-blue: #7eb8dd;
+  --chem-blue-dark: #4a90c4;
+  --chem-gradient: linear-gradient(135deg, #e8d5f2 0%, #d5e8f7 100%);
+  --chem-gradient-reverse: linear-gradient(135deg, #d5e8f7 0%, #e8d5f2 100%);
+  
+  /* Glass effect colors */
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(232, 213, 242, 0.5);
+  
+  /* Background and borders */
+  --chem-bg: #f5f0fa;
+  --chem-border: #d4c5e3;
+  --chem-workspace-bg: linear-gradient(135deg, #f5f0fa 0%, #e8f3fa 100%);
+  
+  /* Text colors */
+  --chem-text: #4a3560;
+  --chem-text-secondary: #7a6a8e;
+}
+
+/* Page container with chemistry background */
+.chemistry-page {
+  padding: 24px;
+  min-height: 100vh;
+  background: var(--chem-workspace-bg);
+  animation: fadeIn 0.5s ease-in-out;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Page fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Chemistry-themed card */
+.chemistry-card {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: 0 8px 32px rgba(177, 156, 217, 0.15) !important;
+  border-radius: 12px !important;
+  transition: all 0.3s ease;
+}
+
+.chemistry-card:hover {
+  box-shadow: 0 12px 40px rgba(177, 156, 217, 0.25) !important;
+  transform: translateY(-2px);
+}
+
+/* Header card with gradient */
+.chemistry-header-card {
+  background: var(--chem-gradient) !important;
+  border: 1px solid var(--chem-purple-light) !important;
+  box-shadow: 0 8px 32px rgba(177, 156, 217, 0.2) !important;
+  border-radius: 12px !important;
+}
+
+/* Statistics cards */
+.chemistry-stat-card {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.8) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: 0 4px 16px rgba(177, 156, 217, 0.1) !important;
+  border-radius: 10px !important;
+  transition: all 0.3s ease;
+}
+
+.chemistry-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(177, 156, 217, 0.2) !important;
+}
+
+/* Primary button with chemistry gradient */
+.chemistry-btn-primary {
+  background: var(--chem-gradient-reverse) !important;
+  border: none !important;
+  color: var(--chem-text) !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.chemistry-btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.chemistry-btn-primary:hover::before {
+  left: 100%;
+}
+
+.chemistry-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(126, 184, 221, 0.4) !important;
+  color: var(--chem-text) !important;
+}
+
+/* Secondary button */
+.chemistry-btn-secondary {
+  border: 1px solid var(--chem-blue-light) !important;
+  color: var(--chem-text) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  transition: all 0.3s ease !important;
+}
+
+.chemistry-btn-secondary:hover {
+  border-color: var(--chem-blue) !important;
+  background: var(--chem-blue-light) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(126, 184, 221, 0.2) !important;
+}
+
+/* Page title with icon */
+.chemistry-title {
+  color: var(--chem-text) !important;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chemistry-title .anticon {
+  color: var(--chem-purple) !important;
+  font-size: 1.2em;
+}
+
+/* Subtitle text */
+.chemistry-subtitle {
+  color: var(--chem-text-secondary) !important;
+}
+
+/* Input fields with chemistry theme */
+.chemistry-page .ant-input,
+.chemistry-page .ant-input-number,
+.chemistry-page .ant-select-selector,
+.chemistry-page .ant-picker {
+  border: 1px solid var(--chem-purple-light) !important;
+  border-radius: 6px !important;
+  transition: all 0.3s ease !important;
+}
+
+.chemistry-page .ant-input:focus,
+.chemistry-page .ant-input-number-focused,
+.chemistry-page .ant-select-focused .ant-select-selector,
+.chemistry-page .ant-picker-focused {
+  border-color: var(--chem-purple) !important;
+  box-shadow: 0 0 0 2px rgba(177, 156, 217, 0.1) !important;
+}
+
+/* Table with chemistry theme */
+.chemistry-table .ant-table {
+  background: transparent;
+}
+
+.chemistry-table .ant-table-thead > tr > th {
+  background: var(--chem-gradient) !important;
+  color: var(--chem-text) !important;
+  font-weight: 600 !important;
+  border-color: var(--chem-purple-light) !important;
+}
+
+.chemistry-table .ant-table-tbody > tr:hover > td {
+  background: var(--chem-purple-light) !important;
+}
+
+.chemistry-table .ant-table-tbody > tr > td {
+  border-color: var(--chem-purple-light) !important;
+}
+
+/* Tags with chemistry colors */
+.chemistry-tag-purple {
+  background: var(--chem-purple-light) !important;
+  color: var(--chem-text) !important;
+  border: 1px solid var(--chem-purple) !important;
+}
+
+.chemistry-tag-blue {
+  background: var(--chem-blue-light) !important;
+  color: var(--chem-text) !important;
+  border: 1px solid var(--chem-blue) !important;
+}
+
+/* Modal with chemistry theme */
+.chemistry-modal .ant-modal-content {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: 0 12px 48px rgba(177, 156, 217, 0.3) !important;
+}
+
+.chemistry-modal .ant-modal-header {
+  background: var(--chem-gradient) !important;
+  border-bottom: 1px solid var(--chem-purple-light) !important;
+}
+
+.chemistry-modal .ant-modal-title {
+  color: var(--chem-text) !important;
+  font-weight: 600 !important;
+}
+
+/* Statistic with chemistry colors */
+.chemistry-stat .ant-statistic-title {
+  color: var(--chem-text-secondary) !important;
+}
+
+/* Molecular background decoration */
+.chemistry-molecules-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0.04;
+  background-image: 
+    radial-gradient(circle at 20% 30%, var(--chem-purple) 2px, transparent 2px),
+    radial-gradient(circle at 80% 70%, var(--chem-blue) 2px, transparent 2px),
+    radial-gradient(circle at 40% 80%, var(--chem-purple) 1.5px, transparent 1.5px),
+    radial-gradient(circle at 60% 20%, var(--chem-blue) 1.5px, transparent 1.5px);
+  background-size: 100px 100px;
+  background-position: 0 0, 30px 30px, 50px 10px, 10px 50px;
+  pointer-events: none;
+  animation: moleculeFloat 20s ease-in-out infinite;
+}
+
+@keyframes moleculeFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Smooth transitions for interactive elements */
+.chemistry-page .ant-btn,
+.chemistry-page .ant-card,
+.chemistry-page .ant-tag,
+.chemistry-page .ant-table-row {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Avatar with chemistry border */
+.chemistry-avatar {
+  border: 3px solid var(--chem-purple-light) !important;
+  box-shadow: 0 4px 12px rgba(177, 156, 217, 0.3) !important;
+}
+
+/* Empty state with chemistry theme */
+.chemistry-empty .ant-empty-image svg {
+  fill: var(--chem-purple) !important;
+}
+
+/* Progress bar with chemistry colors */
+.chemistry-progress .ant-progress-bg {
+  background: var(--chem-gradient) !important;
+}
+
+/* Divider with chemistry color */
+.chemistry-divider {
+  border-color: var(--chem-purple-light) !important;
+}
+
+/* Badge with chemistry colors */
+.chemistry-badge {
+  background: var(--chem-gradient) !important;
+  color: var(--chem-text) !important;
+  box-shadow: 0 2px 8px rgba(177, 156, 217, 0.3) !important;
+}

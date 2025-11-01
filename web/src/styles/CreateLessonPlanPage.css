@@ -1,0 +1,401 @@
+/* --- CHEMISTRY THEME: BIẾN MÀU VÀ FONT CHỮ --- */
+:root {
+  /* Chemistry color palette: Light purple to light blue */
+  --chem-purple-light: #e8d5f2;
+  --chem-purple: #b19cd9;
+  --chem-purple-dark: #8a6db8;
+  --chem-blue-light: #d5e8f7;
+  --chem-blue: #7eb8dd;
+  --chem-blue-dark: #4a90c4;
+  --chem-gradient: linear-gradient(135deg, #e8d5f2 0%, #d5e8f7 100%);
+  --chem-gradient-reverse: linear-gradient(135deg, #d5e8f7 0%, #e8d5f2 100%);
+  
+  /* Glass effect colors */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.3);
+  
+  /* Background and borders */
+  --alt-bg: #f5f0fa;
+  --alt-border: #d4c5e3;
+  --alt-workspace-bg: linear-gradient(135deg, #f5f0fa 0%, #e8f3fa 100%);
+  
+  /* Text colors */
+  --alt-text: #4a3560;
+  --alt-text-secondary: #7a6a8e;
+  
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+}
+
+/* --- BỐ CỤC TOÀN TRANG --- */
+.create-lesson-plan-page-alt { 
+  padding: 24px; 
+  background-color: var(--alt-bg); 
+  min-height: calc(100vh - 64px); 
+  font-family: var(--font-family); 
+  background-image: linear-gradient(135deg, #f5f0fa 0%, #e8f3fa 100%);
+  background-size: 100% 200px;
+  background-position: 0% 100%;
+  background-repeat: no-repeat;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Page load animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.control-panel-alt { 
+  background: var(--glass-bg); 
+  border-radius: 8px; 
+  padding: 24px; 
+  border: 1px solid var(--glass-border); 
+  height: 100%; 
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+.panel-title-alt { 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+  font-weight: 600; 
+  color: var(--alt-text); 
+  background: var(--chem-purple-light); 
+  padding: 8px; 
+  border-radius: 4px;
+}
+.alt-button { 
+  margin-top: 16px !important; 
+  background-color: var(--chem-blue) !important; 
+  font-weight: 500; 
+  color: #FFFFFF;
+}
+.saved-docs-list-alt { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 8px; 
+  background: var(--glass-bg); 
+  padding: 16px; 
+  border-radius: 8px; 
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+.saved-doc-item-alt { 
+  padding: 12px; 
+  border-radius: 6px; 
+  cursor: pointer; 
+  transition: background-color 0.2s ease; 
+  border: 1px solid transparent; 
+  background: var(--chem-purple-light);
+}
+.saved-doc-item-alt:hover { 
+  background: var(--chem-gradient);
+  border-color: var(--chem-purple-dark);
+  transform: translateX(4px);
+}
+.saved-doc-item-alt.active { 
+  background-color: var(--chem-blue-light); 
+  border-color: var(--chem-blue);
+}
+/* --- CHEMISTRY THEME SPECIFIC STYLES --- */
+
+/* Glassmorphism effect for control panel */
+.chemistry-control-panel {
+  position: relative;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.75) !important;
+  border: 1px solid rgba(232, 213, 242, 0.5) !important;
+  box-shadow: 0 8px 32px rgba(177, 156, 217, 0.15) !important;
+  overflow: hidden;
+}
+
+/* Molecular background pattern */
+.chemistry-molecules {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.05;
+  background-image: 
+    radial-gradient(circle at 20% 30%, var(--chem-purple) 2px, transparent 2px),
+    radial-gradient(circle at 80% 70%, var(--chem-blue) 2px, transparent 2px),
+    radial-gradient(circle at 40% 80%, var(--chem-purple) 1.5px, transparent 1.5px),
+    radial-gradient(circle at 60% 20%, var(--chem-blue) 1.5px, transparent 1.5px);
+  background-size: 100px 100px;
+  background-position: 0 0, 30px 30px, 50px 10px, 10px 50px;
+  pointer-events: none;
+}
+
+/* Chemistry-themed titles with gradient */
+.chemistry-title {
+  background: var(--chem-gradient) !important;
+  color: var(--alt-text) !important;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.chemistry-title:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(177, 156, 217, 0.3);
+}
+
+/* Chemistry button with gradient */
+.chemistry-button {
+  background: var(--chem-gradient-reverse) !important;
+  border: none !important;
+  color: var(--alt-text) !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.chemistry-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.chemistry-button:hover::before {
+  left: 100%;
+}
+
+.chemistry-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(126, 184, 221, 0.4) !important;
+}
+
+/* Workspace with gradient background */
+.chemistry-workspace {
+  background: var(--alt-workspace-bg) !important;
+  border: 1px solid var(--chem-purple-light) !important;
+  box-shadow: 0 8px 32px rgba(177, 156, 217, 0.15) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.chemistry-workspace::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(232, 213, 242, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 90% 80%, rgba(213, 232, 247, 0.3) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.chemistry-workspace > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Header with glass effect */
+.chemistry-header {
+  background: rgba(255, 255, 255, 0.9) !important;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--chem-purple-light) !important;
+}
+
+/* Canvas with subtle glow */
+.chemistry-canvas {
+  position: relative;
+}
+
+/* Empty state styling */
+.chemistry-empty {
+  background: radial-gradient(circle at center, rgba(232, 213, 242, 0.2) 0%, transparent 70%);
+}
+
+/* Spinner with chemistry colors */
+.chemistry-spinner .ant-spin-dot-item {
+  background-color: var(--chem-purple) !important;
+}
+
+/* Panel with glass effect */
+.chemistry-panel {
+  background: rgba(255, 255, 255, 0.5);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(232, 213, 242, 0.3);
+}
+
+/* Smooth transitions for all interactive elements */
+.saved-doc-item-alt,
+.outline-item,
+.chemistry-button,
+.chemistry-title {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Add subtle chemistry-themed input styling */
+.chemistry-control-panel .ant-input-textarea textarea {
+  border: 1px solid var(--chem-purple-light);
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.chemistry-control-panel .ant-input-textarea textarea:focus {
+  border-color: var(--chem-purple);
+  box-shadow: 0 0 0 2px rgba(177, 156, 217, 0.1);
+}
+
+/* Chemistry-themed button hover effects */
+.chemistry-control-panel .ant-btn:not(.chemistry-button) {
+  border: 1px solid var(--chem-blue-light);
+  transition: all 0.3s ease;
+}
+
+.chemistry-control-panel .ant-btn:not(.chemistry-button):hover {
+  border-color: var(--chem-blue);
+  background: var(--chem-blue-light);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(126, 184, 221, 0.2);
+}
+
+/* Add subtle animation to molecular pattern */
+@keyframes moleculeFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.chemistry-molecules {
+  animation: moleculeFloat 20s ease-in-out infinite;
+}
+
+/* --- CSS MỚI CHO MỤC LỤC --- */
+.outline-panel {
+    max-height: 250px;
+}
+.outline-list {
+    overflow-y: auto;
+    max-height: 200px;
+    padding-right: 8px;
+}
+.outline-item {
+    display: block;
+    padding: 6px 8px;
+    border-radius: 4px;
+    color: var(--alt-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background-color 0.2s ease;
+}
+.outline-item:hover {
+    background: var(--chem-purple-light);
+    transform: translateX(4px);
+}
+.outline-item.level-2 { padding-left: 24px; }
+.outline-item.level-3 { padding-left: 40px; }
+
+/* --- CSS MỚI CHO PHÂN TRANG VÀ WORKSPACE --- */
+.editor-workspace-alt {
+  height: calc(100vh - 64px - 48px);
+  background: var(--alt-workspace-bg); /* Nền xám cho khu vực làm việc */
+  border-radius: 8px;
+  border: 1px solid var(--alt-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.editor-header-alt {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 24px; border-bottom: 1px solid var(--alt-border);
+    flex-shrink: 0; background: #FFFFFF;
+}
+.document-title-alt { margin-bottom: 0 !important; flex-grow: 1; }
+.editor-actions-alt { display: flex; align-items: center; gap: 12px; }
+.save-status-alt { font-style: italic; }
+.save-status-alt.saved { color: green; }
+.save-status-alt.unsaved { color: orange; }
+
+.canvas-container-alt {
+  flex-grow: 1;
+  padding: 32px 0; /* Chỉ padding trên dưới */
+  overflow: auto; /* Cho phép cuộn */
+}
+
+.quill-editor-alt .ql-editor {
+    width: 816px; /* A4 width */
+    min-height: 1056px; /* A4 height */
+    padding: 72px; /* Lề văn bản */
+    margin: 0 auto 24px auto; /* Căn giữa trang và tạo khoảng cách giữa các trang */
+    background: #FFFFFF;
+    box-shadow: 
+      0 0 20px rgba(177, 156, 217, 0.2), 
+      0 0 40px rgba(126, 184, 221, 0.1),
+      0 10px 30px rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+    border: 1px solid var(--chem-purple-light);
+    position: relative;
+    transition: box-shadow 0.3s ease;
+}
+
+.quill-editor-alt .ql-editor:hover {
+    box-shadow: 
+      0 0 25px rgba(177, 156, 217, 0.3), 
+      0 0 50px rgba(126, 184, 221, 0.15),
+      0 15px 40px rgba(0, 0, 0, 0.08);
+}
+.quill-editor-alt .ql-container.ql-snow {
+    border: none;
+}
+.quill-editor-alt .ql-toolbar {
+    position: sticky;
+    top: 0;
+    background: rgba(255, 255, 255, 0.95);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    z-index: 1;
+    border: none;
+    border-bottom: 1px solid var(--chem-purple-light);
+    padding: 12px;
+}
+
+.center-content-alt { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+
+/* --- CSS DÀNH RIÊNG CHO VIỆC IN --- */
+@media print {
+  /* Ẩn tất cả những gì không cần thiết */
+  body > *:not(.create-lesson-plan-page-alt) {
+    display: none;
+  }
+  .create-lesson-plan-page-alt > .ant-row > .ant-col:first-child,
+  .editor-header-alt,
+  .quill-editor-alt .ql-toolbar {
+    display: none;
+  }
+  /* Cấu hình lại layout để chỉ in nội dung */
+  .create-lesson-plan-page-alt {
+    padding: 0;
+  }
+  .editor-workspace-alt, .canvas-container-alt {
+    height: auto;
+    padding: 0;
+    overflow: visible;
+  }
+  .document-canvas-alt {
+    box-shadow: none;
+    width: 100%;
+    min-height: auto;
+    padding: 0;
+  }
+}

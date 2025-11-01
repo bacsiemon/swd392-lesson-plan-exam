@@ -1,0 +1,396 @@
+/* TeacherProfile.css - Simple styling */
+
+.teacher-profile-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+    background-color: #f8f9fa;
+    min-height: calc(100vh - 64px);
+}
+
+.profile-header {
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.page-title {
+    color: #2c3e50;
+    margin-bottom: 8px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.page-subtitle {
+    color: #6c757d;
+    font-size: 16px;
+}
+
+/* Main Profile Card */
+.profile-card {
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e8ecef;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.profile-card .ant-card-body {
+    padding: 32px;
+}
+
+/* Profile Header Section */
+.profile-header-section {
+    position: relative;
+    margin-bottom: 24px;
+}
+
+.avatar-section {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.avatar-container {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 16px;
+}
+
+.profile-avatar {
+    border: 4px solid #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.profile-avatar:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.avatar-uploader {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+}
+
+.avatar-upload-button {
+    width: 40px;
+    height: 40px;
+    background: #667eea;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.avatar-upload-button:hover {
+    background: #5a6fd8;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* Basic Info */
+.basic-info {
+    text-align: center;
+}
+
+.profile-name {
+    color: #2c3e50 !important;
+    margin-bottom: 16px !important;
+    font-weight: 600;
+}
+
+.profile-tags {
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.subject-tag {
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 16px;
+}
+
+.experience-tag {
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 16px;
+}
+
+.education-tag {
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 16px;
+}
+
+.profile-bio {
+    color: #6c757d;
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 24px !important;
+    text-align: left;
+}
+
+/* Action Buttons */
+.action-buttons {
+    text-align: center;
+    margin-top: 24px;
+}
+
+.action-buttons .ant-btn {
+    border-radius: 8px;
+    font-weight: 500;
+    padding: 8px 24px;
+    height: auto;
+}
+
+.action-buttons .ant-btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.action-buttons .ant-btn-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+/* Section Title */
+.section-title {
+    color: #2c3e50 !important;
+    margin-bottom: 24px !important;
+    font-weight: 600;
+    border-bottom: 2px solid #e8ecef;
+    padding-bottom: 8px;
+}
+
+/* Info Items */
+.profile-details {
+    margin-top: 32px;
+}
+
+.info-item {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #e8ecef;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.info-item:hover {
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+    border-color: #667eea;
+}
+
+.info-label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #495057;
+    font-size: 14px;
+}
+
+.info-icon {
+    color: #667eea;
+    margin-right: 8px;
+    font-size: 16px;
+}
+
+.info-value {
+    color: #2c3e50 !important;
+    font-size: 15px;
+    font-weight: 500;
+    word-break: break-word;
+    line-height: 1.5;
+}
+
+/* Edit Modal */
+.edit-profile-modal .ant-modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 8px 8px 0 0;
+}
+
+.edit-profile-modal .ant-modal-title {
+    color: white;
+    font-weight: 600;
+}
+
+.edit-profile-modal .ant-modal-close {
+    color: white;
+}
+
+.edit-profile-modal .ant-modal-close:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.edit-profile-form {
+    margin-top: 16px;
+}
+
+.edit-profile-form .ant-form-item-label>label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.edit-profile-form .ant-input,
+.edit-profile-form .ant-picker {
+    border-radius: 8px;
+    border: 1px solid #e8ecef;
+    padding: 8px 12px;
+}
+
+.edit-profile-form .ant-input:focus,
+.edit-profile-form .ant-picker:focus,
+.edit-profile-form .ant-input-focused,
+.edit-profile-form .ant-picker-focused {
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.form-actions {
+    text-align: right;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #e8ecef;
+}
+
+.form-actions .ant-btn {
+    border-radius: 8px;
+    font-weight: 500;
+    padding: 8px 20px;
+    height: auto;
+}
+
+.form-actions .ant-btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+}
+
+.form-actions .ant-btn-primary:hover {
+    background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .teacher-profile-container {
+        padding: 16px;
+    }
+
+    .profile-card .ant-card-body {
+        padding: 20px;
+    }
+
+    .basic-info {
+        text-align: center;
+        margin-top: 16px;
+    }
+
+    .profile-name {
+        font-size: 20px !important;
+    }
+
+    .profile-tags {
+        justify-content: center;
+    }
+
+    .info-item {
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+
+    .action-buttons {
+        margin-top: 16px;
+    }
+
+    .page-title {
+        font-size: 20px !important;
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 576px) {
+    .teacher-profile-container {
+        padding: 12px;
+    }
+
+    .profile-card .ant-card-body {
+        padding: 16px;
+    }
+
+    .profile-avatar {
+        width: 80px !important;
+        height: 80px !important;
+    }
+
+    .avatar-upload-button {
+        width: 32px;
+        height: 32px;
+        font-size: 12px;
+    }
+
+    .profile-name {
+        font-size: 18px !important;
+    }
+
+    .info-item {
+        padding: 12px;
+    }
+}
+
+/* Loading States */
+.ant-skeleton-avatar {
+    border-radius: 50%;
+}
+
+.ant-skeleton-content .ant-skeleton-title {
+    margin-top: 16px;
+}
+
+/* Copyable text styling */
+.ant-typography-copy {
+    color: #667eea;
+    margin-left: 8px;
+}
+
+.ant-typography-copy:hover {
+    color: #5a6fd8;
+}
+
+/* Success message styling */
+.ant-message-notice-content {
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Divider styling */
+.ant-divider {
+    border-color: #e8ecef;
+    margin: 32px 0;
+}
+
+/* Tag hover effects */
+.ant-tag {
+    transition: all 0.3s ease;
+    cursor: default;
+}
+
+.ant-tag:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
