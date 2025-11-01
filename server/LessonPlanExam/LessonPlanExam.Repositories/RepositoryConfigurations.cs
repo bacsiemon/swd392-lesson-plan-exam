@@ -40,6 +40,8 @@ namespace LessonPlanExam.Repositories
             services.AddScoped<Interfaces.IQuestionRepository, Repositories.QuestionRepository>();
             services.AddScoped<Interfaces.IExamMatrixRepository, Repositories.ExamMatrixRepository>();
             services.AddScoped<Interfaces.IExamRepository, Repositories.ExamRepository>();
+            services.AddScoped<Interfaces.IExamAttemptRepository, Repositories.ExamAttemptRepository>();
+            services.AddScoped<Interfaces.IExamAttemptAnswerRepository, Repositories.ExamAttemptAnswerRepository>();
         }
     }
 }
