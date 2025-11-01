@@ -24,6 +24,22 @@ namespace LessonPlanExam.API.Controllers
             _accountService = accountService;
         }
 
+        /// <summary>User</summary>
+        /// <remarks>
+        /// Start a new attempt for the specified exam if conditions are met (exam active, within time window,
+        /// attempts left and student authenticated). If the exam is password protected pass `password` as query parameter.
+        /// 
+        /// Sample call:
+        /// ```
+        /// POST /api/exams/5/attempts/start?password=plainText
+        /// ```
+        /// </remarks>
+        /// <param name="examId">The ID of the exam to attempt.</param>
+        /// <param name="password">Optional plain-text password for protected exams.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <response code="200">Returns attempt start payload with question snapshot.</response>
+        /// <response code="400">If attempt cannot be started (limits, timing, etc.).</response>
+        /// <response code="401">If the user is not authenticated.</response>
         [HttpPost("start")]
         public async Task<IActionResult> StartAttempt([FromRoute] int examId, [FromQuery] string password = null, CancellationToken ct = default)
         {
@@ -36,6 +52,22 @@ namespace LessonPlanExam.API.Controllers
             return Ok(res);
         }
 
+        /// <summary>User</summary>
+        /// <remarks>
+        /// Save or update a single answer for an in-progress attempt. This endpoint accepts MCQ selections
+        /// (`selectedAnswerIds` as comma-separated ids) or text answers for fill-in-the-blank questions.
+        /// 
+        /// Sample request body:
+        /// ```
+        /// { "questionId": 123, "selectedAnswerIds": "10,11" }
+        /// ```
+        /// </remarks>
+        /// <param name="examId">The exam ID.</param>
+        /// <param name="attemptId">The attempt ID.</param>
+        /// <param name="request">Answer payload.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <response code="200">If the answer was saved successfully.</response>
+        /// <response code="400">If the request is invalid or cannot be saved.</response>
         [HttpPost("{attemptId}/answer")]
         public async Task<IActionResult> SaveAnswer([FromRoute] int examId, [FromRoute] int attemptId, [FromBody] SaveAnswerRequest request, CancellationToken ct = default)
         {
@@ -45,6 +77,21 @@ namespace LessonPlanExam.API.Controllers
             return Ok(new { Status = ok });
         }
 
+        /// <summary>User</summary>
+        /// <remarks>
+        /// Submit an attempt for auto-grading. The system will grade MCQ and Fill-Blank automatically and return
+        /// the score summary and per-question details (if allowed by exam settings).
+        /// 
+        /// Sample call:
+        /// ```
+        /// POST /api/exams/5/attempts/10/submit
+        /// ```
+        /// </remarks>
+        /// <param name="examId">The exam ID.</param>
+        /// <param name="attemptId">The attempt ID to submit.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <response code="200">Returns grading result with total score and details.</response>
+        /// <response code="400">If submission fails (invalid attempt, already submitted, etc.).</response>
         [HttpPost("{attemptId}/submit")]
         public async Task<IActionResult> SubmitAttempt([FromRoute] int examId, [FromRoute] int attemptId, CancellationToken ct = default)
         {
@@ -53,6 +100,16 @@ namespace LessonPlanExam.API.Controllers
             return Ok(res);
         }
 
+        /// <summary>User</summary>
+        /// <remarks>
+        /// Get the latest attempt of the currently authenticated student for the given exam.
+        /// Useful for students to resume or view their most recent attempt.
+        /// </remarks>
+        /// <param name="examId">The exam ID.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <response code="200">Returns the latest attempt result for the student.</response>
+        /// <response code="401">If the user is not authenticated.</response>
+        /// <response code="404">If no attempt is found.</response>
         [HttpGet("my-latest")]
         public async Task<IActionResult> GetMyLatest([FromRoute] int examId, CancellationToken ct = default)
         {
@@ -69,6 +126,16 @@ namespace LessonPlanExam.API.Controllers
             return Ok(res);
         }
 
+        /// <summary>User</summary>
+        /// <remarks>
+        /// Get detailed attempt information including saved answers for review. Students can fetch their own
+        /// attempts; teachers can fetch attempts for their exams (authorization should be enforced in controller/service).
+        /// </remarks>
+        /// <param name="examId">The exam ID.</param>
+        /// <param name="attemptId">The attempt ID.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <response code="200">Returns detailed attempt information.</response>
+        /// <response code="404">If the attempt is not found.</response>
         [HttpGet("{attemptId}")]
         public async Task<IActionResult> GetAttemptDetail([FromRoute] int examId, [FromRoute] int attemptId, CancellationToken ct = default)
         {
@@ -102,6 +169,20 @@ namespace LessonPlanExam.API.Controllers
             return Ok(dto);
         }
 
+        /// <summary>User</summary>
+        /// <remarks>
+        /// Query attempts for a specific exam. Typically used by teachers to list student attempts and filter by status.
+        /// Use `status` query parameter to filter by attempt status.
+        /// 
+        /// Sample request:
+        /// ```
+        /// GET /api/exams/5/attempts?status=2
+        /// ```
+        /// </remarks>
+        /// <param name="examId">The exam ID.</param>
+        /// <param name="status">Optional status filter (use enum value for EAttemptStatus).</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <response code="200">Returns a list of attempts (summary fields).</response>
         [HttpGet]
         public async Task<IActionResult> Query([FromRoute] int examId, [FromQuery] int? status = null, CancellationToken ct = default)
         {
