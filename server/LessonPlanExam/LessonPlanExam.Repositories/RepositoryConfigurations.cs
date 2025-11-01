@@ -37,6 +37,7 @@ namespace LessonPlanExam.Repositories
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<Interfaces.IQuestionBankRepository, Repositories.QuestionBankRepository>();
             services.AddScoped<Interfaces.IQuestionRepository, Repositories.QuestionRepository>();
+            services.AddScoped<Interfaces.IExamMatrixRepository, Repositories.ExamMatrixRepository>();
         }
     }
 }
