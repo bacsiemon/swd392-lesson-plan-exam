@@ -35,6 +35,8 @@ namespace LessonPlanExam.Repositories
         public static void AddDependencyInjection(this IServiceCollection services)
         {
             services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddScoped<Interfaces.IQuestionBankRepository, Repositories.QuestionBankRepository>();
+            services.AddScoped<Interfaces.IQuestionRepository, Repositories.QuestionRepository>();
         }
     }
 }

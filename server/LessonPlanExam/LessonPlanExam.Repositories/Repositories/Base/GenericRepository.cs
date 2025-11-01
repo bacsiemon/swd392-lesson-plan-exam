@@ -61,7 +61,7 @@ namespace LessonPlanExam.Repositories.Repositories.Base
             return await query.ToListAsync();
         }
 
-        public async Task<PaginatedList<T>> GetPaginatedAsync(int page, int size, int firstPage = 1, Expression<Func<T, bool>> predicate = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, params string[] includeProperties)
+        public async Task<PaginatedList<T>> GetPaginatedAsync(int page, int size, int firstPage = 1, Expression<Func<T, bool>>? predicate = null, Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null, params string[] includeProperties)
         {
             if (firstPage > page)
                 throw new ArgumentException($"Page ({page}) must be greater or equal than firstPage ({firstPage})");
@@ -106,7 +106,7 @@ namespace LessonPlanExam.Repositories.Repositories.Base
         /// <summary>
         /// Get paginated results with strongly typed include properties
         /// </summary>
-        public async Task<PaginatedList<T>> GetPaginatedAsync(int page, int size, int firstPage = 1, Expression<Func<T, bool>> predicate = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, params Expression<Func<T, object>>[] includeProperties)
+        public async Task<PaginatedList<T>> GetPaginatedAsync(int page, int size, int firstPage = 1, Expression<Func<T, bool>>? predicate = null, Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null, params Expression<Func<T, object>>[] includeProperties)
         {
             if (firstPage > page)
                 throw new ArgumentException($"Page ({page}) must be greater or equal than firstPage ({firstPage})");
@@ -148,7 +148,7 @@ namespace LessonPlanExam.Repositories.Repositories.Base
             };
         }
 
-        public async Task<PaginatedList<TResult>> GetPaginatedAsync<TResult>(int page, int size, Expression<Func<T, TResult>> projection, int firstPage = 1, Expression<Func<T, bool>> predicate = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, params string[] includeProperties)
+        public async Task<PaginatedList<TResult>> GetPaginatedAsync<TResult>(int page, int size, Expression<Func<T, TResult>> projection, int firstPage = 1, Expression<Func<T, bool>>? predicate = null, Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null, params string[] includeProperties)
         {
             if (firstPage > page)
                 throw new ArgumentException($"Page ({page}) must be greater or equal than firstPage ({firstPage})");
@@ -200,7 +200,7 @@ namespace LessonPlanExam.Repositories.Repositories.Base
         /// <summary>
         /// Get paginated projected results with strongly typed include properties
         /// </summary>
-        public async Task<PaginatedList<TResult>> GetPaginatedAsync<TResult>(int page, int size, Expression<Func<T, TResult>> projection, int firstPage = 1, Expression<Func<T, bool>> predicate = null, Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, params Expression<Func<T, object>>[] includeProperties)
+        public async Task<PaginatedList<TResult>> GetPaginatedAsync<TResult>(int page, int size, Expression<Func<T, TResult>> projection, int firstPage = 1, Expression<Func<T, bool>>? predicate = null, Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null, params Expression<Func<T, object>>[] includeProperties)
         {
             if (firstPage > page)
                 throw new ArgumentException($"Page ({page}) must be greater or equal than firstPage ({firstPage})");
