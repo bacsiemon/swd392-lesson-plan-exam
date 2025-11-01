@@ -2,6 +2,7 @@ using LessonPlanExam.Repositories.Context;
 using LessonPlanExam.Repositories.DTOs.ExamMatrixDTOs;
 using LessonPlanExam.Repositories.Interfaces;
 using LessonPlanExam.Repositories.Models;
+using LessonPlanExam.Repositories.Enums;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -123,6 +124,15 @@ namespace LessonPlanExam.Repositories.Repositories
             return true;
         }
 
+        public async Task<bool> DeleteMatrixAsync(int id, CancellationToken ct = default)
+        {
+            var entity = await _db.ExamMatrices.FirstOrDefaultAsync(x => x.Id == id, ct);
+            if (entity == null) return false;
+            _db.ExamMatrices.Remove(entity);
+            await _db.SaveChangesAsync(ct);
+            return true;
+        }
+
         public async Task<ValidationResponse> ValidateMatrixAsync(int matrixId, CancellationToken ct = default)
         {
             var response = new ValidationResponse { Ok = true, Shortages = new List<ShortageInfo>() };
@@ -141,7 +151,7 @@ namespace LessonPlanExam.Repositories.Repositories
                 var bank = await _db.QuestionBanks.AsNoTracking()
                     .FirstOrDefaultAsync(b => b.Id == item.QuestionBankId, ct);
                 
-                if (bank?.StatusEnum != null && bank.StatusEnum != Repositories.Enums.EQuestionBankStatus.Active)
+                if (bank?.StatusEnum != null && bank.StatusEnum != EQuestionBankStatus.Active)
                 {
                     response.Shortages.Add(new ShortageInfo
                     {

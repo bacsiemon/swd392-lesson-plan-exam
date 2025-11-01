@@ -16,6 +16,7 @@ namespace LessonPlanExam.Repositories.Interfaces
         Task<ExamMatrixItem> UpdateMatrixItemAsync(int itemId, ExamMatrixItemUpdateRequest request, CancellationToken ct = default);
         Task<bool> DeleteMatrixItemAsync(int itemId, CancellationToken ct = default);
         Task<ValidationResponse> ValidateMatrixAsync(int matrixId, CancellationToken ct = default);
+        Task<bool> DeleteMatrixAsync(int id, CancellationToken ct = default);
     }
 }
 

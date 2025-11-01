@@ -1,5 +1,6 @@
 using LessonPlanExam.Repositories.DTOs.ExamMatrixDTOs;
 using LessonPlanExam.Repositories.Interfaces;
+using LessonPlanExam.Services.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -42,11 +43,7 @@ namespace LessonPlanExam.Services.Services
 
         public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
         {
-            var entity = await _repo.GetByIdAsync(id);
-            if (entity == null) return false;
-            _repo.Remove(entity);
-            await _repo.SaveChangesAsync(ct);
-            return true;
+            return await _repo.DeleteMatrixAsync(id, ct);
         }
 
         public async Task<ExamMatrixItemResponse> CreateItemAsync(int matrixId, ExamMatrixItemCreateRequest request, CancellationToken ct = default)
