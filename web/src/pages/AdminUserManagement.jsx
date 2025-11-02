@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Modal } from 'antd';
+import { Card, Modal, Spin, Alert } from 'antd';
 import { useUserManagement } from '../services/useUserManagement';
 import UserManagementHeader from '../components/UserManagementHeader';
 import UserStats from '../components/UserStats';
@@ -14,6 +14,8 @@ const AdminUserManagement = () => {
     // State
     filteredUsers,
     filters,
+    loading,
+    error,
     isAddModalVisible,
     isEditModalVisible,
     currentUserToEdit,
@@ -57,15 +59,29 @@ const AdminUserManagement = () => {
 
       {/* Table */}
       <Card className="admin-card">
-        <div className="admin-table">
-          <UserTable
-            users={filteredUsers}
-            filters={filters}
-            onEdit={showEditModal}
-            onDelete={handleDelete}
-            onAddUser={() => setIsAddModalVisible(true)}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Spin size="large" tip="Đang tải danh sách tài khoản..." />
+          </div>
+        ) : error ? (
+          <Alert
+            message="Lỗi tải dữ liệu"
+            description={error}
+            type="error"
+            showIcon
+            style={{ marginBottom: 16 }}
           />
-        </div>
+        ) : (
+          <div className="admin-table">
+            <UserTable
+              users={filteredUsers}
+              filters={filters}
+              onEdit={showEditModal}
+              onDelete={handleDelete}
+              onAddUser={() => setIsAddModalVisible(true)}
+            />
+          </div>
+        )}
       </Card>
 
       {/* Add User Modal */}

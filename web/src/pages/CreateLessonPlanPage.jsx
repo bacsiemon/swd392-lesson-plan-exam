@@ -1,12 +1,40 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Row, Col, Input, Button, Typography, Spin, Empty, message, Divider, Upload } from 'antd';
+import { Row, Col, Input, Button, Typography, Spin, Empty, message, Divider, Upload, InputNumber, Form, Card } from 'antd';
 import { PlusOutlined, FolderOpenOutlined, FileTextOutlined, SaveOutlined, UploadOutlined, PrinterOutlined, MenuOutlined, ExperimentOutlined, BulbOutlined } from '@ant-design/icons';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import '../styles/CreateLessonPlanPage.css';
 import lessonPlanService from '../services/lessonPlanService';
+import api from '../services/axios';
 
 const { Title, Paragraph, Text } = Typography;
+
+// Helper function to get current user ID from JWT token
+const getCurrentUserId = async () => {
+  try {
+    // Try to get from API
+    const response = await api.get('/api/test/current-user');
+    if (response.data?.data?.userId) {
+      return response.data.data.userId;
+    }
+    // Fallback: decode JWT token from localStorage
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      const decoded = JSON.parse(jsonPayload);
+      // Try different claim names that might contain user ID
+      const userId = decoded.userId || decoded.sub || decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || decoded.id;
+      return parseInt(userId) || 1;
+    }
+  } catch (error) {
+    console.error('Error getting current user ID:', error);
+  }
+  return 1; // Default fallback
+};
 
 // --- DỮ LIỆU GIẢ LẬP ---
 const MOCK_SAVED_PLANS = [
@@ -43,7 +71,19 @@ const CreateLessonPlanPage = () => {
     const [outline, setOutline] = useState([]);
     const [savedPlans, setSavedPlans] = useState([]);
     const [loadingPlans, setLoadingPlans] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState(null);
+    const [showMetadataForm, setShowMetadataForm] = useState(false);
+    const [form] = Form.useForm();
     const editorRef = useRef(null);
+
+    // --- LOAD CURRENT USER ID ON MOUNT ---
+    useEffect(() => {
+        const loadUserId = async () => {
+            const userId = await getCurrentUserId();
+            setCurrentUserId(userId);
+        };
+        loadUserId();
+    }, []);
 
     // --- LOAD SAVED LESSON PLANS ON MOUNT ---
     useEffect(() => {
@@ -95,12 +135,34 @@ const CreateLessonPlanPage = () => {
             return;
         }
 
+        // Validate required fields for create
+        if (!activePlanId) {
+            if (!document.objectives || !document.description || !document.gradeLevel) {
+                message.warning('Vui lòng điền đầy đủ thông tin: Mục tiêu, Mô tả và Khối lớp');
+                setShowMetadataForm(true);
+                return;
+            }
+        }
+
         setIsLoading(true);
         try {
             const lessonPlanData = {
                 title: document.title,
-                content: document.content,
-                // Add other fields as needed based on API requirements
+                // For create: include all required fields
+                ...(activePlanId ? {} : {
+                    createdByTeacher: currentUserId || 1, // Server will override this anyway
+                    objectives: document.objectives || '',
+                    description: document.description || '',
+                    gradeLevel: document.gradeLevel || 1,
+                    imageUrl: document.imageUrl || null
+                }),
+                // For update: only send fields that can be updated
+                ...(activePlanId ? {
+                    objectives: document.objectives || '',
+                    description: document.description || '',
+                    gradeLevel: document.gradeLevel || 1,
+                    imageUrl: document.imageUrl || null
+                } : {})
             };
 
             let result;
@@ -117,6 +179,7 @@ const CreateLessonPlanPage = () => {
 
             if (result.success) {
                 setSaveStatus('saved');
+                setShowMetadataForm(false);
                 message.success(result.message || 'Lưu giáo án thành công');
                 // Refresh saved plans list
                 const plansResult = await lessonPlanService.getCurrentTeacherLessonPlans();
@@ -125,11 +188,34 @@ const CreateLessonPlanPage = () => {
                     setSavedPlans(plans);
                 }
             } else {
-                message.error(result.message || 'Không thể lưu giáo án');
+                // Show detailed error message
+                const errorMsg = result.message || result.error?.message || result.error?.Message || 
+                                (typeof result.error === 'string' ? result.error : 'Không thể lưu giáo án');
+                const errorDetails = result.error?.errors || result.error?.Errors || result.error;
+                console.error('❌ Failed to save lesson plan:', {
+                    result,
+                    error: errorDetails,
+                    statusCode: result.statusCode
+                });
+                message.error({
+                    content: errorMsg,
+                    duration: 5
+                });
             }
         } catch (error) {
-            console.error('Error saving lesson plan:', error);
-            message.error('Có lỗi xảy ra khi lưu giáo án');
+            console.error('❌ Error saving lesson plan:', {
+                error: error,
+                response: error.response,
+                data: error.response?.data,
+                status: error.response?.status
+            });
+            const errorMsg = error.response?.data?.message || error.response?.data?.Message || 
+                           error.response?.data?.errors || error.response?.data?.Errors ||
+                           error.message || 'Có lỗi xảy ra khi lưu giáo án';
+            message.error({
+                content: errorMsg,
+                duration: 5
+            });
         } finally {
             setIsLoading(false);
         }
@@ -175,10 +261,15 @@ const CreateLessonPlanPage = () => {
                 const planData = result.data;
                 setDocument({
                     title: planData.title || plan.title,
-                    content: planData.content || plan.content || ''
+                    content: planData.content || plan.content || '',
+                    objectives: planData.objectives || '',
+                    description: planData.description || '',
+                    gradeLevel: planData.gradeLevel || 1,
+                    imageUrl: planData.imageUrl || null
                 });
                 setActivePlanId(plan.id);
                 setSaveStatus('saved');
+                setShowMetadataForm(false);
                 message.info(`Đã mở "${planData.title || plan.title}".`);
             } else {
                 message.error(result.message || 'Không thể tải giáo án');
@@ -197,12 +288,22 @@ const CreateLessonPlanPage = () => {
         setTimeout(() => { 
             setDocument({
                 title: MOCK_SAVED_PLANS[0].title, 
-                content: MOCK_SAVED_PLANS[0].content
+                content: MOCK_SAVED_PLANS[0].content,
+                objectives: '',
+                description: '',
+                gradeLevel: 1,
+                imageUrl: null
             }); 
-            setSaveStatus('unsaved'); 
+            setSaveStatus('unsaved');
+            setShowMetadataForm(true);
             setIsLoading(false); 
             message.success('AI đã tạo giáo án mới!'); 
         }, 1500); 
+    };
+
+    const handleMetadataChange = (field, value) => {
+        setDocument(prev => ({ ...prev, [field]: value }));
+        setSaveStatus('unsaved');
     };
     const handleNavigate = (element) => {
         if (element) {
@@ -264,6 +365,56 @@ const CreateLessonPlanPage = () => {
                                             <Button icon={<PrinterOutlined />} onClick={handlePrint}>In / Xuất PDF</Button>
                                         </div>
                                     </div>
+                                    {/* Metadata Form */}
+                                    {showMetadataForm && (
+                                        <Card style={{ marginBottom: 16 }} title="Thông tin giáo án">
+                                            <Row gutter={16}>
+                                                <Col xs={24} sm={12}>
+                                                    <Text strong>Mục tiêu bài học *</Text>
+                                                    <Input.TextArea
+                                                        rows={3}
+                                                        placeholder="Nhập mục tiêu bài học..."
+                                                        value={document.objectives || ''}
+                                                        onChange={(e) => handleMetadataChange('objectives', e.target.value)}
+                                                        style={{ marginTop: 8 }}
+                                                    />
+                                                </Col>
+                                                <Col xs={24} sm={12}>
+                                                    <Text strong>Mô tả *</Text>
+                                                    <Input.TextArea
+                                                        rows={3}
+                                                        placeholder="Nhập mô tả bài học..."
+                                                        value={document.description || ''}
+                                                        onChange={(e) => handleMetadataChange('description', e.target.value)}
+                                                        style={{ marginTop: 8 }}
+                                                    />
+                                                </Col>
+                                                <Col xs={24} sm={8}>
+                                                    <Text strong>Khối lớp *</Text>
+                                                    <InputNumber
+                                                        min={1}
+                                                        max={12}
+                                                        placeholder="Khối lớp"
+                                                        value={document.gradeLevel || 1}
+                                                        onChange={(value) => handleMetadataChange('gradeLevel', value || 1)}
+                                                        style={{ width: '100%', marginTop: 8 }}
+                                                    />
+                                                </Col>
+                                                <Col xs={24} sm={16}>
+                                                    <Text strong>URL ảnh (tùy chọn)</Text>
+                                                    <Input
+                                                        placeholder="https://example.com/image.jpg"
+                                                        value={document.imageUrl || ''}
+                                                        onChange={(e) => handleMetadataChange('imageUrl', e.target.value)}
+                                                        style={{ marginTop: 8 }}
+                                                    />
+                                                </Col>
+                                                <Col xs={24}>
+                                                    <Button type="link" onClick={() => setShowMetadataForm(false)}>Ẩn thông tin</Button>
+                                                </Col>
+                                            </Row>
+                                        </Card>
+                                    )}
                                     <div className="canvas-container-alt chemistry-canvas">
                                         {/* Quill Editor giờ đây render trong một cấu trúc mô phỏng trang giấy */}
                                         <ReactQuill ref={editorRef} theme="snow" value={document.content} onChange={handleContentChange} modules={quillModules} className="quill-editor-alt" />

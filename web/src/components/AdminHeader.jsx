@@ -65,14 +65,7 @@ const AdminHeader = ({ userName = 'Quản trị viên' }) => {
           icon: <UserOutlined />,
           label: 'Hồ sơ cá nhân',
         },
-        {
-          key: 'settings',
-          icon: <SettingOutlined />,
-          label: 'Cài đặt hệ thống',
-        },
-        {
-          type: 'divider',
-        },
+        
         {
           key: 'logout',
           icon: <LogoutOutlined />,

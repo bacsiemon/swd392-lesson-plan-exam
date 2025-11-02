@@ -35,7 +35,7 @@ const RegisterPage = () => {
                 phoneNumber: values.phone, // Backend expects phoneNumber, not phone
                 password: values.password,
                 confirmPassword: values.confirmPassword, // Backend requires confirmPassword
-                role: values.role === 'teacher' ? 1 : 2, // Convert to enum: 1=Teacher, 2=Student
+                role: values.role === 'admin' ? 0 : (values.role === 'teacher' ? 1 : 2), // Convert to enum: 0=Admin, 1=Teacher, 2=Student
                 // Format date properly - backend expects DateTime?
                 dateOfBirth: values.dateOfBirth 
                     ? dayjs(values.dateOfBirth).startOf('day').toISOString() 
@@ -258,6 +258,7 @@ const RegisterPage = () => {
                                         placeholder="Chọn vai trò của bạn"
                                         size="large"
                                     >
+                                        <Option value="admin">Quản trị viên</Option>
                                         <Option value="teacher">Giáo viên</Option>
                                         <Option value="student">Học sinh</Option>
                                     </Select>

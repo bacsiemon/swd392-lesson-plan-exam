@@ -7,18 +7,60 @@ const lessonPlanService = {
    */
   async createLessonPlan(data) {
     try {
-      const response = await api.post('/api/LessonPlan', data);
+      console.log('🔍 Creating lesson plan with data:', data);
+      
+      // Ensure data matches backend DTO structure (PascalCase)
+      const requestData = {
+        Title: data.title || data.Title || '',
+        CreatedByTeacher: data.createdByTeacher || data.CreatedByTeacher || 1,
+        Objectives: data.objectives || data.Objectives || '',
+        Description: data.description || data.Description || '',
+        GradeLevel: data.gradeLevel || data.GradeLevel || 1,
+        ImageUrl: data.imageUrl || data.ImageUrl || null
+      };
+      
+      // Validate required fields
+      if (!requestData.Title || !requestData.Objectives || !requestData.Description) {
+        console.error('❌ Missing required fields:', requestData);
+        return {
+          success: false,
+          error: 'Missing required fields',
+          message: 'Vui lòng điền đầy đủ: Tiêu đề, Mục tiêu và Mô tả'
+        };
+      }
+      
+      const response = await api.post('/api/LessonPlan', requestData);
+      
+      // Backend returns BaseResponse: { StatusCode, Message, Data: LessonPlanResponse }
+      const baseResponse = response.data;
+      const lessonPlanData = baseResponse.data || baseResponse.Data || baseResponse;
+      
+      console.log('✅ Lesson plan created:', {
+        statusCode: baseResponse.statusCode || baseResponse.StatusCode,
+        message: baseResponse.message || baseResponse.Message,
+        lessonPlan: lessonPlanData
+      });
+      
       return {
-        success: true,
-        data: response.data,
-        message: 'Tạo giáo án thành công'
+        success: (baseResponse.statusCode || baseResponse.StatusCode) === 201 || response.status === 201,
+        data: lessonPlanData,
+        message: baseResponse.message || baseResponse.Message || 'Tạo giáo án thành công'
       };
     } catch (error) {
-      console.error('Error creating lesson plan:', error);
+      console.error('❌ Error creating lesson plan:', {
+        error: error,
+        response: error.response,
+        data: error.response?.data,
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message
+      });
+      
+      const errorData = error.response?.data || {};
       return {
         success: false,
-        error: error.response?.data || error.message,
-        message: error.response?.data?.message || 'Không thể tạo giáo án'
+        error: errorData,
+        statusCode: error.response?.status,
+        message: errorData.message || errorData.Message || error.message || 'Không thể tạo giáo án'
       };
     }
   },

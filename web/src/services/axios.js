@@ -63,4 +63,7 @@ export const setAuthToken = (token) => {
 };
 
 // Helper to remove token
-export const removeAuthToken = () => setAuthToken(null);
+export const removeAuthToken = () => {
+  setAuthToken(null);
+  localStorage.removeItem('user_role');
+};

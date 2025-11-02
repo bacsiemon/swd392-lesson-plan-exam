@@ -78,15 +78,82 @@ const LoginPage = () => {
                 );
 
                 // Navigate to appropriate dashboard based on user role
-                const userData = result.data?.user || result.data;
-                const userRole = userData?.role || userData?.roleEnum;
+                // accountService.login returns { success: true, data: LoginResponse, ... }
+                // LoginResponse contains: { Id, Email, FullName, Role (enum: 0/1/2), AccessToken, ... }
+                const loginData = result.data; // This is the LoginResponse directly
+                
+                // Get role from multiple sources
+                const roleFromResponse = loginData?.role || loginData?.Role || loginData?.roleEnum || loginData?.RoleEnum;
+                const roleFromStorage = localStorage.getItem('user_role');
+                const roleFromSession = sessionStorage.getItem('user_role');
+                
+                // Get token to decode role
+                const token = localStorage.getItem('auth_token');
+                let roleFromToken = null;
+                if (token) {
+                    try {
+                        const base64Url = token.split('.')[1];
+                        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                        const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
+                            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                        }).join(''));
+                        const decoded = JSON.parse(jsonPayload);
+                        roleFromToken = decoded.role || decoded.Role || 
+                                       decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || 
+                                       decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role'];
+                    } catch (error) {
+                        console.error('Error decoding token to get role:', error);
+                    }
+                }
+                
+                // Determine final role (priority: storage > token > response)
+                // Role should already be saved to storage by accountService.login
+                const finalRole = roleFromStorage || roleFromSession || roleFromToken || roleFromResponse;
+                
+                console.log('🔍 Login - Determining navigation:', {
+                    loginData: loginData,
+                    roleFromResponse,
+                    roleFromStorage,
+                    roleFromSession,
+                    roleFromToken,
+                    finalRole,
+                    roleType: typeof finalRole
+                });
+                
+                // Normalize role for comparison - handle both number and string
+                let roleNum = null;
+                let roleStr = '';
+                
+                if (finalRole !== null && finalRole !== undefined) {
+                    if (typeof finalRole === 'number') {
+                        roleNum = finalRole;
+                        roleStr = String(finalRole);
+                    } else {
+                        roleStr = String(finalRole).trim().toLowerCase();
+                        roleNum = parseInt(roleStr) || null;
+                    }
+                }
+                
+                console.log('🔍 Normalized role:', { roleNum, roleStr, finalRole });
                 
                 // Determine navigation based on role
-                if (userRole === 'teacher' || userRole === 1 || userRole === 'Teacher') {
-                    navigate('/teacher-dashboard');
-                } else if (userRole === 'admin' || userRole === 0 || userRole === 'Admin') {
-                    navigate('/admin');
-                } else {
+                // Admin: 0, '0', 'Admin', 'admin', 'ADMIN'
+                if (roleNum === 0 || roleStr === '0' || roleStr === 'admin') {
+                    console.log('✅ Navigating to AdminUserManagement (admin role)');
+                    navigate('/admin/users');
+                }
+                // Teacher: 1, '1', 'Teacher', 'teacher', 'TEACHER'
+                else if (roleNum === 1 || roleStr === '1' || roleStr === 'teacher') {
+                    console.log('✅ Navigating to Teacher Dashboard (teacher role)');
+                    navigate('/dashboard');
+                }
+                // Student: 2, '2', 'Student', 'student', 'STUDENT' (or default)
+                else {
+                    console.log('✅ Navigating to Student Dashboard (student role or default)', {
+                        roleNum,
+                        roleStr,
+                        finalRole
+                    });
                     navigate('/student-dashboard');
                 }
             } else {

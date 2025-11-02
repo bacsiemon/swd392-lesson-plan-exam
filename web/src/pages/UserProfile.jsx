@@ -35,7 +35,7 @@ import '../styles/TeacherProfile.css';
 const { Title, Text, Paragraph } = Typography;
 
 // Universal Profile component for both students and teachers
-const TeacherProfile = () => {
+const UserProfile = () => {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [editing, setEditing] = useState(false);
@@ -61,6 +61,7 @@ const TeacherProfile = () => {
                         date_of_birth: profileData.dateOfBirth || profileData.date_of_birth || null,
                         school_name: profileData.schoolName || profileData.school_name || '',
                         bio: profileData.bio || profileData.biography || '',
+                        role: profileData.role || profileData.roleEnum || profileData.Role,
                         // Store raw data for update
                         rawData: profileData
                     });
@@ -268,7 +269,7 @@ const TeacherProfile = () => {
                                     <span>Số điện thoại</span>
                                 </div>
                                 <Text className="info-value" copyable>
-                                    {profile.phone}
+                                    {profile.phone || 'Chưa cập nhật'}
                                 </Text>
                             </div>
                         </Col>
@@ -288,13 +289,13 @@ const TeacherProfile = () => {
                             </Col>
                         )}
 
-                        {/* School */}
+                        {/* School - Only show for teachers */}
                         {profile.school_name && (
                             <Col xs={24}>
                                 <div className="info-item">
                                     <div className="info-label">
                                         <HomeOutlined className="info-icon" />
-                                        <span>Trường công tác</span>
+                                        <span>{profile.role === 'Student' || profile.role === 'student' || profile.role === 2 ? 'Trường học' : 'Trường công tác'}</span>
                                     </div>
                                     <Text className="info-value">
                                         {profile.school_name}
@@ -349,7 +350,6 @@ const TeacherProfile = () => {
                             <Form.Item
                                 name="phone"
                                 label="Số điện thoại"
-                                rules={[{ required: true, message: 'Vui lòng nhập số điện thoại' }]}
                             >
                                 <Input placeholder="Nhập số điện thoại" />
                             </Form.Item>
@@ -359,7 +359,6 @@ const TeacherProfile = () => {
                             <Form.Item
                                 name="date_of_birth"
                                 label="Ngày sinh"
-                                rules={[{ required: true, message: 'Vui lòng chọn ngày sinh' }]}
                             >
                                 <Input
                                     type="date"
@@ -372,10 +371,9 @@ const TeacherProfile = () => {
                         <Col xs={24}>
                             <Form.Item
                                 name="school_name"
-                                label="Trường công tác"
-                                rules={[{ required: true, message: 'Vui lòng nhập tên trường' }]}
+                                label={profile.role === 'Student' || profile.role === 'student' || profile.role === 2 ? 'Trường học' : 'Trường công tác'}
                             >
-                                <Input placeholder="Nhập tên trường công tác" />
+                                <Input placeholder={profile.role === 'Student' || profile.role === 'student' || profile.role === 2 ? 'Nhập tên trường học' : 'Nhập tên trường công tác'} />
                             </Form.Item>
                         </Col>
 
@@ -386,7 +384,7 @@ const TeacherProfile = () => {
                             >
                                 <Input.TextArea
                                     rows={4}
-                                    placeholder="Giới thiệu về bản thân, kinh nghiệm giảng dạy..."
+                                    placeholder="Giới thiệu về bản thân..."
                                 />
                             </Form.Item>
                         </Col>
@@ -408,4 +406,5 @@ const TeacherProfile = () => {
     );
 };
 
-export default TeacherProfile;
+export default UserProfile;
+
