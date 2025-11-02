@@ -50,9 +50,8 @@ namespace LessonPlanExam.API.Attributes
                 context.Result = new JsonResult(new
                 {
                     StatusCode = 401,
-                    Message = "Authentication required. Please provide a valid JWT token.",
-                    Data = (object?)null,
-                    Errors = "Unauthorized access"
+                    Data = "Please provide a valid JWT token.",
+                    Errors = "MISSING_JWT"
                 })
                 {
                     StatusCode = 401
@@ -74,9 +73,8 @@ namespace LessonPlanExam.API.Attributes
                 context.Result = new JsonResult(new
                 {
                     StatusCode = 401,
-                    Message = "Invalid token. Role information not found.",
-                    Data = (object?)null,
-                    Errors = "Missing role claim in JWT token"
+                    Data = "Role information not found.",
+                    Errors = "INVALID_JWT"
                 })
                 {
                     StatusCode = 401
@@ -90,9 +88,8 @@ namespace LessonPlanExam.API.Attributes
                 context.Result = new JsonResult(new
                 {
                     StatusCode = 401,
-                    Message = "Invalid role in token.",
-                    Data = (object?)null,
-                    Errors = $"Invalid role value: {userRoleClaim}"
+                    Data = "Invalid role in token.",
+                    Errors = "INVALID_JWT"
                 })
                 {
                     StatusCode = 401
@@ -107,9 +104,8 @@ namespace LessonPlanExam.API.Attributes
                 context.Result = new JsonResult(new
                 {
                     StatusCode = 403,
-                    Message = $"Access denied. Required roles: {allowedRoleNames}. Your role: {userRole}",
-                    Data = (object?)null,
-                    Errors = "Insufficient permissions"
+                    Data = $"Access denied. Required roles: {allowedRoleNames}. Your role: {userRole}",
+                    Errors = "INSUFFICIENT_PERMISSIONS"
                 })
                 {
                     StatusCode = 403
