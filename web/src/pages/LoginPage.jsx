@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 import Logo from '../Assets/Logo.png';
 import ChemistryBackground from '../components/ChemistryBackground';
+import accountService from '../services/accountService';
 const { Title, Text, Link } = Typography;
 const { Content } = Layout;
 const openNotification = (type, message, description) => {
@@ -43,17 +44,22 @@ const LoginPage = () => {
             }
         }
     }, [form]);
-    const onFinish = (values) => {
+    const onFinish = async (values) => {
         setLoading(true);
-        setTimeout(() => {
-            setLoading(false);
-            if (values.username === 'chemistry' && values.password === '123') {
+        try {
+            // Use username field as email (since label says it can be email)
+            const email = values.username;
+            const password = values.password;
+
+            const result = await accountService.login(email, password);
+
+            if (result.success) {
                 // Handle remember password functionality
                 if (values.remember) {
                     // Save credentials to localStorage
                     const credentialsToSave = {
-                        username: values.username,
-                        password: values.password,
+                        username: email,
+                        password: password,
                         remember: true,
                         savedAt: new Date().toISOString()
                     };
@@ -67,22 +73,39 @@ const LoginPage = () => {
 
                 openNotification(
                     'success',
-                    'Đăng nhập thành công',
+                    result.message || 'Đăng nhập thành công',
                     'Chào mừng bạn đến với Trang web Giáo dục Hóa học.'
                 );
 
                 // Navigate to appropriate dashboard based on user role
-                // For demo purposes, navigate to student dashboard
-                navigate('/student-dashboard');
-
+                const userData = result.data?.user || result.data;
+                const userRole = userData?.role || userData?.roleEnum;
+                
+                // Determine navigation based on role
+                if (userRole === 'teacher' || userRole === 1 || userRole === 'Teacher') {
+                    navigate('/teacher-dashboard');
+                } else if (userRole === 'admin' || userRole === 0 || userRole === 'Admin') {
+                    navigate('/admin');
+                } else {
+                    navigate('/student-dashboard');
+                }
             } else {
                 openNotification(
                     'error',
                     'Lỗi Đăng nhập',
-                    'Tên người dùng hoặc mật khẩu không đúng. Vui lòng thử lại.'
+                    result.message || 'Tên người dùng hoặc mật khẩu không đúng. Vui lòng thử lại.'
                 );
             }
-        }, 1500);
+        } catch (error) {
+            console.error('Login error:', error);
+            openNotification(
+                'error',
+                'Lỗi Đăng nhập',
+                'Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại.'
+            );
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleGoogleLogin = () => {

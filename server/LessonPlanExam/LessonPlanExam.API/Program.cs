@@ -50,6 +50,34 @@ if (jwtSettings != null && !string.IsNullOrEmpty(jwtSettings.SecretKey))
 
 builder.Services.AddAuthorization();
 
+// Add CORS configuration
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        if (builder.Environment.IsDevelopment())
+        {
+            // In development, allow all localhost ports
+            policy.SetIsOriginAllowed(origin =>
+            {
+                var uri = new Uri(origin);
+                return uri.Host == "localhost" || uri.Host == "127.0.0.1";
+            })
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();
+        }
+        else
+        {
+            // In production, use specific origins
+            policy.WithOrigins("http://localhost:5173", "http://localhost:3000", "http://localhost:5174", "http://localhost:5175")
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
+    });
+});
+
 // Get assemblies that contain validators
 var apiAssembly = Assembly.GetExecutingAssembly(); // API assembly for API DTOs and validators
 var repositoriesAssembly = Assembly.GetAssembly(typeof(ExampleRequest))!; // Repositories assembly
@@ -95,13 +123,20 @@ var app = builder.Build();
 // Add exception middleware first to catch all unhandled exceptions
 app.UseMiddleware<ExceptionMiddleware>();
 
+// Enable CORS - must be before UseAuthentication, UseAuthorization, and UseHttpsRedirection
+app.UseCors("AllowReactApp");
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// Only redirect to HTTPS in production
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication(); // Add authentication middleware
 app.UseAuthorization();

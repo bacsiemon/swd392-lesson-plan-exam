@@ -4,6 +4,7 @@ import { PlusOutlined, FolderOpenOutlined, FileTextOutlined, SaveOutlined, Uploa
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import '../styles/CreateLessonPlanPage.css';
+import lessonPlanService from '../services/lessonPlanService';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -40,7 +41,31 @@ const CreateLessonPlanPage = () => {
     const [activePlanId, setActivePlanId] = useState(null);
     const [saveStatus, setSaveStatus] = useState('saved');
     const [outline, setOutline] = useState([]);
+    const [savedPlans, setSavedPlans] = useState([]);
+    const [loadingPlans, setLoadingPlans] = useState(false);
     const editorRef = useRef(null);
+
+    // --- LOAD SAVED LESSON PLANS ON MOUNT ---
+    useEffect(() => {
+        const loadSavedPlans = async () => {
+            setLoadingPlans(true);
+            try {
+                const result = await lessonPlanService.getCurrentTeacherLessonPlans();
+                if (result.success && result.data) {
+                    // Transform API data to match component format
+                    const plans = Array.isArray(result.data) ? result.data : (result.data.items || []);
+                    setSavedPlans(plans);
+                } else {
+                    console.error('Failed to load lesson plans:', result.message);
+                }
+            } catch (error) {
+                console.error('Error loading lesson plans:', error);
+            } finally {
+                setLoadingPlans(false);
+            }
+        };
+        loadSavedPlans();
+    }, []);
 
     // --- TỰ ĐỘNG TẠO MỤC LỤC ---
     useEffect(() => {
@@ -64,13 +89,121 @@ const CreateLessonPlanPage = () => {
     }, [document?.content]);
 
     // --- CÁC HÀM XỬ LÝ ---
-    const handleSave = () => { /* Giữ nguyên */ };
+    const handleSave = async () => {
+        if (!document || !document.title || !document.content) {
+            message.warning('Vui lòng nhập tiêu đề và nội dung giáo án');
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const lessonPlanData = {
+                title: document.title,
+                content: document.content,
+                // Add other fields as needed based on API requirements
+            };
+
+            let result;
+            if (activePlanId) {
+                // Update existing lesson plan
+                result = await lessonPlanService.updateLessonPlan(activePlanId, lessonPlanData);
+            } else {
+                // Create new lesson plan
+                result = await lessonPlanService.createLessonPlan(lessonPlanData);
+                if (result.success && result.data?.id) {
+                    setActivePlanId(result.data.id);
+                }
+            }
+
+            if (result.success) {
+                setSaveStatus('saved');
+                message.success(result.message || 'Lưu giáo án thành công');
+                // Refresh saved plans list
+                const plansResult = await lessonPlanService.getCurrentTeacherLessonPlans();
+                if (plansResult.success && plansResult.data) {
+                    const plans = Array.isArray(plansResult.data) ? plansResult.data : (plansResult.data.items || []);
+                    setSavedPlans(plans);
+                }
+            } else {
+                message.error(result.message || 'Không thể lưu giáo án');
+            }
+        } catch (error) {
+            console.error('Error saving lesson plan:', error);
+            message.error('Có lỗi xảy ra khi lưu giáo án');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handlePrint = () => { if (!document) return; window.print(); };
-    const handleUpload = (file) => { /* Giữ nguyên */ };
-    const handleContentChange = (content) => { setDocument(prev => ({ ...prev, content })); setSaveStatus('unsaved'); };
-    const handleTitleChange = (title) => { setDocument(prev => ({ ...prev, title })); setSaveStatus('unsaved'); };
-    const handleLoadSavedPlan = (plan) => { setIsLoading(true); setTimeout(() => { setDocument({title: plan.title, content: plan.content}); setActivePlanId(plan.id); setSaveStatus('saved'); setIsLoading(false); message.info(`Đã mở "${plan.title}".`); }, 500); };
-    const handleGenerateClick = () => { setIsLoading(true); setActivePlanId(null); setTimeout(() => { setDocument({title: MOCK_SAVED_PLANS[0].title, content: MOCK_SAVED_PLANS[0].content}); setSaveStatus('unsaved'); setIsLoading(false); message.success('AI đã tạo giáo án mới!'); }, 1500); };
+
+    const handleUpload = async (file) => {
+        if (!activePlanId) {
+            message.warning('Vui lòng lưu giáo án trước khi tải lên file');
+            return false;
+        }
+
+        try {
+            const result = await lessonPlanService.uploadFile(activePlanId, file);
+            if (result.success) {
+                message.success(result.message || 'Tải lên file thành công');
+            } else {
+                message.error(result.message || 'Không thể tải lên file');
+            }
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            message.error('Có lỗi xảy ra khi tải lên file');
+        }
+        return false; // Prevent default upload behavior
+    };
+
+    const handleContentChange = (content) => { 
+        setDocument(prev => ({ ...prev, content })); 
+        setSaveStatus('unsaved'); 
+    };
+
+    const handleTitleChange = (title) => { 
+        setDocument(prev => ({ ...prev, title })); 
+        setSaveStatus('unsaved'); 
+    };
+
+    const handleLoadSavedPlan = async (plan) => {
+        setIsLoading(true);
+        try {
+            const result = await lessonPlanService.getLessonPlanById(plan.id);
+            if (result.success && result.data) {
+                const planData = result.data;
+                setDocument({
+                    title: planData.title || plan.title,
+                    content: planData.content || plan.content || ''
+                });
+                setActivePlanId(plan.id);
+                setSaveStatus('saved');
+                message.info(`Đã mở "${planData.title || plan.title}".`);
+            } else {
+                message.error(result.message || 'Không thể tải giáo án');
+            }
+        } catch (error) {
+            console.error('Error loading lesson plan:', error);
+            message.error('Có lỗi xảy ra khi tải giáo án');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleGenerateClick = () => { 
+        setIsLoading(true); 
+        setActivePlanId(null); 
+        setTimeout(() => { 
+            setDocument({
+                title: MOCK_SAVED_PLANS[0].title, 
+                content: MOCK_SAVED_PLANS[0].content
+            }); 
+            setSaveStatus('unsaved'); 
+            setIsLoading(false); 
+            message.success('AI đã tạo giáo án mới!'); 
+        }, 1500); 
+    };
     const handleNavigate = (element) => {
         if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -97,12 +230,20 @@ const CreateLessonPlanPage = () => {
                         <Divider />
                         <Title level={5} className="panel-title-alt chemistry-title"><FolderOpenOutlined /> Thư viện Giáo án</Title>
                         <div className="saved-docs-list-alt">
-                            {MOCK_SAVED_PLANS.map(plan => (
-                                <div key={plan.id} className={`saved-doc-item-alt ${plan.id === activePlanId ? 'active' : ''}`} onClick={() => handleLoadSavedPlan(plan)}>
-                                    <Text strong ellipsis>{plan.title}</Text>
-                                    <Text type="secondary">{plan.createdAt}</Text>
-                                </div>
-                            ))}
+                            {loadingPlans ? (
+                                <Spin size="small" tip="Đang tải..." />
+                            ) : savedPlans.length === 0 ? (
+                                <Text type="secondary">Chưa có giáo án nào</Text>
+                            ) : (
+                                savedPlans.map(plan => (
+                                    <div key={plan.id} className={`saved-doc-item-alt ${plan.id === activePlanId ? 'active' : ''}`} onClick={() => handleLoadSavedPlan(plan)}>
+                                        <Text strong ellipsis>{plan.title || plan.name}</Text>
+                                        <Text type="secondary">
+                                            {plan.createdAt ? new Date(plan.createdAt).toLocaleDateString('vi-VN') : 'Không có ngày'}
+                                        </Text>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
                 </Col>

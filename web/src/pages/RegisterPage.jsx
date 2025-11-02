@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Card, Typography, Row, Col, Layout, notification, Divider, Select } from 'antd';
-import { GoogleOutlined, UserOutlined, LockOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
+import { Form, Input, Button, Card, Typography, Row, Col, Layout, notification, Divider, Select, DatePicker } from 'antd';
+import { GoogleOutlined, UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, CalendarOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import dayjs from 'dayjs';
 
 import Logo from '../Assets/Logo.png';
 import ChemistryBackground from '../components/ChemistryBackground';
+import accountService from '../services/accountService';
 
 const { Title, Text, Link } = Typography;
 const { Content } = Layout;
@@ -23,21 +25,72 @@ const RegisterPage = () => {
     const [form] = Form.useForm();
     const navigate = useNavigate();
 
-    const onFinish = (values) => {
+    const onFinish = async (values) => {
         setLoading(true);
-        setTimeout(() => {
-            setLoading(false);
-            console.log('Register values:', values);
+        try {
+            // Prepare registration data (remove confirmPassword as it's not needed in API)
+            const registerData = {
+                fullName: values.fullName,
+                email: values.email,
+                phoneNumber: values.phone, // Backend expects phoneNumber, not phone
+                password: values.password,
+                confirmPassword: values.confirmPassword, // Backend requires confirmPassword
+                role: values.role === 'teacher' ? 1 : 2, // Convert to enum: 1=Teacher, 2=Student
+                // Format date properly - backend expects DateTime?
+                dateOfBirth: values.dateOfBirth 
+                    ? dayjs(values.dateOfBirth).startOf('day').toISOString() 
+                    : undefined, // Use undefined instead of null for optional fields
+            };
+
+            const result = await accountService.register(registerData);
+
+            if (result.success) {
+                openNotification(
+                    'success',
+                    result.message || 'Đăng ký thành công',
+                    'Tài khoản của bạn đã được tạo thành công. Vui lòng kiểm tra email để xác thực tài khoản.'
+                );
+                // Chuyển về trang login sau khi đăng ký thành công
+                setTimeout(() => {
+                    navigate('/login');
+                }, 2000);
+            } else {
+                // Show detailed error message
+                const errorDetails = result.error || {};
+                let errorMsg = result.message || 'Đăng ký thất bại. Vui lòng thử lại.';
+                
+                // Map common error codes to Vietnamese messages
+                if (errorMsg.includes('EMAIL_ALREADY_EXISTS')) {
+                    errorMsg = 'Email này đã được sử dụng. Vui lòng sử dụng email khác.';
+                } else if (errorMsg.includes('PASSWORD_NOT_STRONG_ENOUGH')) {
+                    errorMsg = 'Mật khẩu không đủ mạnh. Mật khẩu phải có ít nhất 6 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt.';
+                } else if (errorMsg.includes('REGISTRATION_ERROR')) {
+                    errorMsg = 'Lỗi hệ thống khi đăng ký. Vui lòng thử lại sau.';
+                }
+                
+                openNotification(
+                    'error',
+                    'Lỗi Đăng ký',
+                    errorMsg
+                );
+                
+                // Log full error for debugging
+                console.error('Registration failed:', {
+                    message: errorMsg,
+                    statusCode: result.statusCode,
+                    error: errorDetails
+                });
+            }
+        } catch (error) {
+            console.error('Register error:', error);
             openNotification(
-                'success',
-                'Đăng ký thành công',
-                'Tài khoản của bạn đã được tạo thành công. Vui lòng kiểm tra email để xác thực tài khoản.'
+                'error',
+                'Lỗi Đăng ký',
+                'Có lỗi xảy ra khi đăng ký. Vui lòng thử lại.'
             );
-            // Chuyển về trang login sau khi đăng ký thành công
-            setTimeout(() => {
-                navigate('/login');
-            }, 2000);
-        }, 1500);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleGoogleRegister = () => {
@@ -156,6 +209,42 @@ const RegisterPage = () => {
                                         prefix={<PhoneOutlined className="site-form-item-icon" />}
                                         placeholder="0123456789"
                                         size="large"
+                                    />
+                                </Form.Item>
+
+                                {/* Ngày sinh */}
+                                <Form.Item
+                                    name="dateOfBirth"
+                                    rules={[
+                                        { required: true, message: 'Vui lòng chọn ngày sinh!' },
+                                        {
+                                            validator: (_, value) => {
+                                                if (!value) {
+                                                    return Promise.reject(new Error('Vui lòng chọn ngày sinh!'));
+                                                }
+                                                const age = dayjs().diff(value, 'year');
+                                                if (age < 13) {
+                                                    return Promise.reject(new Error('Bạn phải ít nhất 13 tuổi để đăng ký!'));
+                                                }
+                                                if (age > 100) {
+                                                    return Promise.reject(new Error('Ngày sinh không hợp lệ!'));
+                                                }
+                                                return Promise.resolve();
+                                            },
+                                        },
+                                    ]}
+                                    label="Ngày sinh"
+                                >
+                                    <DatePicker
+                                        placeholder="Chọn ngày sinh"
+                                        size="large"
+                                        style={{ width: '100%' }}
+                                        format="DD/MM/YYYY"
+                                        suffixIcon={<CalendarOutlined />}
+                                        disabledDate={(current) => {
+                                            // Disable future dates and dates more than 100 years ago
+                                            return current && (current > dayjs().endOf('day') || current < dayjs().subtract(100, 'year'));
+                                        }}
                                     />
                                 </Form.Item>
 
