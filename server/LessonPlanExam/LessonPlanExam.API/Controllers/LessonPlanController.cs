@@ -18,7 +18,7 @@ namespace LessonPlanExam.API.Controllers
             _lessonPlanService = lessonPlanService;
         }
 
-        /// <summary>User</summary>
+        /// <summary>Teacher</summary>
         /// <remarks>
         /// 
         /// Create a new lesson plan.
@@ -65,7 +65,7 @@ namespace LessonPlanExam.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        /// <summary>User</summary>
+        /// <summary>Teacher</summary>
         /// <remarks>
         /// 
         /// Get paginated list of lesson plans for the current authenticated teacher.
@@ -119,7 +119,7 @@ namespace LessonPlanExam.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        /// <summary>User</summary>
+        /// <summary>Teacher</summary>
         /// <remarks>
         /// 
         /// Update an existing lesson plan.
@@ -169,7 +169,7 @@ namespace LessonPlanExam.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        /// <summary>User</summary>
+        /// <summary>Teacher</summary>
         /// <remarks>
         /// 
         /// Delete a lesson plan permanently.
@@ -197,7 +197,7 @@ namespace LessonPlanExam.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        /// <summary>User</summary>
+        /// <summary>Teacher</summary>
         /// <remarks>
         /// 
         /// Upload a file attachment to an existing lesson plan.
@@ -242,7 +242,7 @@ namespace LessonPlanExam.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        /// <summary>User</summary>
+        /// <summary>Teacher</summary>
         /// <remarks>
         /// 
         /// Delete a file attachment from a lesson plan.
