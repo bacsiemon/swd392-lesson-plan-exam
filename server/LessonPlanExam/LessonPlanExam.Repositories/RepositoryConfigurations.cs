@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using LessonPlanExam.Repositories.Repositories;
 
 namespace LessonPlanExam.Repositories
 {
@@ -37,6 +38,10 @@ namespace LessonPlanExam.Repositories
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<Interfaces.IQuestionBankRepository, Repositories.QuestionBankRepository>();
             services.AddScoped<Interfaces.IQuestionRepository, Repositories.QuestionRepository>();
+            services.AddScoped<Interfaces.IExamMatrixRepository, Repositories.ExamMatrixRepository>();
+            services.AddScoped<Interfaces.IExamRepository, Repositories.ExamRepository>();
+            services.AddScoped<Interfaces.IExamAttemptRepository, Repositories.ExamAttemptRepository>();
+            services.AddScoped<Interfaces.IExamAttemptAnswerRepository, Repositories.ExamAttemptAnswerRepository>();
         }
     }
 }
