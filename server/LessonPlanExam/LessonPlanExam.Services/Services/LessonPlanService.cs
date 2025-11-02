@@ -26,6 +26,15 @@ namespace LessonPlanExam.Services.Services
         public async Task<BaseResponse> CreateLessonPlanAsync(CreateLessonPlanRequest request)
         {
             // Get current user ID from JWT token via AccountService
+            var currentRole = _accountService.GetCurrentUserRole();
+            if (currentRole != Repositories.Enums.EUserRole.Teacher)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 401,
+                    Errors = "TEACHER_ONLY"
+                };
+            }
             var currentUserId = _accountService.GetCurrentUserId();
             
             var lessonPlan = request.ToEntity();

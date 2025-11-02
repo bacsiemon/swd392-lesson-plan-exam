@@ -60,6 +60,38 @@ namespace LessonPlanExam.API.Controllers
         }
 
         /// <summary>
+        /// API đăng ký tài khoản học sinh
+        /// Tạo tài khoản mới với role Student và entity Student tương ứng
+        /// </summary>
+        /// <param name="request">Thông tin đăng ký học sinh</param>
+        /// <returns>Xác nhận tạo tài khoản học sinh thành công và thông tin tài khoản</returns>
+        [HttpPost("register-student")]
+        [AllowAnonymous] // Cho phép truy cập không cần xác thực
+        public async Task<IActionResult> RegisterStudentAsync([FromBody] StudentRegisterRequest request)
+        {
+            // Gọi service để xử lý logic đăng ký tài khoản học sinh
+            var response = await _accountService.RegisterStudentAsync(request);
+            // Trả về kết quả (201 Created nếu thành công)
+            return StatusCode(response.StatusCode, response);
+        }
+
+        /// <summary>
+        /// API đăng ký tài khoản giáo viên
+        /// Tạo tài khoản mới với role Teacher và entity Teacher tương ứng (bao gồm school name)
+        /// </summary>
+        /// <param name="request">Thông tin đăng ký giáo viên</param>
+        /// <returns>Xác nhận tạo tài khoản giáo viên thành công và thông tin tài khoản</returns>
+        [HttpPost("register-teacher")]
+        [AllowAnonymous] // Cho phép truy cập không cần xác thực
+        public async Task<IActionResult> RegisterTeacherAsync([FromBody] TeacherRegisterRequest request)
+        {
+            // Gọi service để xử lý logic đăng ký tài khoản giáo viên
+            var response = await _accountService.RegisterTeacherAsync(request);
+            // Trả về kết quả (201 Created nếu thành công)
+            return StatusCode(response.StatusCode, response);
+        }
+
+        /// <summary>
         /// API yêu cầu đặt lại mật khẩu qua email
         /// Gửi email chứa token để reset mật khẩu đến địa chỉ email của người dùng
         /// </summary>

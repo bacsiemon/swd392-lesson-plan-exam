@@ -6,6 +6,7 @@ using LessonPlanExam.Repositories.UoW;
 using LessonPlanExam.Services.Configuration;
 using LessonPlanExam.Services.Interfaces;
 using LessonPlanExam.Services.Mapping;
+using LessonPlanExam.Repositories.Enums;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -153,6 +154,95 @@ namespace LessonPlanExam.Services.Services
             }
         }
 
+        /// <summary>
+        /// Extracts the user role from the current JWT token in the HTTP context
+        /// </summary>
+        /// <returns>The user role if the token is valid and present</returns>
+        /// <exception cref="UnauthorizedException">Thrown when no token is found or token is invalid</exception>
+        public EUserRole GetCurrentUserRole()
+        {
+            var context = _httpContextAccessor.HttpContext;
+            if (context == null)
+            {
+                throw new UnauthorizedException("HTTP_CONTEXT_NOT_AVAILABLE");
+            }
+
+            // Try to get user role from claims first (if JWT authentication is configured)
+            var roleClaim = context.User?.FindFirst(ClaimTypes.Role) 
+                           ?? context.User?.FindFirst("role") 
+                           ?? context.User?.FindFirst("userRole")
+                           ?? context.User?.FindFirst("roleEnum");
+
+            if (roleClaim != null)
+            {
+                // Try to parse as enum value first (0, 1, 2)
+                if (int.TryParse(roleClaim.Value, out var roleInt) && Enum.IsDefined(typeof(EUserRole), roleInt))
+                {
+                    return (EUserRole)roleInt;
+                }
+
+                // Try to parse as enum name (Admin, Teacher, Student)
+                if (Enum.TryParse<EUserRole>(roleClaim.Value, true, out var roleEnum))
+                {
+                    return roleEnum;
+                }
+            }
+
+            // Fallback: Try to extract from Authorization header directly
+            var authorizationHeader = context.Request.Headers.Authorization.FirstOrDefault();
+            if (string.IsNullOrEmpty(authorizationHeader))
+            {
+                throw new UnauthorizedException("AUTHORIZATION_HEADER_MISSING");
+            }
+
+            if (!authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new UnauthorizedException("INVALID_AUTHORIZATION_HEADER_FORMAT");
+            }
+
+            var token = authorizationHeader.Substring("Bearer ".Length).Trim();
+            if (string.IsNullOrEmpty(token))
+            {
+                throw new UnauthorizedException("JWT_TOKEN_MISSING");
+            }
+
+            try
+            {
+                var jwtHandler = new JwtSecurityTokenHandler();
+                var jsonToken = jwtHandler.ReadJwtToken(token);
+
+                // Try different claim names that might contain the user role
+                var roleFromToken = jsonToken.Claims.FirstOrDefault(x => 
+                    x.Type == ClaimTypes.Role || 
+                    x.Type == "role" || 
+                    x.Type == "userRole" || 
+                    x.Type == "roleEnum")?.Value;
+
+                if (string.IsNullOrEmpty(roleFromToken))
+                {
+                    throw new UnauthorizedException("USER_ROLE_NOT_FOUND_IN_TOKEN");
+                }
+
+                // Try to parse as enum value first (0, 1, 2)
+                if (int.TryParse(roleFromToken, out var roleIntFromToken) && Enum.IsDefined(typeof(EUserRole), roleIntFromToken))
+                {
+                    return (EUserRole)roleIntFromToken;
+                }
+
+                // Try to parse as enum name (Admin, Teacher, Student)
+                if (Enum.TryParse<EUserRole>(roleFromToken, true, out var roleEnumFromToken))
+                {
+                    return roleEnumFromToken;
+                }
+
+                throw new UnauthorizedException("INVALID_USER_ROLE_FORMAT_IN_TOKEN");
+            }
+            catch (Exception ex) when (!(ex is UnauthorizedException))
+            {
+                throw new UnauthorizedException("INVALID_JWT_TOKEN");
+            }
+        }
+
         #region Authentication Methods
 
         public async Task<BaseResponse> LoginAsync(LoginRequest request)
@@ -258,6 +348,7 @@ namespace LessonPlanExam.Services.Services
                 _unitOfWork.AccountRepository.Create(account);
                 await _unitOfWork.SaveChangesAsync();
 
+
                 // Send welcome email
                 try
                 {
@@ -284,6 +375,144 @@ namespace LessonPlanExam.Services.Services
                 {
                     StatusCode = 500,
                     Message = $"REGISTRATION_ERROR: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<BaseResponse> RegisterStudentAsync(StudentRegisterRequest request)
+        {
+            try
+            {
+                // Check if email already exists
+                var accounts = await _unitOfWork.AccountRepository.GetAllAsync();
+                var existingAccount = accounts.FirstOrDefault(x => x.NormalizedEmail == request.Email.ToUpperInvariant());
+
+                if (existingAccount != null)
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 400,
+                        Message = "EMAIL_ALREADY_EXISTS"
+                    };
+                }
+
+                // Validate password strength
+                if (!PasswordHelper.IsStrongPassword(request.Password))
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 400,
+                        Message = "PASSWORD_NOT_STRONG_ENOUGH"
+                    };
+                }
+
+                // Create new account
+                var account = request.ToEntity();
+                account.PasswordHash = PasswordHelper.HashPassword(request.Password);
+
+                _unitOfWork.AccountRepository.Create(account);
+                await _unitOfWork.SaveChangesAsync();
+
+                // Create student entity
+                var student = request.ToStudentEntity(account.Id);
+                _unitOfWork.StudentRepository.Create(student);
+                await _unitOfWork.SaveChangesAsync();
+
+                // Send welcome email
+                try
+                {
+                    await _emailService.SendWelcomeEmailAsync(account.Email, account.FullName ?? account.Email);
+                }
+                catch (Exception emailEx)
+                {
+                    // Log email error but don't fail registration
+                    Console.WriteLine($"Failed to send welcome email: {emailEx.Message}");
+                }
+
+                var studentRegisterResponse = account.ToStudentRegisterResponse(student);
+
+                return new BaseResponse
+                {
+                    StatusCode = 201,
+                    Message = "STUDENT_REGISTRATION_SUCCESS",
+                    Data = studentRegisterResponse
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 500,
+                    Message = $"STUDENT_REGISTRATION_ERROR: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<BaseResponse> RegisterTeacherAsync(TeacherRegisterRequest request)
+        {
+            try
+            {
+                // Check if email already exists
+                var accounts = await _unitOfWork.AccountRepository.GetAllAsync();
+                var existingAccount = accounts.FirstOrDefault(x => x.NormalizedEmail == request.Email.ToUpperInvariant());
+
+                if (existingAccount != null)
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 400,
+                        Message = "EMAIL_ALREADY_EXISTS"
+                    };
+                }
+
+                // Validate password strength
+                if (!PasswordHelper.IsStrongPassword(request.Password))
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 400,
+                        Message = "PASSWORD_NOT_STRONG_ENOUGH"
+                    };
+                }
+
+                // Create new account
+                var account = request.ToEntity();
+                account.PasswordHash = PasswordHelper.HashPassword(request.Password);
+
+                _unitOfWork.AccountRepository.Create(account);
+                await _unitOfWork.SaveChangesAsync();
+
+                // Create teacher entity
+                var teacher = request.ToTeacherEntity(account.Id);
+                _unitOfWork.TeacherRepository.Create(teacher);
+                await _unitOfWork.SaveChangesAsync();
+
+                // Send welcome email
+                try
+                {
+                    await _emailService.SendWelcomeEmailAsync(account.Email, account.FullName ?? account.Email);
+                }
+                catch (Exception emailEx)
+                {
+                    // Log email error but don't fail registration
+                    Console.WriteLine($"Failed to send welcome email: {emailEx.Message}");
+                }
+
+                var teacherRegisterResponse = account.ToTeacherRegisterResponse(teacher);
+
+                return new BaseResponse
+                {
+                    StatusCode = 201,
+                    Message = "TEACHER_REGISTRATION_SUCCESS",
+                    Data = teacherRegisterResponse
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 500,
+                    Message = $"TEACHER_REGISTRATION_ERROR: {ex.Message}"
                 };
             }
         }
