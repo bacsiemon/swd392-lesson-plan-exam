@@ -16,11 +16,11 @@ namespace LessonPlanExam.Repositories.DTOs.QuestionDTOs
         [Required]
         public EQuestionType QuestionTypeEnum { get; set; }
         public int? QuestionDifficultyId { get; set; }
-        public string AdditionalData { get; set; }
+        public string? AdditionalData { get; set; }
         // MC
-        public List<MultipleChoiceAnswerPayload> MultipleChoiceAnswers { get; set; }
+        public List<MultipleChoiceAnswerPayload>? MultipleChoiceAnswers { get; set; }
         // FillBlank
-        public List<FillBlankAnswerPayload> FillBlankAnswers { get; set; }
+        public List<FillBlankAnswerPayload>? FillBlankAnswers { get; set; }
     }
 
     public class MultipleChoiceAnswerPayload
@@ -28,7 +28,7 @@ namespace LessonPlanExam.Repositories.DTOs.QuestionDTOs
         [Required]
         public string AnswerText { get; set; }
         public bool IsCorrect { get; set; }
-        public string Explanation { get; set; }
+        public string? Explanation { get; set; }
         public int? OrderIndex { get; set; }
     }
 
@@ -36,8 +36,8 @@ namespace LessonPlanExam.Repositories.DTOs.QuestionDTOs
     {
         [Required]
         public string CorrectAnswer { get; set; }
-        public string NormalizedCorrectAnswer { get; set; }
-        public string Explanation { get; set; }
+        public string? NormalizedCorrectAnswer { get; set; }
+        public string? Explanation { get; set; }
     }
 
     public class QuestionUpdateRequest : QuestionCreateRequest { }
@@ -50,10 +50,10 @@ namespace LessonPlanExam.Repositories.DTOs.QuestionDTOs
         public string Content { get; set; }
         public EQuestionType QuestionTypeEnum { get; set; }
         public int? QuestionDifficultyId { get; set; }
-        public string AdditionalData { get; set; }
+        public string? AdditionalData { get; set; }
         public bool? IsActive { get; set; }
-        public List<MultipleChoiceAnswerPayload> MultipleChoiceAnswers { get; set; }
-        public List<FillBlankAnswerPayload> FillBlankAnswers { get; set; }
+        public List<MultipleChoiceAnswerPayload>? MultipleChoiceAnswers { get; set; }
+        public List<FillBlankAnswerPayload>? FillBlankAnswers { get; set; }
     }
 
     public class BulkCreateQuestionsRequest
