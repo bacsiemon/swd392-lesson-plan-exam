@@ -5,7 +5,6 @@ namespace LessonPlanExam.Repositories.DTOs.LessonPlanDTOs
     public class CreateLessonPlanRequest
     {
         public string Title { get; set; } = null!;
-        public int CreatedByTeacher { get; set; }
         public string Objectives { get; set; } = null!;
         public string Description { get; set; } = null!;
         public string? ImageUrl { get; set; }
@@ -19,9 +18,6 @@ namespace LessonPlanExam.Repositories.DTOs.LessonPlanDTOs
             RuleFor(x => x.Title)
                 .NotEmpty().WithMessage("TITLE_REQUIRED")
                 .MaximumLength(200).WithMessage("TITLE_MAX_200_CHARACTERS");
-
-            RuleFor(x => x.CreatedByTeacher)
-                .GreaterThan(0).WithMessage("CREATED_BY_TEACHER_REQUIRED");
 
             RuleFor(x => x.Objectives)
                 .NotEmpty().WithMessage("OBJECTIVES_REQUIRED")

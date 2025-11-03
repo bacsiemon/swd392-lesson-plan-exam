@@ -28,6 +28,12 @@ namespace LessonPlanExam.Repositories.UoW
         private IAccountRepository _accountRepository;
         public IAccountRepository AccountRepository => _accountRepository ??= new Repositories.AccountRepository(_context);
 
+        private IStudentRepository _studentRepository;
+        public IStudentRepository StudentRepository => _studentRepository ??= new Repositories.StudentRepository(_context);
+
+        private ITeacherRepository _teacherRepository;
+        public ITeacherRepository TeacherRepository => _teacherRepository ??= new Repositories.TeacherRepository(_context);
+
         private IFileUploadRepository _fileUploadRepository;
         public IFileUploadRepository FileUploadRepository => _fileUploadRepository ??= new Repositories.FileUploadRepository(_context);
 

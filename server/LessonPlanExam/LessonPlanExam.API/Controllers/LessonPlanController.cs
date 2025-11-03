@@ -1,4 +1,6 @@
+using LessonPlanExam.API.Attributes;
 using LessonPlanExam.Repositories.DTOs.LessonPlanDTOs;
+using LessonPlanExam.Repositories.Enums;
 using LessonPlanExam.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -16,7 +18,7 @@ namespace LessonPlanExam.API.Controllers
             _lessonPlanService = lessonPlanService;
         }
 
-        /// <summary>User</summary>
+        /// <summary>Teacher</summary>
         /// <remarks>
         /// 
         /// Create a new lesson plan.
@@ -56,13 +58,14 @@ namespace LessonPlanExam.API.Controllers
         /// <response code="401">Unauthorized. User authentication required.</response>
         /// <response code="500">Internal server error occurred during lesson plan creation. Handled by ExceptionMiddleware.</response>
         [HttpPost]
+        [AuthorizeRoles(EUserRole.Teacher)]
         public async Task<IActionResult> CreateLessonPlanAsync([FromBody] CreateLessonPlanRequest request)
         {
             var response = await _lessonPlanService.CreateLessonPlanAsync(request);
             return StatusCode(response.StatusCode, response);
         }
 
-        /// <summary>User</summary>
+        /// <summary>Teacher</summary>
         /// <remarks>
         /// 
         /// Get paginated list of lesson plans for the current authenticated teacher.
@@ -82,6 +85,7 @@ namespace LessonPlanExam.API.Controllers
         /// <response code="403">Forbidden. User is not a teacher or does not have access to lesson plans.</response>
         /// <response code="500">Internal server error occurred while retrieving lesson plans. Handled by ExceptionMiddleware.</response>
         [HttpGet("current-teacher")]
+        [AuthorizeRoles(EUserRole.Teacher)]
         public async Task<IActionResult> GetLessonPlansAsync([FromQuery] int page = 1, [FromQuery] int size = 10)
         {
             var response = await _lessonPlanService.GetByCurrentTeacherAsync(page, size);
@@ -115,7 +119,7 @@ namespace LessonPlanExam.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        /// <summary>User</summary>
+        /// <summary>Teacher</summary>
         /// <remarks>
         /// 
         /// Update an existing lesson plan.
@@ -158,13 +162,14 @@ namespace LessonPlanExam.API.Controllers
         /// <response code="404">Lesson plan not found with the specified ID.</response>
         /// <response code="500">Internal server error occurred during lesson plan update. Handled by ExceptionMiddleware.</response>
         [HttpPut("{id}")]
+        [AuthorizeRoles(EUserRole.Teacher)]
         public async Task<IActionResult> UpdateLessonPlanAsync(int id, [FromBody] UpdateLessonPlanRequest request)
         {
             var response = await _lessonPlanService.UpdateLessonPlanAsync(id, request);
             return StatusCode(response.StatusCode, response);
         }
 
-        /// <summary>User</summary>
+        /// <summary>Teacher</summary>
         /// <remarks>
         /// 
         /// Delete a lesson plan permanently.
@@ -185,13 +190,14 @@ namespace LessonPlanExam.API.Controllers
         /// <response code="404">Lesson plan not found with the specified ID.</response>
         /// <response code="500">Internal server error occurred during lesson plan deletion. Handled by ExceptionMiddleware.</response>
         [HttpDelete("{id}")]
+        [AuthorizeRoles(EUserRole.Teacher)]
         public async Task<IActionResult> DeleteLessonPlanAsync(int id)
         {
             var response = await _lessonPlanService.DeleteLessonPlanAsync(id);
             return StatusCode(response.StatusCode, response);
         }
 
-        /// <summary>User</summary>
+        /// <summary>Teacher</summary>
         /// <remarks>
         /// 
         /// Upload a file attachment to an existing lesson plan.
@@ -224,6 +230,7 @@ namespace LessonPlanExam.API.Controllers
         /// <response code="404">Lesson plan not found with the specified ID.</response>
         /// <response code="500">Internal server error occurred during file upload. Handled by ExceptionMiddleware.</response>
         [HttpPost("{id}/upload-file")]
+        [AuthorizeRoles(EUserRole.Teacher)]
         public async Task<IActionResult> UploadFileAsync(int id, IFormFile file)
         {
             if (file == null)
@@ -235,7 +242,7 @@ namespace LessonPlanExam.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        /// <summary>User</summary>
+        /// <summary>Teacher</summary>
         /// <remarks>
         /// 
         /// Delete a file attachment from a lesson plan.
@@ -256,6 +263,7 @@ namespace LessonPlanExam.API.Controllers
         /// <response code="404">File not found with the specified ID.</response>
         /// <response code="500">Internal server error occurred during file deletion. Handled by ExceptionMiddleware.</response>
         [HttpDelete("files/{id}")]
+        [AuthorizeRoles(EUserRole.Teacher)]
         public async Task<IActionResult> DeleteLessonPlanFileAsync(int id)
         {
             var response = await _lessonPlanService.DeleteLessonPlanFileAsync(id);

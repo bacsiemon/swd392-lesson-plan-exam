@@ -11,7 +11,6 @@ namespace LessonPlanExam.Services.Mapping
             return new LessonPlan
             {
                 Title = request.Title,
-                CreatedByTeacher = request.CreatedByTeacher,
                 Objectives = request.Objectives,
                 Description = request.Description,
                 ImageUrl = request.ImageUrl,
