@@ -72,17 +72,85 @@ const lessonPlanService = {
   async getCurrentTeacherLessonPlans(params = {}) {
     try {
       const response = await api.get('/api/LessonPlan/current-teacher', { params });
-      return {
-        success: true,
-        data: response.data,
-        message: 'Lấy danh sách giáo án thành công'
-      };
+      
+      // Backend returns BaseResponse: { StatusCode, Message, Data: IEnumerable<LessonPlanResponse>, AdditionalData }
+      // But the controller returns Ok(response), so response.data is the BaseResponse
+      const baseResponse = response.data;
+      
+      // Log for debugging
+      console.log('Get lesson plans response:', {
+        httpStatus: response.status,
+        responseData: baseResponse,
+        statusCode: baseResponse?.StatusCode || baseResponse?.statusCode,
+        message: baseResponse?.Message || baseResponse?.message,
+        data: baseResponse?.Data || baseResponse?.data,
+        dataType: Array.isArray(baseResponse?.Data || baseResponse?.data) ? 'array' : typeof (baseResponse?.Data || baseResponse?.data)
+      });
+      
+      // Handle both PascalCase and camelCase
+      const responseStatusCode = baseResponse?.StatusCode !== undefined 
+        ? baseResponse.StatusCode 
+        : (baseResponse?.statusCode !== undefined ? baseResponse.statusCode : null);
+      
+      // Check if StatusCode indicates success (200)
+      if (responseStatusCode === 200 || response.status === 200) {
+        // Extract lesson plans from Data field
+        // Backend returns Data as IEnumerable<LessonPlanResponse>
+        let plansData = baseResponse.Data || baseResponse.data;
+        
+        // Convert to array if it's not already
+        if (!Array.isArray(plansData)) {
+          // If it's an object with items, use items
+          if (plansData && typeof plansData === 'object' && plansData.items) {
+            plansData = plansData.items;
+          } else if (plansData && typeof plansData === 'object') {
+            // If it's a single object, wrap in array
+            plansData = [plansData];
+          } else {
+            plansData = [];
+          }
+        }
+        
+        return {
+          success: true,
+          data: plansData,
+          additionalData: baseResponse.AdditionalData || baseResponse.additionalData,
+          message: baseResponse.Message || baseResponse.message || 'Lấy danh sách giáo án thành công'
+        };
+      } else {
+        // Handle non-200 status codes
+        console.warn('Get lesson plans returned non-success status code:', responseStatusCode);
+        return {
+          success: false,
+          error: baseResponse,
+          message: baseResponse?.Message || baseResponse?.message || 'Không thể tải danh sách giáo án',
+          statusCode: responseStatusCode,
+        };
+      }
     } catch (error) {
       console.error('Error fetching lesson plans:', error);
+      console.error('Error response:', error.response?.data);
+      
+      const errorData = error.response?.data;
+      
+      // Handle BaseResponse error format
+      let errorMessage = 'Không thể tải danh sách giáo án. Vui lòng thử lại.';
+      if (errorData) {
+        // Check for BaseResponse format
+        if (errorData.Message) {
+          errorMessage = errorData.Message;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        }
+      }
+      
       return {
         success: false,
-        error: error.response?.data || error.message,
-        message: error.response?.data?.message || 'Không thể tải danh sách giáo án'
+        error: errorData || error.message,
+        message: errorMessage,
+        statusCode: error.response?.status || errorData?.StatusCode || errorData?.statusCode,
       };
     }
   },
@@ -94,17 +162,55 @@ const lessonPlanService = {
   async getLessonPlanById(id) {
     try {
       const response = await api.get(`/api/LessonPlan/${id}`);
-      return {
-        success: true,
-        data: response.data,
-        message: 'Lấy thông tin giáo án thành công'
-      };
+      
+      // Backend returns BaseResponse: { StatusCode, Message, Data: LessonPlanResponse }
+      const baseResponse = response.data;
+      
+      // Handle both PascalCase and camelCase
+      const responseStatusCode = baseResponse?.StatusCode !== undefined 
+        ? baseResponse.StatusCode 
+        : (baseResponse?.statusCode !== undefined ? baseResponse.statusCode : null);
+      
+      // Check if StatusCode indicates success (200)
+      if (responseStatusCode === 200 || response.status === 200) {
+        // Extract lesson plan from Data field
+        const lessonPlanData = baseResponse.Data || baseResponse.data;
+        
+        return {
+          success: true,
+          data: lessonPlanData,
+          message: baseResponse.Message || baseResponse.message || 'Lấy thông tin giáo án thành công'
+        };
+      } else {
+        // Handle non-200 status codes
+        return {
+          success: false,
+          error: baseResponse,
+          message: baseResponse?.Message || baseResponse?.message || 'Không thể tải thông tin giáo án',
+          statusCode: responseStatusCode,
+        };
+      }
     } catch (error) {
       console.error('Error fetching lesson plan:', error);
+      
+      const errorData = error.response?.data;
+      let errorMessage = 'Không thể tải thông tin giáo án. Vui lòng thử lại.';
+      
+      if (errorData) {
+        if (errorData.Message) {
+          errorMessage = errorData.Message;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        }
+      }
+      
       return {
         success: false,
-        error: error.response?.data || error.message,
-        message: error.response?.data?.message || 'Không thể tải thông tin giáo án'
+        error: errorData || error.message,
+        message: errorMessage,
+        statusCode: error.response?.status || errorData?.StatusCode || errorData?.statusCode,
       };
     }
   },

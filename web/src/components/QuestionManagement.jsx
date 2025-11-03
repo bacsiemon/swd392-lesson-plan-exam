@@ -29,7 +29,7 @@ import {
   BarChartOutlined,
   FilterOutlined
 } from '@ant-design/icons';
-import { questionService } from '../services/questionBankService';
+import questionService from '../services/questionService';
 import {
   QUESTION_TYPES,
   DIFFICULTY_LEVELS,
@@ -71,26 +71,33 @@ const QuestionManagement = ({ questionBank }) => {
   const fetchQuestions = async (params = {}) => {
     setLoading(true);
     try {
-      const result = await questionService.getQuestions(questionBank.id, {
-        page: pagination.current,
-        pageSize: pagination.pageSize,
-        ...filters,
-        ...params
-      });
+      // Use query params format for question API
+      const queryParams = {
+        bankId: questionBank.id,
+        type: filters.questionType !== undefined ? filters.questionType : (params.questionType !== undefined ? params.questionType : null),
+        difficultyId: filters.difficulty !== undefined ? filters.difficulty : (params.difficulty !== undefined ? params.difficulty : null),
+        active: true, // Only get active questions
+        q: filters.search || params.search || ''
+      };
+
+      const result = await questionService.getQuestions(queryParams);
 
       if (result.success) {
-        setQuestions(result.data);
+        setQuestions(result.data || []);
+        
+        // Update pagination (backend doesn't return pagination for query, so we handle client-side)
         setPagination(prev => ({
           ...prev,
-          ...result.pagination
+          total: result.data?.length || 0
         }));
 
         // Calculate statistics
         await calculateStats();
       } else {
-        message.error(result.message);
+        message.error(result.message || 'Không thể tải danh sách câu hỏi');
       }
     } catch (error) {
+      console.error('Error fetching questions:', error);
       message.error('Có lỗi xảy ra khi tải dữ liệu');
     } finally {
       setLoading(false);
@@ -100,20 +107,20 @@ const QuestionManagement = ({ questionBank }) => {
   const calculateStats = async () => {
     try {
       // Get all questions for statistics (not paginated)
-      const result = await questionService.getQuestions(questionBank.id, {
-        page: 1,
-        pageSize: 1000 // Get all questions
+      const result = await questionService.getQuestions({
+        bankId: questionBank.id,
+        active: true
       });
 
       if (result.success) {
-        const allQuestions = result.data;
+        const allQuestions = result.data || [];
         const newStats = {
           total: allQuestions.length,
-          multipleChoice: allQuestions.filter(q => q.questionTypeEnum === 0).length,
-          fillBlank: allQuestions.filter(q => q.questionTypeEnum === 1).length,
-          easy: allQuestions.filter(q => q.questionDifficultyId === 1).length,
-          medium: allQuestions.filter(q => q.questionDifficultyId === 2).length,
-          hard: allQuestions.filter(q => q.questionDifficultyId === 3).length
+          multipleChoice: allQuestions.filter(q => q.questionTypeEnum === 0 || q.QuestionTypeEnum === 0).length,
+          fillBlank: allQuestions.filter(q => q.questionTypeEnum === 1 || q.QuestionTypeEnum === 1).length,
+          easy: allQuestions.filter(q => q.questionDifficultyId === 1 || q.QuestionDifficultyId === 1).length,
+          medium: allQuestions.filter(q => q.questionDifficultyId === 2 || q.QuestionDifficultyId === 2).length,
+          hard: allQuestions.filter(q => q.questionDifficultyId === 3 || q.QuestionDifficultyId === 3).length
         };
         setStats(newStats);
       }
@@ -161,27 +168,35 @@ const QuestionManagement = ({ questionBank }) => {
   // Handle form submission
   const handleFormSubmit = async (values) => {
     try {
+      // Ensure questionBankId is set
       const questionData = {
         ...values,
-        questionBankId: questionBank.id
+        questionBankId: questionBank.id || questionBank.Id
       };
+
+      console.log('Submitting question data:', questionData);
 
       let result;
       if (editingRecord) {
-        result = await questionService.updateQuestion(editingRecord.id, questionData);
+        result = await questionService.updateQuestion(editingRecord.id || editingRecord.Id, questionData);
       } else {
         result = await questionService.createQuestion(questionData);
       }
 
       if (result.success) {
-        message.success(result.message);
+        message.success(result.message || 'Thao tác thành công');
         setIsFormModalVisible(false);
         fetchQuestions();
       } else {
-        message.error(result.message);
+        // Display detailed error message
+        const errorMsg = result.message || 'Có lỗi xảy ra khi thao tác';
+        console.error('Question operation failed:', result.error);
+        message.error(errorMsg);
       }
     } catch (error) {
-      message.error('Có lỗi xảy ra');
+      console.error('Error in handleFormSubmit:', error);
+      const errorMsg = error.message || 'Có lỗi xảy ra khi thao tác';
+      message.error(errorMsg);
     }
   };
 
@@ -236,25 +251,28 @@ const QuestionManagement = ({ questionBank }) => {
       dataIndex: 'title',
       key: 'title',
       ellipsis: true,
-      render: (text, record) => (
-        <div>
-          <Text strong style={{ fontSize: '14px' }}>{text}</Text>
-          <br />
-          <Text type="secondary" ellipsis style={{ fontSize: '12px' }}>
-            {record.content?.length > 100
-              ? `${record.content.substring(0, 100)}...`
-              : record.content
-            }
-          </Text>
-        </div>
-      )
+      render: (text, record) => {
+        const content = record.content || record.Content || '';
+        return (
+          <div>
+            <Text strong style={{ fontSize: '14px' }}>{text || record.Title || ''}</Text>
+            <br />
+            <Text type="secondary" ellipsis style={{ fontSize: '12px' }}>
+              {content.length > 100
+                ? `${content.substring(0, 100)}...`
+                : content
+              }
+            </Text>
+          </div>
+        );
+      }
     },
     {
       title: 'Loại',
       dataIndex: 'questionTypeEnum',
       key: 'questionTypeEnum',
       width: 120,
-      render: getQuestionTypeLabel,
+      render: (value, record) => getQuestionTypeLabel(value || record.QuestionTypeEnum),
       filters: QUESTION_TYPES.map(type => ({
         text: type.label,
         value: type.value
@@ -266,7 +284,7 @@ const QuestionManagement = ({ questionBank }) => {
       dataIndex: 'questionDifficultyId',
       key: 'questionDifficultyId',
       width: 100,
-      render: getDifficultyLabel,
+      render: (value, record) => getDifficultyLabel(value || record.QuestionDifficultyId),
       filters: DIFFICULTY_LEVELS.map(level => ({
         text: level.label,
         value: level.value
@@ -278,19 +296,29 @@ const QuestionManagement = ({ questionBank }) => {
       dataIndex: 'isActive',
       key: 'isActive',
       width: 100,
-      render: (isActive) => (
-        <Tag color={isActive ? 'success' : 'default'}>
-          {isActive ? 'Kích hoạt' : 'Tạm dừng'}
-        </Tag>
-      )
+      render: (isActive, record) => {
+        const active = isActive !== undefined ? isActive : (record.IsActive !== undefined ? record.IsActive : true);
+        return (
+          <Tag color={active ? 'success' : 'default'}>
+            {active ? 'Kích hoạt' : 'Tạm dừng'}
+          </Tag>
+        );
+      }
     },
     {
       title: 'Ngày tạo',
       dataIndex: 'createdAt',
       key: 'createdAt',
       width: 120,
-      render: (date) => new Date(date).toLocaleDateString('vi-VN'),
-      sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+      render: (date, record) => {
+        const dateValue = date || record.CreatedAt;
+        return dateValue ? new Date(dateValue).toLocaleDateString('vi-VN') : '-';
+      },
+      sorter: (a, b) => {
+        const dateA = a.createdAt || a.CreatedAt || 0;
+        const dateB = b.createdAt || b.CreatedAt || 0;
+        return new Date(dateA) - new Date(dateB);
+      }
     },
     {
       title: 'Thao tác',
@@ -479,7 +507,7 @@ const QuestionManagement = ({ questionBank }) => {
         <Table
           columns={columns}
           dataSource={questions}
-          rowKey="id"
+          rowKey={(record) => record.id || record.Id || Math.random()}
           loading={loading}
           pagination={{
             ...pagination,

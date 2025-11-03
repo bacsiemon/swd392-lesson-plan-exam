@@ -50,23 +50,30 @@ const TeacherProfile = () => {
             setError(null);
             try {
                 const result = await accountService.getProfile();
+                console.log('Profile result:', result);
+                
                 if (result.success && result.data) {
                     // Map API response to component format
+                    // Backend AccountResponse: { Id, Email, FullName, Phone, DateOfBirth, AvatarUrl, Role, IsActive, EmailVerified }
                     const profileData = result.data;
+                    console.log('Profile data:', profileData);
+                    
                     setProfile({
-                        avatar_url: profileData.avatarUrl || profileData.avatar_url || null,
-                        full_name: profileData.fullName || profileData.full_name || profileData.name || '',
-                        email: profileData.email || '',
-                        phone: profileData.phone || '',
-                        date_of_birth: profileData.dateOfBirth || profileData.date_of_birth || null,
-                        school_name: profileData.schoolName || profileData.school_name || '',
-                        bio: profileData.bio || profileData.biography || '',
+                        avatar_url: profileData.AvatarUrl || profileData.avatarUrl || profileData.avatar_url || null,
+                        full_name: profileData.FullName || profileData.fullName || profileData.full_name || profileData.Name || profileData.name || '',
+                        email: profileData.Email || profileData.email || '',
+                        phone: profileData.Phone || profileData.phone || '',
+                        date_of_birth: profileData.DateOfBirth || profileData.dateOfBirth || profileData.date_of_birth || null,
+                        school_name: profileData.SchoolName || profileData.schoolName || profileData.school_name || '',
+                        bio: profileData.Bio || profileData.bio || profileData.biography || '',
                         // Store raw data for update
                         rawData: profileData
                     });
                 } else {
-                    setError(result.message || 'Không thể tải thông tin profile');
-                    message.error(result.message || 'Không thể tải thông tin profile');
+                    const errorMsg = result.message || 'Không thể tải thông tin profile';
+                    setError(errorMsg);
+                    message.error(errorMsg);
+                    console.error('Profile loading failed:', result);
                 }
             } catch (err) {
                 console.error('Error loading profile:', err);

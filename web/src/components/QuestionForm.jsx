@@ -58,30 +58,70 @@ const QuestionForm = ({ initialValues, onSubmit, onCancel, loading = false }) =>
   const handleSubmit = async (values) => {
     setSubmitting(true);
     try {
-      // Prepare data based on question type
-      let additionalData = {};
-
-      if (questionType === 0) { // Multiple Choice
-        additionalData = {
-          answers: values.answers || [],
-          explanation: values.explanation || ''
-        };
-      } else if (questionType === 1) { // Fill Blank
-        additionalData = {
-          blanks: values.blanks || [],
-          explanation: values.explanation || ''
-        };
-      }
-
+      // Prepare data based on question type - format for backend API
+      // Backend expects: QuestionBankId, Title, Content, QuestionTypeEnum, QuestionDifficultyId?, AdditionalData?, MultipleChoiceAnswers?, FillBlankAnswers?
       const submitData = {
+        questionBankId: values.questionBankId, // Will be set by parent component
         title: values.title,
         content: values.content,
         questionTypeEnum: questionType,
-        questionDifficultyId: values.questionDifficultyId,
-        additionalData: JSON.stringify(additionalData)
+        questionDifficultyId: values.questionDifficultyId || null,
+        additionalData: values.explanation || null
       };
 
+      // Format answers based on question type
+      if (questionType === 0) { // Multiple Choice
+        // Convert form answers to backend format
+        // Form structure: [{ text: '...', isCorrect: true }]
+        // Backend expects: [{ AnswerText: '...', IsCorrect: true, Explanation?: string, OrderIndex?: number }]
+        const answers = (values.answers || []).filter(answer => answer && answer.text); // Filter out empty answers
+        if (answers.length === 0) {
+          throw new Error('Cần ít nhất 1 lựa chọn trả lời');
+        }
+        
+        submitData.multipleChoiceAnswers = answers.map((answer, index) => ({
+          answerText: answer.text || answer.answerText || '',
+          isCorrect: answer.isCorrect !== undefined ? answer.isCorrect : false,
+          explanation: answer.explanation || '', // Use empty string instead of null (backend accepts both, but empty string is safer)
+          orderIndex: index + 1
+        }));
+        
+        // Explicitly set fillBlankAnswers to null for MultipleChoice (not undefined)
+        // This helps ASP.NET Core model binding - some validators expect the field to exist
+        submitData.fillBlankAnswers = null;
+      } else if (questionType === 1) { // Fill Blank
+        // Convert form blanks to backend format
+        // Form structure: [{ correctAnswer: '...', alternatives?: [] }]
+        // Backend expects: [{ CorrectAnswer: '...', NormalizedCorrectAnswer?: string, Explanation?: string }]
+        const blanks = (values.blanks || []).filter(blank => blank && blank.correctAnswer); // Filter out empty blanks
+        if (blanks.length === 0) {
+          throw new Error('Cần ít nhất 1 chỗ trống');
+        }
+        
+        submitData.fillBlankAnswers = blanks.map(blank => {
+          const correctAnswer = blank.correctAnswer || '';
+          return {
+            correctAnswer: correctAnswer,
+            // Backend will normalize if not provided, but let's provide it for consistency
+            normalizedCorrectAnswer: blank.normalizedCorrectAnswer || correctAnswer.toLowerCase(),
+            // Use empty string instead of null (backend accepts both, but empty string is safer)
+            explanation: blank.explanation || ''
+          };
+        });
+        
+        // Explicitly set multipleChoiceAnswers to null for FillBlank (not undefined)
+        // This helps ASP.NET Core model binding - some validators expect the field to exist
+        submitData.multipleChoiceAnswers = null;
+      }
+
       await onSubmit(submitData);
+    } catch (error) {
+      // If validation error, throw it so Form can handle
+      if (error.message) {
+        throw error;
+      }
+      console.error('Error submitting question:', error);
+      throw new Error('Có lỗi xảy ra khi tạo câu hỏi');
     } finally {
       setSubmitting(false);
     }

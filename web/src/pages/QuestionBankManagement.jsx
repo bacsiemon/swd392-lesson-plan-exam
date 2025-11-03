@@ -83,18 +83,28 @@ const QuestionBankManagement = () => {
       });
 
       if (result.success) {
-        setQuestionBanks(result.data);
+        // Map backend response to frontend format
+        const mappedData = result.data.map(item => ({
+          ...item,
+          questionCount: item.totalQuestions || item.questionCount || 0,
+          statusEnum: item.statusEnum !== undefined ? item.statusEnum : item.status
+        }));
+        
+        setQuestionBanks(mappedData);
         setPagination(prev => ({
           ...prev,
-          ...result.pagination
+          current: result.pagination?.current || pagination.current,
+          pageSize: result.pagination?.pageSize || pagination.pageSize,
+          total: result.pagination?.total || result.data?.length || 0
         }));
 
         // Calculate statistics
         await calculateStats();
       } else {
-        message.error(result.message);
+        message.error(result.message || 'Không thể tải danh sách ngân hàng câu hỏi');
       }
     } catch (error) {
+      console.error('Error fetching question banks:', error);
       message.error('Có lỗi xảy ra khi tải dữ liệu');
     } finally {
       setLoading(false);
@@ -110,12 +120,12 @@ const QuestionBankManagement = () => {
       });
 
       if (result.success) {
-        const allBanks = result.data;
+        const allBanks = result.data || [];
         const newStats = {
           total: allBanks.length,
-          approved: allBanks.filter(bank => bank.statusEnum === 1).length,
-          pending: allBanks.filter(bank => bank.statusEnum === 0).length,
-          rejected: allBanks.filter(bank => bank.statusEnum === 2).length
+          approved: allBanks.filter(bank => bank.statusEnum === 1 || bank.status === 1).length,
+          pending: allBanks.filter(bank => bank.statusEnum === 0 || bank.status === 0).length,
+          rejected: allBanks.filter(bank => bank.statusEnum === 2 || bank.status === 2).length
         };
         setStats(newStats);
       }

@@ -91,12 +91,17 @@ const CreateLessonPlanPage = () => {
             setLoadingPlans(true);
             try {
                 const result = await lessonPlanService.getCurrentTeacherLessonPlans();
+                console.log('Loading lesson plans on mount:', result);
                 if (result.success && result.data) {
-                    // Transform API data to match component format
-                    const plans = Array.isArray(result.data) ? result.data : (result.data.items || []);
+                    // Service now returns array directly in result.data
+                    const plans = Array.isArray(result.data) 
+                        ? result.data 
+                        : (result.data.items || []);
+                    console.log('Loaded lesson plans:', plans);
                     setSavedPlans(plans);
                 } else {
                     console.error('Failed to load lesson plans:', result.message);
+                    setSavedPlans([]); // Set empty array on error
                 }
             } catch (error) {
                 console.error('Error loading lesson plans:', error);
@@ -152,14 +157,17 @@ const CreateLessonPlanPage = () => {
                 ...(activePlanId ? {} : {
                     createdByTeacher: currentUserId || 1, // Server will override this anyway
                     objectives: document.objectives || '',
-                    description: document.description || '',
+                    // Save content in description temporarily (backend doesn't have Content field yet)
+                    // TODO: Backend should have a Content field to store the full editor content
+                    description: document.content || document.description || '',
                     gradeLevel: document.gradeLevel || 1,
                     imageUrl: document.imageUrl || null
                 }),
                 // For update: only send fields that can be updated
                 ...(activePlanId ? {
                     objectives: document.objectives || '',
-                    description: document.description || '',
+                    // Save content in description temporarily
+                    description: document.content || document.description || '',
                     gradeLevel: document.gradeLevel || 1,
                     imageUrl: document.imageUrl || null
                 } : {})
@@ -172,20 +180,37 @@ const CreateLessonPlanPage = () => {
             } else {
                 // Create new lesson plan
                 result = await lessonPlanService.createLessonPlan(lessonPlanData);
-                if (result.success && result.data?.id) {
-                    setActivePlanId(result.data.id);
-                }
             }
 
             if (result.success) {
                 setSaveStatus('saved');
                 setShowMetadataForm(false);
                 message.success(result.message || 'Lưu giáo án thành công');
+                
+                // Update activePlanId if creating new plan (handle both camelCase and PascalCase)
+                if (!activePlanId && result.data) {
+                    const newPlanId = result.data.id || result.data.Id || result.data.ID;
+                    if (newPlanId) {
+                        setActivePlanId(newPlanId);
+                    }
+                }
+                
                 // Refresh saved plans list
-                const plansResult = await lessonPlanService.getCurrentTeacherLessonPlans();
-                if (plansResult.success && plansResult.data) {
-                    const plans = Array.isArray(plansResult.data) ? plansResult.data : (plansResult.data.items || []);
-                    setSavedPlans(plans);
+                try {
+                    const plansResult = await lessonPlanService.getCurrentTeacherLessonPlans();
+                    console.log('Refreshing lesson plans after save:', plansResult);
+                    if (plansResult.success && plansResult.data) {
+                        // Service now returns array directly in result.data
+                        const plans = Array.isArray(plansResult.data) 
+                            ? plansResult.data 
+                            : (plansResult.data.items || []);
+                        console.log('Setting saved plans:', plans);
+                        setSavedPlans(plans);
+                    } else {
+                        console.error('Failed to refresh lesson plans:', plansResult.message);
+                    }
+                } catch (error) {
+                    console.error('Error refreshing lesson plans:', error);
                 }
             } else {
                 // Show detailed error message
@@ -256,22 +281,60 @@ const CreateLessonPlanPage = () => {
     const handleLoadSavedPlan = async (plan) => {
         setIsLoading(true);
         try {
-            const result = await lessonPlanService.getLessonPlanById(plan.id);
+            // Handle both camelCase and PascalCase for plan ID
+            const planId = plan.id || plan.Id || plan.ID;
+            if (!planId) {
+                message.error('Không tìm thấy ID của giáo án');
+                return;
+            }
+            
+            console.log('Loading lesson plan:', { planId, plan });
+            
+            const result = await lessonPlanService.getLessonPlanById(planId);
+            console.log('Get lesson plan result:', result);
+            
             if (result.success && result.data) {
                 const planData = result.data;
-                setDocument({
-                    title: planData.title || plan.title,
-                    content: planData.content || plan.content || '',
-                    objectives: planData.objectives || '',
-                    description: planData.description || '',
-                    gradeLevel: planData.gradeLevel || 1,
-                    imageUrl: planData.imageUrl || null
-                });
-                setActivePlanId(plan.id);
+                console.log('Loaded lesson plan data:', planData);
+                
+                // Backend returns: { Id, Title, Objectives, Description, GradeLevel, ImageUrl, ... }
+                // Since we're saving content in Description temporarily, get it from there
+                const content = planData.Content || planData.content || 
+                                planData.Description || planData.description || 
+                                plan.content || '';
+                
+                const documentData = {
+                    title: planData.Title || planData.title || plan.Title || plan.title || '',
+                    content: content, // Get from Description (where we saved it)
+                    objectives: planData.Objectives || planData.objectives || '',
+                    description: planData.Description || planData.description || '', // Keep original description
+                    gradeLevel: planData.GradeLevel || planData.gradeLevel || plan.GradeLevel || plan.gradeLevel || 1,
+                    imageUrl: planData.ImageUrl || planData.imageUrl || plan.ImageUrl || plan.imageUrl || null
+                };
+                
+                console.log('Setting document:', documentData);
+                
+                setDocument(documentData);
+                setActivePlanId(planId);
                 setSaveStatus('saved');
                 setShowMetadataForm(false);
-                message.info(`Đã mở "${planData.title || plan.title}".`);
+                
+                // Update editor content - ReactQuill should update automatically via value prop
+                // But ensure it's set by forcing a re-render if needed
+                if (editorRef.current) {
+                    const editor = editorRef.current.getEditor();
+                    if (editor) {
+                        // Set content directly if ReactQuill doesn't update via value prop
+                        const currentContent = editor.root.innerHTML;
+                        if (currentContent !== content) {
+                            editor.root.innerHTML = content;
+                        }
+                    }
+                }
+                
+                message.info(`Đã mở "${documentData.title}".`);
             } else {
+                console.error('Failed to load lesson plan:', result);
                 message.error(result.message || 'Không thể tải giáo án');
             }
         } catch (error) {

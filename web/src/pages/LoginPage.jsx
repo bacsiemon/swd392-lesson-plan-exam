@@ -79,46 +79,17 @@ const LoginPage = () => {
 
                 // Navigate to appropriate dashboard based on user role
                 // accountService.login returns { success: true, data: LoginResponse, ... }
-                // LoginResponse contains: { Id, Email, FullName, Role (enum: 0/1/2), AccessToken, ... }
+                // LoginResponse contains: { Id, Email, FullName, Role (enum: 0/1/2), AccessToken, RefreshToken, ... }
                 const loginData = result.data; // This is the LoginResponse directly
                 
-                // Get role from multiple sources
-                const roleFromResponse = loginData?.role || loginData?.Role || loginData?.roleEnum || loginData?.RoleEnum;
+                // Get role from response (already saved by accountService.login)
+                // Role is EUserRole enum: 0 (Admin), 1 (Teacher), 2 (Student)
+                const roleFromResponse = loginData?.Role !== undefined ? loginData.Role : 
+                                        (loginData?.role !== undefined ? loginData.role : null);
                 const roleFromStorage = localStorage.getItem('user_role');
-                const roleFromSession = sessionStorage.getItem('user_role');
                 
-                // Get token to decode role
-                const token = localStorage.getItem('auth_token');
-                let roleFromToken = null;
-                if (token) {
-                    try {
-                        const base64Url = token.split('.')[1];
-                        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                        const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
-                            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                        }).join(''));
-                        const decoded = JSON.parse(jsonPayload);
-                        roleFromToken = decoded.role || decoded.Role || 
-                                       decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || 
-                                       decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role'];
-                    } catch (error) {
-                        console.error('Error decoding token to get role:', error);
-                    }
-                }
-                
-                // Determine final role (priority: storage > token > response)
-                // Role should already be saved to storage by accountService.login
-                const finalRole = roleFromStorage || roleFromSession || roleFromToken || roleFromResponse;
-                
-                console.log('🔍 Login - Determining navigation:', {
-                    loginData: loginData,
-                    roleFromResponse,
-                    roleFromStorage,
-                    roleFromSession,
-                    roleFromToken,
-                    finalRole,
-                    roleType: typeof finalRole
-                });
+                // Use role from storage (saved by accountService) or from response
+                const finalRole = roleFromStorage || roleFromResponse;
                 
                 // Normalize role for comparison - handle both number and string
                 let roleNum = null;
@@ -129,31 +100,22 @@ const LoginPage = () => {
                         roleNum = finalRole;
                         roleStr = String(finalRole);
                     } else {
-                        roleStr = String(finalRole).trim().toLowerCase();
-                        roleNum = parseInt(roleStr) || null;
+                        roleStr = String(finalRole).trim();
+                        roleNum = parseInt(roleStr);
                     }
                 }
                 
-                console.log('🔍 Normalized role:', { roleNum, roleStr, finalRole });
-                
                 // Determine navigation based on role
-                // Admin: 0, '0', 'Admin', 'admin', 'ADMIN'
-                if (roleNum === 0 || roleStr === '0' || roleStr === 'admin') {
-                    console.log('✅ Navigating to AdminUserManagement (admin role)');
+                // Admin: 0, '0'
+                if (roleNum === 0 || roleStr === '0') {
                     navigate('/admin/users');
                 }
-                // Teacher: 1, '1', 'Teacher', 'teacher', 'TEACHER'
-                else if (roleNum === 1 || roleStr === '1' || roleStr === 'teacher') {
-                    console.log('✅ Navigating to Teacher Dashboard (teacher role)');
+                // Teacher: 1, '1'
+                else if (roleNum === 1 || roleStr === '1') {
                     navigate('/dashboard');
                 }
-                // Student: 2, '2', 'Student', 'student', 'STUDENT' (or default)
+                // Student: 2, '2' (or default)
                 else {
-                    console.log('✅ Navigating to Student Dashboard (student role or default)', {
-                        roleNum,
-                        roleStr,
-                        finalRole
-                    });
                     navigate('/student-dashboard');
                 }
             } else {

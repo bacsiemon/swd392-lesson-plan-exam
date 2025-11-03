@@ -2,7 +2,8 @@ import axios from 'axios';
 
 // Create axios instance with Vite env base URL
 // Default to localhost:5166 if env variable is not set
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5166/api';
+// Note: baseURL should NOT include /api because routes already have /api prefix
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5166';
 
 // Log warning if using default URL (helpful for debugging)
 if (!import.meta.env.VITE_API_BASE_URL) {
@@ -40,11 +41,54 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const status = error?.response?.status;
-    // place for refresh token logic if needed
+    
+    // Handle 401 Unauthorized - token expired or invalid
     if (status === 401) {
-      // optionally redirect to login or attempt refresh
-      // window.location.href = '/login';
+      const originalRequest = error.config;
+      
+      // Try to refresh token if we have a refresh token and haven't already tried
+      const refreshToken = localStorage.getItem('refresh_token');
+      if (refreshToken && !originalRequest._retry) {
+        originalRequest._retry = true;
+        
+        try {
+          // Import accountService dynamically to avoid circular dependency
+          const accountService = (await import('./accountService')).default;
+          const refreshResult = await accountService.refreshToken(refreshToken);
+          
+          if (refreshResult.success && refreshResult.data?.AccessToken) {
+            // Retry the original request with new token
+            const newToken = refreshResult.data.AccessToken;
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+            return api(originalRequest);
+          }
+        } catch (refreshError) {
+          console.error('Error refreshing token:', refreshError);
+          // If refresh fails, clear tokens and redirect to login
+          removeAuthToken();
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('user_role');
+          sessionStorage.removeItem('user_role');
+          
+          // Only redirect if we're not already on login/register page
+          if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+            window.location.href = '/login';
+          }
+        }
+      } else {
+        // No refresh token or already retried - clear tokens and redirect
+        removeAuthToken();
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user_role');
+        sessionStorage.removeItem('user_role');
+        
+        // Only redirect if we're not already on login/register page
+        if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+          window.location.href = '/login';
+        }
+      }
     }
+    
     return Promise.reject(error);
   }
 );
@@ -65,5 +109,7 @@ export const setAuthToken = (token) => {
 // Helper to remove token
 export const removeAuthToken = () => {
   setAuthToken(null);
+  localStorage.removeItem('refresh_token');
   localStorage.removeItem('user_role');
+  sessionStorage.removeItem('user_role');
 };
