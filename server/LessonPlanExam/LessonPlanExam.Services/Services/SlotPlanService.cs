@@ -91,5 +91,68 @@ namespace LessonPlanExam.Services.Services
                 Data = createdSlotPlan.ToResponse()
             };
         }
+
+        public async Task<BaseResponse> UpdateSlotPlanAsync(int id, UpdateSlotPlanRequest request)
+        {
+            // Check if user is a teacher
+            var currentRole = _accountService.GetCurrentUserRole();
+            if (currentRole != EUserRole.Teacher)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 403,
+                    Errors = "TEACHER_ONLY"
+                };
+            }
+
+            var currentUserId = _accountService.GetCurrentUserId();
+
+            // Get the slot plan with lesson plan details
+            var slotPlan = await _unitOfWork.SlotPlanRepository.GetByIdAsync(
+                id,
+                sp => sp.LessonPlan
+            );
+
+            if (slotPlan == null)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 404,
+                    Errors = "SLOT_PLAN_NOT_FOUND"
+                };
+            }
+
+            // Check if the lesson plan exists and is not deleted
+            if (slotPlan.LessonPlan == null || slotPlan.LessonPlan.DeletedAt != null)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 404,
+                    Errors = "LESSON_PLAN_NOT_FOUND"
+                };
+            }
+
+            // Check if the lesson plan belongs to the current teacher
+            if (slotPlan.LessonPlan.CreatedByTeacher != currentUserId)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 403,
+                    Errors = "LESSON_PLAN_NOT_OWNED_BY_TEACHER"
+                };
+            }
+
+            // Update the slot plan
+            slotPlan.UpdateFromRequest(request);
+            _unitOfWork.SlotPlanRepository.Update(slotPlan);
+            await _unitOfWork.SaveChangesAsync();
+
+            return new BaseResponse
+            {
+                StatusCode = 200,
+                Message = "SUCCESS",
+                Data = slotPlan.ToResponse()
+            };
+        }
     }
 }

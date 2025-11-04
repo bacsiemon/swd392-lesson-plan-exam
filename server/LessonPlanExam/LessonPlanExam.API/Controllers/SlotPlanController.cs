@@ -76,5 +76,55 @@ namespace LessonPlanExam.API.Controllers
             var response = await _slotPlanService.CreateSlotPlanAsync(request);
             return StatusCode(response.StatusCode, response);
         }
+
+        /// <summary>Teacher</summary>
+        /// <remarks>
+        ///
+        /// Edit an existing slot plan for a lesson plan.  
+        /// 
+        /// Only the lesson plan creator (teacher) can edit slot plans for their lesson plans.  
+        /// The slot number cannot be changed through this endpoint.  
+        ///
+        /// Parameters:
+        /// title: Required, maximum 255 characters.  
+        /// durationMinutes: Optional, duration of the slot in minutes. Must be greater than 0 if provided.  
+        /// content: Required, detailed content and activities for this slot.  
+        ///
+        /// Sample request:
+        ///```
+        /// PUT /api/slotplan/5  
+        /// {  
+        /// "title": "Updated Introduction and Warm-up",  
+        /// "durationMinutes": 20,  
+        /// "content": "Begin with a comprehensive review of previous lesson. Introduce today's topic with interactive questions and group discussion."  
+        /// }
+        ///```
+        /// </remarks>
+        /// <param name="id">The ID of the slot plan to edit</param>
+        /// <param name="request">Slot plan update request containing updated slot information</param>
+        /// <response code="200">Slot plan updated successfully. Returns the updated slot plan with modified timestamps.</response>
+        /// <response code="400">Validation error. Possible messages:
+        /// - TITLE_REQUIRED  
+        /// - TITLE_MAX_255_CHARACTERS  
+        /// - CONTENT_REQUIRED  
+        /// - DURATION_MUST_BE_GREATER_THAN_ZERO  
+        /// </response>
+        /// <response code="401">Unauthorized. User authentication required.</response>
+        /// <response code="403">Forbidden. Possible messages:
+        /// - TEACHER_ONLY  
+        /// - LESSON_PLAN_NOT_OWNED_BY_TEACHER  
+        /// </response>
+        /// <response code="404">Not found. Possible messages:
+        /// - SLOT_PLAN_NOT_FOUND  
+        /// - LESSON_PLAN_NOT_FOUND  
+        /// </response>
+        /// <response code="500">Internal server error occurred during slot plan update. Handled by ExceptionMiddleware.</response>
+        [HttpPut("{id}")]
+        [AuthorizeRoles(EUserRole.Teacher)]
+        public async Task<IActionResult> EditSlotPlanAsync(int id, [FromBody] UpdateSlotPlanRequest request)
+        {
+            var response = await _slotPlanService.UpdateSlotPlanAsync(id, request);
+            return StatusCode(response.StatusCode, response);
+        }
     }
 }

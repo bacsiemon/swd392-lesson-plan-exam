@@ -19,6 +19,14 @@ namespace LessonPlanExam.Services.Mapping
                 UpdatedAt = DateTime.UtcNow
             };
         }
+
+        public static void UpdateFromRequest(this SlotPlan entity, UpdateSlotPlanRequest request)
+        {
+            entity.Title = request.Title;
+            entity.DurationMinutes = request.DurationMinutes;
+            entity.Content = request.Content;
+            entity.UpdatedAt = DateTime.UtcNow;
+        }
         #endregion
 
         #region Entity to DTO
