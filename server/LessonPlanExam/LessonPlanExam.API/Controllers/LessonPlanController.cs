@@ -119,6 +119,18 @@ namespace LessonPlanExam.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchAsync(
+            [FromQuery] string? title,
+            [FromQuery] string? teacherName,
+            [FromQuery] int? gradeLevel,
+            [FromQuery] int page = 1,
+            [FromQuery] int size = 10)
+        {
+            var response = await _lessonPlanService.SearchAsync(title, teacherName, gradeLevel, page, size);
+            return StatusCode(response.StatusCode, response);
+        }
+
         /// <summary>Teacher</summary>
         /// <remarks>
         /// 

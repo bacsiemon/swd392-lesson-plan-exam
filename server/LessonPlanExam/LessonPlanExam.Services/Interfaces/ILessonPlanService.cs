@@ -14,5 +14,6 @@ namespace LessonPlanExam.Services.Interfaces
         Task<BaseResponse> GetByCurrentTeacherAsync(int page, int size);
         Task<BaseResponse<FileUploadResponse>> UploadFileAsync(int lessonPlanId, IFormFile file);
         Task<BaseResponse> DeleteLessonPlanFileAsync(int fileId);
+        Task<BaseResponse> SearchAsync(string? title, string? teacherName, int? gradeLevel, int page = 1, int size = 10);
     }
 }
