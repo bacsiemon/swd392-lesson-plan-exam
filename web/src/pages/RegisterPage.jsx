@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, Card, Typography, Row, Col, Layout, notification, Divider, DatePicker, Tabs } from 'antd';
-import { GoogleOutlined, UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, CalendarOutlined, BankOutlined } from '@ant-design/icons';
+import { GoogleOutlined, UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, CalendarOutlined, BankOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 
@@ -166,6 +166,10 @@ const RegisterPage = () => {
         navigate('/login');
     };
 
+    const handleBackToHome = () => {
+        navigate('/');
+    };
+
     return (
         <Layout
             className="register-layout"
@@ -198,6 +202,18 @@ const RegisterPage = () => {
                         margin: isMobile ? '16px auto' : '24px auto',
                     }}
                 >
+                    {/* Nút quay lại */}
+                    <Button
+                        type="text"
+                        icon={<ArrowLeftOutlined />}
+                        onClick={handleBackToHome}
+                        style={{
+                            marginBottom: '16px',
+                            color: '#595959'
+                        }}
+                    >
+                        Quay lại trang chủ
+                    </Button>
 
                     <div style={{ textAlign: 'center', marginBottom: '24px' }}>
                         <div style={{

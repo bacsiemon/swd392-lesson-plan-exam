@@ -60,7 +60,7 @@ const accountService = {
               localStorage.setItem('refresh_token', refreshToken);
             }
             
-            // Decode token to get role and save it
+            // Decode token to get role and name and save them
             try {
               const base64Url = accessToken.split('.')[1];
               const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -76,8 +76,17 @@ const accountService = {
                 sessionStorage.setItem('user_role', String(roleFromToken));
                 console.log('Role saved from token:', roleFromToken);
               }
+              // Get name from token
+              const nameFromToken = decoded.name || decoded.Name || 
+                          decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] ||
+                          decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/name'] ||
+                          decoded.fullName || decoded.FullName;
+              if (nameFromToken) {
+                localStorage.setItem('user_name', nameFromToken);
+                console.log('Name saved from token:', nameFromToken);
+              }
             } catch (error) {
-              console.error('Error decoding token to get role:', error);
+              console.error('Error decoding token to get role/name:', error);
             }
           }
 
@@ -91,6 +100,13 @@ const accountService = {
             localStorage.setItem('user_role', roleToSave);
             sessionStorage.setItem('user_role', roleToSave);
             console.log('Role saved from response:', roleToSave);
+          }
+
+          // Get full name from response data and save it
+          const fullNameFromResponse = loginData.FullName || loginData.fullName || loginData.full_name;
+          if (fullNameFromResponse) {
+            localStorage.setItem('user_name', fullNameFromResponse);
+            console.log('Name saved from response:', fullNameFromResponse);
           }
 
           return {
@@ -664,6 +680,7 @@ const accountService = {
       removeAuthToken();
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user_role');
+      localStorage.removeItem('user_name');
       sessionStorage.removeItem('user_role');
       
       if (baseResponse.StatusCode === 200 || baseResponse.StatusCode === 201) {
@@ -686,6 +703,7 @@ const accountService = {
       removeAuthToken();
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('user_role');
+      localStorage.removeItem('user_name');
       sessionStorage.removeItem('user_role');
       
       const errorData = error.response?.data;

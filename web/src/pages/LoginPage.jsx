@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, Card, Typography, Row, Col, Layout, notification, Divider, Checkbox } from 'antd';
-import { GoogleOutlined, UserOutlined, LockOutlined } from '@ant-design/icons';
+import { GoogleOutlined, UserOutlined, LockOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
 import Logo from '../Assets/Logo.png';
@@ -163,6 +163,11 @@ const LoginPage = () => {
             'Thông tin đăng nhập đã được xóa khỏi trình duyệt.'
         );
     };
+
+    const handleBackToHome = () => {
+        navigate('/');
+    };
+
     return (
         <Layout
             className="login-layout"
@@ -184,6 +189,18 @@ const LoginPage = () => {
                     className="login-card"
                     style={{ maxWidth: 960, width: '100%', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                 >
+                    {/* Nút quay lại */}
+                    <Button
+                        type="text"
+                        icon={<ArrowLeftOutlined />}
+                        onClick={handleBackToHome}
+                        style={{
+                            marginBottom: '16px',
+                            color: '#595959'
+                        }}
+                    >
+                        Quay lại trang chủ
+                    </Button>
 
                     <div style={{ textAlign: 'center', marginBottom: '32px' }}>
                         <div style={{

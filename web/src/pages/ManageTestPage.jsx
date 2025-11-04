@@ -176,26 +176,55 @@ const ManageTestPage = () => {
       
       if (result.success && result.data) {
         // Map backend ExamResponse to display format
-        // Backend returns: { Id, Title, Description, StatusEnum, DurationMinutes, TotalQuestions, TotalPoints, ... }
-        const mappedTests = result.data.map(exam => ({
-          id: exam.id || exam.Id,
-          title: exam.title || exam.Title || '',
-          description: exam.description || exam.Description || '',
+        // Backend returns camelCase: { id, title, description, statusEnum, durationMinutes, totalQuestions, totalPoints, ... }
+        // Handle both camelCase and PascalCase for compatibility
+        let examsArray = [];
+        if (Array.isArray(result.data)) {
+          examsArray = result.data;
+        } else if (result.data && typeof result.data === 'object') {
+          if (Array.isArray(result.data.data)) {
+            examsArray = result.data.data;
+          } else if (Array.isArray(result.data.items)) {
+            examsArray = result.data.items;
+          } else {
+            examsArray = [result.data];
+          }
+        }
+        
+        const mappedTests = examsArray.map(exam => {
+          // Handle both camelCase and PascalCase
+          const examId = exam.id !== undefined ? exam.id : (exam.Id !== undefined ? exam.Id : null);
+          const examTitle = exam.title !== undefined ? exam.title : (exam.Title !== undefined ? exam.Title : '');
+          const examDescription = exam.description !== undefined ? exam.description : (exam.Description !== undefined ? exam.Description : '');
+          const examStatusEnum = exam.statusEnum !== undefined ? exam.statusEnum : (exam.StatusEnum !== undefined ? exam.StatusEnum : 0);
+          const examTotalQuestions = exam.totalQuestions !== undefined ? exam.totalQuestions : (exam.TotalQuestions !== undefined ? exam.TotalQuestions : 0);
+          const examTotalPoints = exam.totalPoints !== undefined ? exam.totalPoints : (exam.TotalPoints !== undefined ? exam.TotalPoints : 0);
+          const examDurationMinutes = exam.durationMinutes !== undefined ? exam.durationMinutes : (exam.DurationMinutes !== undefined ? exam.DurationMinutes : 0);
+          const examGradeLevel = exam.gradeLevel !== undefined ? exam.gradeLevel : (exam.GradeLevel !== undefined ? exam.GradeLevel : null);
+          const examCreatedAt = exam.createdAt !== undefined ? exam.createdAt : (exam.CreatedAt !== undefined ? exam.CreatedAt : null);
+          
           // Map StatusEnum: 0=Draft, 1=Inactive, 2=Active to string
-          status: exam.statusEnum === 0 ? 'draft' : (exam.statusEnum === 2 ? 'active' : 'inactive'),
-          statusEnum: exam.statusEnum !== undefined ? exam.statusEnum : (exam.StatusEnum !== undefined ? exam.StatusEnum : 0),
-          totalQuestions: exam.totalQuestions || exam.TotalQuestions || 0,
-          totalPoints: exam.totalPoints || exam.TotalPoints || 0,
-          duration: exam.durationMinutes || exam.DurationMinutes || 0,
-          gradeLevel: exam.gradeLevel || exam.GradeLevel || null,
-          createdAt: exam.createdAt || exam.CreatedAt || null,
-          // These might not be in ExamResponse, set defaults
-          studentAttempts: exam.studentAttempts || 0,
-          averageScore: exam.averageScore || 0,
-          passRate: exam.passRate || 0,
-          // Keep original data for details
-          rawData: exam
-        }));
+          const status = examStatusEnum === 0 ? 'draft' : (examStatusEnum === 2 ? 'active' : 'inactive');
+          
+          return {
+            id: examId,
+            title: examTitle,
+            description: examDescription,
+            status: status,
+            statusEnum: examStatusEnum,
+            totalQuestions: examTotalQuestions,
+            totalPoints: examTotalPoints,
+            duration: examDurationMinutes,
+            gradeLevel: examGradeLevel,
+            createdAt: examCreatedAt,
+            // These might not be in ExamResponse, set defaults
+            studentAttempts: exam.studentAttempts || exam.StudentAttempts || 0,
+            averageScore: exam.averageScore || exam.AverageScore || 0,
+            passRate: exam.passRate || exam.PassRate || 0,
+            // Keep original data for details
+            rawData: exam
+          };
+        });
         
         console.log('Loaded and mapped exams:', mappedTests);
         setTests(mappedTests);

@@ -13,12 +13,12 @@ const examService = {
    */
   async createExam(examData) {
     try {
-      // Backend expects PascalCase: { Title, Description, CreatedByTeacher, ... }
-      // But ASP.NET Core can bind both camelCase and PascalCase
+      // Map to backend expected format (camelCase)
+      // Backend expects: title, description, createdByTeacher, gradeLevel, durationMinutes, etc.
       const requestData = {
         title: examData.title || examData.Title || '',
-        description: examData.description || examData.Description || '',
-        createdByTeacher: examData.createdByTeacher || examData.CreatedByTeacher || null,
+        description: examData.description !== undefined ? (examData.description || null) : (examData.Description !== undefined ? (examData.Description || null) : null),
+        createdByTeacher: examData.createdByTeacher !== undefined ? examData.createdByTeacher : (examData.CreatedByTeacher !== undefined ? examData.CreatedByTeacher : null),
         gradeLevel: examData.gradeLevel !== undefined && examData.gradeLevel !== null 
           ? examData.gradeLevel 
           : (examData.GradeLevel !== undefined && examData.GradeLevel !== null ? examData.GradeLevel : null),
@@ -114,11 +114,13 @@ const examService = {
    */
   async createExamFromMatrix(examData) {
     try {
+      // Map to backend expected format (camelCase)
+      // Backend expects: examMatrixId (Required), title, description, createdByTeacher, etc.
       const requestData = {
-        examMatrixId: examData.examMatrixId || examData.ExamMatrixId,
-        title: examData.title || examData.Title || '',
-        description: examData.description || examData.Description || '',
-        createdByTeacher: examData.createdByTeacher || examData.CreatedByTeacher || null,
+        examMatrixId: examData.examMatrixId !== undefined ? examData.examMatrixId : (examData.ExamMatrixId !== undefined ? examData.ExamMatrixId : null),
+        title: examData.title !== undefined ? (examData.title || null) : (examData.Title !== undefined ? (examData.Title || null) : null),
+        description: examData.description !== undefined ? (examData.description || null) : (examData.Description !== undefined ? (examData.Description || null) : null),
+        createdByTeacher: examData.createdByTeacher !== undefined ? examData.createdByTeacher : (examData.CreatedByTeacher !== undefined ? examData.CreatedByTeacher : null),
         gradeLevel: examData.gradeLevel !== undefined && examData.gradeLevel !== null
           ? examData.gradeLevel
           : (examData.GradeLevel !== undefined && examData.GradeLevel !== null ? examData.GradeLevel : null),
@@ -316,11 +318,12 @@ const examService = {
    */
   async updateExam(id, examData) {
     try {
-      // Use same format as createExam
+      // Map to backend expected format (camelCase)
+      // ExamUpdateRequest extends ExamCreateRequest, so same fields
       const requestData = {
         title: examData.title || examData.Title || '',
-        description: examData.description || examData.Description || '',
-        createdByTeacher: examData.createdByTeacher || examData.CreatedByTeacher || null,
+        description: examData.description !== undefined ? (examData.description || null) : (examData.Description !== undefined ? (examData.Description || null) : null),
+        createdByTeacher: examData.createdByTeacher !== undefined ? examData.createdByTeacher : (examData.CreatedByTeacher !== undefined ? examData.CreatedByTeacher : null),
         gradeLevel: examData.gradeLevel !== undefined && examData.gradeLevel !== null
           ? examData.gradeLevel
           : (examData.GradeLevel !== undefined && examData.GradeLevel !== null ? examData.GradeLevel : null),
@@ -409,6 +412,8 @@ const examService = {
    */
   async updateExamStatus(id, statusEnum) {
     try {
+      // Map to backend expected format (camelCase)
+      // Backend expects: { statusEnum: number }
       const requestData = {
         statusEnum: statusEnum
       };
@@ -464,8 +469,10 @@ const examService = {
    */
   async addQuestionToExam(examId, questionData) {
     try {
+      // Map to backend expected format (camelCase)
+      // Backend expects: { questionId (Required), points?, orderIndex? }
       const requestData = {
-        questionId: questionData.questionId || questionData.QuestionId,
+        questionId: questionData.questionId !== undefined ? questionData.questionId : (questionData.QuestionId !== undefined ? questionData.QuestionId : null),
         points: questionData.points !== undefined && questionData.points !== null
           ? questionData.points
           : (questionData.Points !== undefined && questionData.Points !== null ? questionData.Points : null),
@@ -576,8 +583,10 @@ const examService = {
    */
   async updateExamQuestion(examId, examQuestionId, questionData) {
     try {
+      // Map to backend expected format (camelCase)
+      // Backend expects: { questionId (Required), points?, orderIndex? }
       const requestData = {
-        questionId: questionData.questionId || questionData.QuestionId,
+        questionId: questionData.questionId !== undefined ? questionData.questionId : (questionData.QuestionId !== undefined ? questionData.QuestionId : null),
         points: questionData.points !== undefined && questionData.points !== null
           ? questionData.points
           : (questionData.Points !== undefined && questionData.Points !== null ? questionData.Points : null),
