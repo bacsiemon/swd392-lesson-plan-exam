@@ -3,7 +3,7 @@
 ## Variable Naming
 - Use `camelCase`for variables and parameters.
 - Use `PascalCase` for public properties and methods.
-- Use `ALL_CAPS` for constants.
+- Use `ALL_CAPS` for constants, return messages & error messages.
 
 ## Api Commenting
 - XML Content must be written using proper Markdown syntax. Pay extra careful to line breaks
