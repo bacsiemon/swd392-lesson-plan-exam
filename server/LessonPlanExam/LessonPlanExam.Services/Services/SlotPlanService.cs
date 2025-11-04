@@ -215,5 +215,59 @@ namespace LessonPlanExam.Services.Services
                 Message = "SUCCESS"
             };
         }
+
+        public async Task<BaseResponse> GetSlotPlansByLessonPlanAsync(int lessonPlanId, int page = 1, int size = 10)
+        {
+            // Check if user is a teacher
+            var currentRole = _accountService.GetCurrentUserRole();
+            if (currentRole != EUserRole.Teacher)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 403,
+                    Errors = "TEACHER_ONLY"
+                };
+            }
+
+            var currentUserId = _accountService.GetCurrentUserId();
+
+            // Check if the lesson plan exists and belongs to the current teacher
+            var lessonPlan = await _unitOfWork.LessonPlanRepository.GetByIdAsync(lessonPlanId);
+            if (lessonPlan == null || lessonPlan.DeletedAt != null)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 404,
+                    Errors = "LESSON_PLAN_NOT_FOUND"
+                };
+            }
+
+            if (lessonPlan.CreatedByTeacher != currentUserId)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 403,
+                    Errors = "LESSON_PLAN_NOT_OWNED_BY_TEACHER"
+                };
+            }
+
+            // Get paginated slot plans for the lesson plan, ordered by slot number
+            var response = await _unitOfWork.SlotPlanRepository.GetPaginatedAsync(
+                page,
+                size,
+                firstPage: 1,
+                predicate: sp => sp.LessonPlanId == lessonPlanId,
+                orderBy: q => q.OrderBy(x => x.SlotNumber),
+                includeProperties: sp => sp.LessonPlan
+            );
+
+            return new BaseResponse
+            {
+                StatusCode = 200,
+                Message = "SUCCESS",
+                Data = response.Items.Select(e => e.ToResponse()),
+                AdditionalData = response.AdditionalData
+            };
+        }
     }
 }

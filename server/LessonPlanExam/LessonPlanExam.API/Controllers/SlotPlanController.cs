@@ -159,5 +159,37 @@ namespace LessonPlanExam.API.Controllers
             var response = await _slotPlanService.DeleteSlotPlanAsync(id);
             return StatusCode(response.StatusCode, response);
         }
+
+        /// <summary>Teacher</summary>
+        /// <remarks>
+        ///
+        /// Get paginated list of slot plans for a specific lesson plan.  
+        /// 
+        /// Only the lesson plan creator (teacher) can retrieve slot plans for their lesson plans.  
+        /// Results are ordered by slot number in ascending order.  
+        ///
+        /// Sample request:
+        ///```
+        /// GET /api/slotplan/lesson-plan/123?page=1&amp;size=10
+        ///```
+        /// </remarks>
+        /// <param name="lessonPlanId">The ID of the lesson plan to retrieve slot plans for</param>
+        /// <param name="page">Page number for pagination (default: 1). Must be greater than 0.</param>
+        /// <param name="size">Number of items per page (default: 10). Must be between 1 and 100.</param>
+        /// <response code="200">Slot plans retrieved successfully. Returns paginated list with slot plan details and pagination metadata.</response>
+        /// <response code="401">Unauthorized. User authentication required.</response>
+        /// <response code="403">Forbidden. Possible messages:
+        /// - TEACHER_ONLY  
+        /// - LESSON_PLAN_NOT_OWNED_BY_TEACHER  
+        /// </response>
+        /// <response code="404">Lesson plan not found. Message: LESSON_PLAN_NOT_FOUND</response>
+        /// <response code="500">Internal server error occurred while retrieving slot plans. Handled by ExceptionMiddleware.</response>
+        [HttpGet("lesson-plan/{lessonPlanId}")]
+        [AuthorizeRoles(EUserRole.Teacher)]
+        public async Task<IActionResult> GetSlotPlansByLessonPlanAsync(int lessonPlanId, [FromQuery] int page = 1, [FromQuery] int size = 10)
+        {
+            var response = await _slotPlanService.GetSlotPlansByLessonPlanAsync(lessonPlanId, page, size);
+            return StatusCode(response.StatusCode, response);
+        }
     }
 }

@@ -8,5 +8,6 @@ namespace LessonPlanExam.Services.Interfaces
         Task<BaseResponse> CreateSlotPlanAsync(CreateSlotPlanRequest request);
         Task<BaseResponse> UpdateSlotPlanAsync(int id, UpdateSlotPlanRequest request);
         Task<BaseResponse> DeleteSlotPlanAsync(int id);
+        Task<BaseResponse> GetSlotPlansByLessonPlanAsync(int lessonPlanId, int page = 1, int size = 10);
     }
 }
