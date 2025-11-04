@@ -60,7 +60,7 @@ namespace LessonPlanExam.API.Controllers
         /// <param name="ct">Cancellation token.</param>
         /// <response code="200">Returns the list of exam matrices.</response>
         [HttpGet]
-        public async Task<IActionResult> QueryAsync([FromQuery] int? teacherId, [FromQuery] string q, CancellationToken ct = default)
+        public async Task<IActionResult> QueryAsync([FromQuery] int? teacherId, [FromQuery] string? q, CancellationToken ct = default)
         {
             var result = await _service.QueryAsync(teacherId, q, ct);
             return Ok(result);

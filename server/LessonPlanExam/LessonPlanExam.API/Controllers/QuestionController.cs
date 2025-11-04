@@ -31,6 +31,20 @@ namespace LessonPlanExam.API.Controllers {
         ///   ]
         /// }
         /// ```
+        /// 
+        /// Sample request (Fill-Blank):
+        /// ```
+        /// POST /api/questions
+        /// {
+        ///   "questionBankId": 1,
+        ///   "title": "Name the compound",
+        ///   "content": "Write the common name for H2O",
+        ///   "questionTypeEnum": 1,
+        ///   "fillBlankAnswers": [
+        ///     { "correctAnswer": "water", "normalizedCorrectAnswer": "water" }
+        ///   ]
+        /// }
+        /// ```
         /// </remarks>
         /// <param name="request">The question creation request.</param>
         /// <param name="ct">Cancellation token.</param>
@@ -60,7 +74,7 @@ namespace LessonPlanExam.API.Controllers {
         /// <param name="ct">Cancellation token.</param>
         /// <response code="200">Returns the list of questions.</response>
         [HttpGet]
-        public async Task<IActionResult> Query([FromQuery] int? bankId, [FromQuery] int? type, [FromQuery] int? difficultyId, [FromQuery] bool? active, [FromQuery] string q, CancellationToken ct) {
+        public async Task<IActionResult> Query([FromQuery] int? bankId, [FromQuery] int? type, [FromQuery] int? difficultyId, [FromQuery] bool? active, [FromQuery] string? q, CancellationToken ct) {
             var result = await _service.QueryAsync(bankId, type, difficultyId, active, q, ct);
             return Ok(result);
         }

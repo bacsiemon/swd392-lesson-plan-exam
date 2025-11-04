@@ -18,7 +18,7 @@ namespace LessonPlanExam.Repositories.DTOs.ExamMatrixDTOs
 
         public decimal? TotalPoints { get; set; }
 
-        public string Configuration { get; set; }
+        public string? Configuration { get; set; }
     }
 
     public class ExamMatrixUpdateRequest
@@ -33,7 +33,7 @@ namespace LessonPlanExam.Repositories.DTOs.ExamMatrixDTOs
 
         public decimal? TotalPoints { get; set; }
 
-        public string Configuration { get; set; }
+        public string? Configuration { get; set; }
     }
 
     public class ExamMatrixResponse
@@ -44,7 +44,7 @@ namespace LessonPlanExam.Repositories.DTOs.ExamMatrixDTOs
         public int TeacherId { get; set; }
         public int? TotalQuestions { get; set; }
         public decimal? TotalPoints { get; set; }
-        public string Configuration { get; set; }
+        public string? Configuration { get; set; }
     }
 
     public class ExamMatrixItemCreateRequest

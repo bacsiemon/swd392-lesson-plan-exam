@@ -24,7 +24,8 @@ namespace LessonPlanExam.Repositories.Repositories {
                 Content = request.Content,
                 QuestionTypeEnum = request.QuestionTypeEnum,
                 QuestionDifficultyId = request.QuestionDifficultyId,
-                AdditionalData = request.AdditionalData ?? "",
+                // Ensure AdditionalData contains valid JSON for jsonb column; use empty object if not provided
+                AdditionalData = string.IsNullOrWhiteSpace(request.AdditionalData) ? "{}" : request.AdditionalData,
                 IsActive = true,
             };
             await _db.Questions.AddAsync(entity, ct);
@@ -88,7 +89,8 @@ namespace LessonPlanExam.Repositories.Repositories {
             entity.Content = request.Content;
             entity.QuestionTypeEnum = request.QuestionTypeEnum;
             entity.QuestionDifficultyId = request.QuestionDifficultyId;
-            entity.AdditionalData = request.AdditionalData;
+            // Ensure valid json for jsonb column
+            entity.AdditionalData = string.IsNullOrWhiteSpace(request.AdditionalData) ? "{}" : request.AdditionalData;
             // Update answers: xóa hết tạo lại
             if (request.QuestionTypeEnum == EQuestionType.MultipleChoice && request.MultipleChoiceAnswers != null) {
                 var old = _db.QuestionMultipleChoiceAnswers.Where(x => x.QuestionId == entity.Id);
