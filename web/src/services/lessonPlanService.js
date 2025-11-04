@@ -267,23 +267,56 @@ const lessonPlanService = {
       const formData = new FormData();
       formData.append('file', file);
 
+      // Don't set Content-Type manually - axios will automatically set it with boundary for FormData
+      // When axios detects FormData, it automatically sets Content-Type with boundary
+      // We use transformRequest to remove the default Content-Type header so axios can set it automatically
       const response = await api.post(`/api/LessonPlan/${lessonPlanId}/upload-file`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        transformRequest: [(data, headers) => {
+          // Remove Content-Type header so axios can set it automatically with boundary for FormData
+          delete headers['Content-Type'];
+          return data;
+        }]
       });
 
-      return {
-        success: true,
-        data: response.data,
-        message: 'Tải lên file thành công'
-      };
+      // Handle backend response structure: { StatusCode, Message, Data }
+      const baseResponse = response.data;
+      const statusCode = baseResponse?.StatusCode !== undefined 
+        ? baseResponse.StatusCode 
+        : (baseResponse?.statusCode !== undefined ? baseResponse.statusCode : response.status);
+
+      // Check if upload was successful (201 Created)
+      if (statusCode === 201 || response.status === 201) {
+        return {
+          success: true,
+          data: baseResponse.Data || baseResponse.data || baseResponse,
+          message: baseResponse.Message || baseResponse.message || 'Tải lên file thành công',
+          statusCode: statusCode
+        };
+      } else {
+        // Handle non-success status codes
+        const errorMsg = baseResponse.Message || baseResponse.message || 
+                        baseResponse.Errors || baseResponse.errors ||
+                        'Không thể tải lên file';
+        return {
+          success: false,
+          error: baseResponse.Errors || baseResponse.errors || baseResponse,
+          message: errorMsg,
+          statusCode: statusCode
+        };
+      }
     } catch (error) {
       console.error('Error uploading file:', error);
+      const errorData = error.response?.data || {};
+      const statusCode = error.response?.status || errorData?.StatusCode || errorData?.statusCode;
+      const errorMsg = errorData.Message || errorData.message || 
+                      errorData.Errors || errorData.errors ||
+                      error.message || 'Không thể tải lên file';
+      
       return {
         success: false,
-        error: error.response?.data || error.message,
-        message: error.response?.data?.message || 'Không thể tải lên file'
+        error: errorData || error.message,
+        message: errorMsg,
+        statusCode: statusCode
       };
     }
   },

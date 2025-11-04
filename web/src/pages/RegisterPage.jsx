@@ -175,9 +175,13 @@ const RegisterPage = () => {
             className="register-layout"
             style={{
                 minHeight: '100vh',
-                position: 'relative',
-                width: '100%',
-                overflow: 'auto',
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                width: '100vw',
+                height: '100vh',
             }}
         >
             <ChemistryBackground />
