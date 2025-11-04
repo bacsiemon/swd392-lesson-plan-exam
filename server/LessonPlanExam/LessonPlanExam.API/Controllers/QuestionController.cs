@@ -74,7 +74,7 @@ namespace LessonPlanExam.API.Controllers {
         /// <param name="ct">Cancellation token.</param>
         /// <response code="200">Returns the list of questions.</response>
         [HttpGet]
-        public async Task<IActionResult> Query([FromQuery] int? bankId, [FromQuery] int? type, [FromQuery] int? difficultyId, [FromQuery] bool? active, [FromQuery] string q, CancellationToken ct) {
+        public async Task<IActionResult> Query([FromQuery] int? bankId, [FromQuery] int? type, [FromQuery] int? difficultyId, [FromQuery] bool? active, [FromQuery] string? q, CancellationToken ct) {
             var result = await _service.QueryAsync(bankId, type, difficultyId, active, q, ct);
             return Ok(result);
         }

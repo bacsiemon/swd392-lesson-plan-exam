@@ -58,7 +58,7 @@ namespace LessonPlanExam.API.Controllers
         /// <param name="size">Number of items per page (default is 10).</param>
         /// <response code="200">Returns a paginated list of question banks.</response>
         [HttpGet]
-		public async Task<IActionResult> QueryAsync([FromQuery] int? teacherId, [FromQuery] int? gradeLevel, [FromQuery] EQuestionBankStatus? status, [FromQuery] string q, [FromQuery] int page = 1, [FromQuery] int size = 10)
+		public async Task<IActionResult> QueryAsync([FromQuery] int? teacherId, [FromQuery] int? gradeLevel, [FromQuery] EQuestionBankStatus? status, [FromQuery] string? q, [FromQuery] int page = 1, [FromQuery] int size = 10)
 		{
 			var res = await _service.QueryAsync(teacherId, gradeLevel, status, q, page, size);
 			return StatusCode(res.StatusCode, res);
