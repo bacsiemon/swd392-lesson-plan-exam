@@ -119,6 +119,33 @@ namespace LessonPlanExam.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
+        /// <summary>User</summary>
+        /// <remarks>
+        /// 
+        /// Search for lesson plans with optional filters and pagination.
+        /// 
+        /// Allows users to search lesson plans by title, teacher name, and/or grade level.
+        /// All search parameters are optional and can be used independently or in combination.
+        /// Results are paginated and returned in descending order by creation date.
+        /// 
+        /// Sample request:
+        /// ```
+        /// GET /api/lessonplan/search?title=mathematics&amp;teacherName=john&amp;gradeLevel=5&amp;page=1&amp;size=10
+        /// ```
+        /// </remarks>
+        /// <param name="title">Optional title filter. Searches for lesson plans containing this text in the title (case-insensitive)</param>
+        /// <param name="teacherName">Optional teacher name filter. Searches for lesson plans created by teachers whose name contains this text (case-insensitive)</param>
+        /// <param name="gradeLevel">Optional grade level filter. Searches for lesson plans targeting this specific grade level</param>
+        /// <param name="page">Page number for pagination (default: 1). Must be greater than 0</param>
+        /// <param name="size">Number of items per page (default: 10). Must be between 1 and 100</param>
+        /// <response code="200">Lesson plans retrieved successfully. Returns paginated search results with lesson plan summaries and pagination metadata.</response>
+        /// <response code="400">Validation error. Possible messages:
+        /// - INVALID_PAGE_NUMBER  
+        /// - INVALID_PAGE_SIZE  
+        /// - INVALID_GRADE_LEVEL  
+        /// </response>
+        /// <response code="401">Unauthorized. User authentication required.</response>
+        /// <response code="500">Internal server error occurred during search operation. Handled by ExceptionMiddleware.</response>
         [HttpGet("search")]
         public async Task<IActionResult> SearchAsync(
             [FromQuery] string? title,
