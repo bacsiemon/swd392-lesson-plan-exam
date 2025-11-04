@@ -30,6 +30,7 @@ namespace LessonPlanExam.Services
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IFileUploadService, FileUploadService>();
             services.AddScoped<ILessonPlanService, LessonPlanService>();
+            services.AddScoped<ISlotPlanService, SlotPlanService>();
             services.AddScoped<IQuestionBankService, QuestionBankService>();
             services.AddScoped<IQuestionService, QuestionService>();
             services.AddScoped<IExamMatrixService, ExamMatrixService>();
