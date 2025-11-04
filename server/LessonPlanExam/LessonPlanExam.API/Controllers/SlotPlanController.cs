@@ -126,5 +126,38 @@ namespace LessonPlanExam.API.Controllers
             var response = await _slotPlanService.UpdateSlotPlanAsync(id, request);
             return StatusCode(response.StatusCode, response);
         }
+
+        /// <summary>Teacher</summary>
+        /// <remarks>
+        ///
+        /// Delete a slot plan permanently.  
+        /// 
+        /// Only the lesson plan creator (teacher) can delete slot plans from their lesson plans.  
+        /// This action is irreversible and will remove the slot plan and all its associated content.  
+        ///
+        /// Sample request:
+        ///```
+        /// DELETE /api/slotplan/5
+        ///```
+        /// </remarks>
+        /// <param name="id">The ID of the slot plan to delete</param>
+        /// <response code="200">Slot plan deleted successfully.</response>
+        /// <response code="401">Unauthorized. User authentication required.</response>
+        /// <response code="403">Forbidden. Possible messages:
+        /// - TEACHER_ONLY  
+        /// - LESSON_PLAN_NOT_OWNED_BY_TEACHER  
+        /// </response>
+        /// <response code="404">Not found. Possible messages:
+        /// - SLOT_PLAN_NOT_FOUND  
+        /// - LESSON_PLAN_NOT_FOUND  
+        /// </response>
+        /// <response code="500">Internal server error occurred during slot plan deletion. Handled by ExceptionMiddleware.</response>
+        [HttpDelete("{id}")]
+        [AuthorizeRoles(EUserRole.Teacher)]
+        public async Task<IActionResult> DeleteSlotPlanAsync(int id)
+        {
+            var response = await _slotPlanService.DeleteSlotPlanAsync(id);
+            return StatusCode(response.StatusCode, response);
+        }
     }
 }
