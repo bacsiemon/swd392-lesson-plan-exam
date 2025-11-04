@@ -24,7 +24,6 @@ import {
 } from '@ant-design/icons';
 import {
   QUESTION_TYPES,
-  DIFFICULTY_LEVELS,
   VALIDATION_RULES
 } from '../constants/questionBankConstants';
 
@@ -32,7 +31,7 @@ const { TextArea } = Input;
 const { Option } = Select;
 const { Title, Text } = Typography;
 
-const QuestionForm = ({ initialValues, onSubmit, onCancel, loading = false }) => {
+const QuestionForm = ({ initialValues, onSubmit, onCancel, loading = false, questionBankId }) => {
   const [form] = Form.useForm();
   const [questionType, setQuestionType] = useState(initialValues?.questionTypeEnum ?? 0);
   const [submitting, setSubmitting] = useState(false);
@@ -45,29 +44,156 @@ const QuestionForm = ({ initialValues, onSubmit, onCancel, loading = false }) =>
           ? JSON.parse(initialValues.additionalData)
           : initialValues.additionalData;
 
-        form.setFieldsValue({
-          ...initialValues,
-          ...additionalData
-        });
+        // Map backend response to form format
+        // Backend returns: { Id, Title, Content, QuestionTypeEnum, MultipleChoiceAnswers, FillBlankAnswers, ... }
+        const formData = {
+          questionBankId: questionBankId || initialValues.questionBankId || initialValues.QuestionBankId || null, // Set questionBankId from prop or initialValues
+          title: initialValues.title || initialValues.Title || '',
+          content: initialValues.content || initialValues.Content || '',
+          questionTypeEnum: initialValues.questionTypeEnum !== undefined 
+            ? initialValues.questionTypeEnum 
+            : (initialValues.QuestionTypeEnum !== undefined ? initialValues.QuestionTypeEnum : 0),
+          questionDifficultyId: initialValues.questionDifficultyId !== undefined && initialValues.questionDifficultyId !== null
+            ? initialValues.questionDifficultyId
+            : (initialValues.QuestionDifficultyId !== undefined && initialValues.QuestionDifficultyId !== null
+                ? initialValues.QuestionDifficultyId
+                : null),
+          explanation: additionalData?.explanation || initialValues.explanation || ''
+        };
+
+        // Map MultipleChoice answers
+        const mcAnswers = initialValues.multipleChoiceAnswers || initialValues.MultipleChoiceAnswers || [];
+        if (mcAnswers.length > 0) {
+          formData.answers = mcAnswers.map(answer => ({
+            text: answer.answerText || answer.text || answer.AnswerText || '',
+            isCorrect: answer.isCorrect !== undefined ? answer.isCorrect : (answer.IsCorrect !== undefined ? answer.IsCorrect : false),
+            explanation: answer.explanation || answer.Explanation || ''
+          }));
+        }
+
+        // Map FillBlank answers
+        const fbAnswers = initialValues.fillBlankAnswers || initialValues.FillBlankAnswers || [];
+        if (fbAnswers.length > 0) {
+          formData.blanks = fbAnswers.map(blank => ({
+            correctAnswer: blank.correctAnswer || blank.CorrectAnswer || '',
+            normalizedCorrectAnswer: blank.normalizedCorrectAnswer || blank.NormalizedCorrectAnswer || '',
+            explanation: blank.explanation || blank.Explanation || ''
+          }));
+        }
+
+        form.setFieldsValue(formData);
+        setQuestionType(formData.questionTypeEnum);
       } catch (error) {
-        console.error('Error parsing additional data:', error);
+        console.error('Error parsing initial values:', error);
       }
+    } else {
+      // Reset form when no initial values (creating new)
+      // Always set questionBankId from prop when creating new question
+      form.resetFields();
+      // Always set questionBankId when creating new question - ensure it's set in form values
+      if (questionBankId) {
+        form.setFieldsValue({ 
+          questionBankId: questionBankId,
+          questionTypeEnum: 0
+        });
+      } else {
+        // If no questionBankId prop, still set questionTypeEnum
+        form.setFieldsValue({ 
+          questionTypeEnum: 0
+        });
+      }
+      setQuestionType(0);
+      
+      // Log to debug
+      console.log('QuestionForm - Creating new question:', {
+        questionBankId: questionBankId,
+        formValues: form.getFieldsValue()
+      });
     }
-  }, [initialValues, form]);
+  }, [initialValues, form, questionBankId]);
 
   const handleSubmit = async (values) => {
     setSubmitting(true);
     try {
       // Prepare data based on question type - format for backend API
-      // Backend expects: QuestionBankId, Title, Content, QuestionTypeEnum, QuestionDifficultyId?, AdditionalData?, MultipleChoiceAnswers?, FillBlankAnswers?
+      // Backend expects: questionBankId, title, content, questionTypeEnum, questionDifficultyId?, additionalData?, multipleChoiceAnswers?, fillBlankAnswers?
+      // Backend repository converts additionalData: if null/empty -> "{}", otherwise use as JSON string
+      
+      // Get questionBankId from form values first, then fallback to prop, then initialValues
+      // Priority: form values > prop > initialValues
+      // Form values should always have questionBankId if it was set properly
+      let questionBankIdValue = values.questionBankId;
+      
+      // If not in form values, try to get from prop
+      if (!questionBankIdValue && questionBankId) {
+        questionBankIdValue = questionBankId;
+        // Also set it to form values for next time
+        form.setFieldsValue({ questionBankId: questionBankId });
+      }
+      
+      // If still not found, try initialValues
+      if (!questionBankIdValue) {
+        questionBankIdValue = initialValues?.questionBankId || initialValues?.QuestionBankId;
+      }
+      
+      console.log('QuestionForm submit - questionBankId check:', {
+        'values.questionBankId': values.questionBankId,
+        'prop questionBankId': questionBankId,
+        'initialValues?.questionBankId': initialValues?.questionBankId,
+        'final value': questionBankIdValue,
+        'all values keys': Object.keys(values),
+        'form.getFieldsValue()': form.getFieldsValue()
+      });
+      
+      if (!questionBankIdValue) {
+        console.error('QuestionBankId is missing:', {
+          values,
+          questionBankId,
+          initialValues,
+          'form.getFieldsValue()': form.getFieldsValue(),
+          'form.getFieldValue("questionBankId")': form.getFieldValue('questionBankId')
+        });
+        throw new Error('Vui lòng chọn ngân hàng câu hỏi');
+      }
+      
+      // Validate and parse questionBankId
+      const parsedBankId = parseInt(questionBankIdValue);
+      if (isNaN(parsedBankId) || parsedBankId <= 0) {
+        throw new Error(`ID ngân hàng câu hỏi không hợp lệ: ${questionBankIdValue}`);
+      }
+      
       const submitData = {
-        questionBankId: values.questionBankId, // Will be set by parent component
-        title: values.title,
-        content: values.content,
+        questionBankId: parsedBankId, // Ensure it's a valid positive number (from form values, prop, or initialValues)
+        title: (values.title || '').trim(),
+        content: (values.content || '').trim(),
         questionTypeEnum: questionType,
-        questionDifficultyId: values.questionDifficultyId || null,
-        additionalData: values.explanation || null
+        // Backend QuestionDifficultyId is int? (nullable) - optional field
+        // Only send if provided and valid (positive integer > 0), otherwise send null
+        questionDifficultyId: (() => {
+          const diffId = values.questionDifficultyId;
+          if (diffId === null || diffId === undefined || diffId === '' || diffId === 0) {
+            return null;
+          }
+          const parsed = parseInt(diffId);
+          if (isNaN(parsed) || parsed <= 0) {
+            return null;
+          }
+          return parsed;
+        })(),
+        // Backend repository will convert null/empty to "{}", so we can send null or valid JSON string
+        // If explanation provided, wrap it in JSON format; otherwise send null (backend will convert to "{}")
+        additionalData: values.explanation && values.explanation.trim()
+          ? JSON.stringify({ explanation: values.explanation.trim() })
+          : null
       };
+      
+      // Validate required fields
+      if (!submitData.title || submitData.title.length === 0) {
+        throw new Error('Vui lòng nhập tiêu đề câu hỏi');
+      }
+      if (!submitData.content || submitData.content.length === 0) {
+        throw new Error('Vui lòng nhập nội dung câu hỏi');
+      }
 
       // Format answers based on question type
       if (questionType === 0) { // Multiple Choice
@@ -79,12 +205,14 @@ const QuestionForm = ({ initialValues, onSubmit, onCancel, loading = false }) =>
           throw new Error('Cần ít nhất 1 lựa chọn trả lời');
         }
         
-        submitData.multipleChoiceAnswers = answers.map((answer, index) => ({
-          answerText: answer.text || answer.answerText || '',
-          isCorrect: answer.isCorrect !== undefined ? answer.isCorrect : false,
-          explanation: answer.explanation || '', // Use empty string instead of null (backend accepts both, but empty string is safer)
-          orderIndex: index + 1
-        }));
+        submitData.multipleChoiceAnswers = answers
+          .filter(answer => answer && (answer.text || answer.answerText)) // Filter empty answers
+          .map((answer, index) => ({
+            answerText: (answer.text || answer.answerText || '').trim(),
+            isCorrect: answer.isCorrect !== undefined ? answer.isCorrect : false,
+            explanation: answer.explanation || '', // Use empty string instead of null (backend accepts both, but empty string is safer)
+            orderIndex: index + 1
+          }));
         
         // Explicitly set fillBlankAnswers to null for MultipleChoice (not undefined)
         // This helps ASP.NET Core model binding - some validators expect the field to exist
@@ -92,22 +220,35 @@ const QuestionForm = ({ initialValues, onSubmit, onCancel, loading = false }) =>
       } else if (questionType === 1) { // Fill Blank
         // Convert form blanks to backend format
         // Form structure: [{ correctAnswer: '...', alternatives?: [] }]
-        // Backend expects: [{ CorrectAnswer: '...', NormalizedCorrectAnswer?: string, Explanation?: string }]
+        // Backend expects: [{ correctAnswer: '...', normalizedCorrectAnswer?: string, explanation?: string }]
         const blanks = (values.blanks || []).filter(blank => blank && blank.correctAnswer); // Filter out empty blanks
         if (blanks.length === 0) {
           throw new Error('Cần ít nhất 1 chỗ trống');
         }
         
-        submitData.fillBlankAnswers = blanks.map(blank => {
-          const correctAnswer = blank.correctAnswer || '';
-          return {
-            correctAnswer: correctAnswer,
-            // Backend will normalize if not provided, but let's provide it for consistency
-            normalizedCorrectAnswer: blank.normalizedCorrectAnswer || correctAnswer.toLowerCase(),
-            // Use empty string instead of null (backend accepts both, but empty string is safer)
-            explanation: blank.explanation || ''
-          };
-        });
+        submitData.fillBlankAnswers = blanks
+          .filter(blank => blank && blank.correctAnswer && (blank.correctAnswer || '').trim()) // Filter empty blanks
+          .map(blank => {
+            const correctAnswer = (blank.correctAnswer || '').trim();
+            
+            // Validate correctAnswer is not empty
+            if (!correctAnswer || correctAnswer.length === 0) {
+              throw new Error('Mỗi chỗ trống phải có đáp án đúng');
+            }
+            
+            // Backend database requires NormalizedCorrectAnswer to be non-null (Required field)
+            // Must provide it explicitly to avoid 500 errors
+            const normalizedAnswer = (blank.normalizedCorrectAnswer || '').trim();
+            const finalNormalized = normalizedAnswer || correctAnswer.toLowerCase();
+            
+            return {
+              correctAnswer: correctAnswer,
+              // Backend database requires normalizedCorrectAnswer to be non-null - MUST provide it
+              normalizedCorrectAnswer: finalNormalized,
+              // Use empty string instead of null (backend accepts both, but empty string is safer)
+              explanation: blank.explanation || ''
+            };
+          });
         
         // Explicitly set multipleChoiceAnswers to null for FillBlank (not undefined)
         // This helps ASP.NET Core model binding - some validators expect the field to exist
@@ -161,9 +302,23 @@ const QuestionForm = ({ initialValues, onSubmit, onCancel, loading = false }) =>
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
+          initialValues={{
+            questionBankId: questionBankId || null, // Set initial questionBankId from prop
+            questionTypeEnum: 0
+          }}
           requiredMark={false}
           size="large"
         >
+          {/* Hidden field to store questionBankId - always present in form values */}
+          <Form.Item 
+            name="questionBankId" 
+            hidden 
+            preserve
+            initialValue={questionBankId || null}
+          >
+            <Input type="hidden" />
+          </Form.Item>
+          
           {/* Basic Information */}
           <Card title="Thông tin cơ bản" style={{ marginBottom: 24 }}>
             <Row gutter={24}>
@@ -249,20 +404,19 @@ const QuestionForm = ({ initialValues, onSubmit, onCancel, loading = false }) =>
                 <Form.Item
                   label={
                     <span>
-                      <Text strong>Độ khó</Text>
-                      <Text type="secondary"> *</Text>
+                      <Text strong>Độ khó (ID)</Text>
+                      <Text type="secondary"> (Tùy chọn)</Text>
                     </span>
                   }
                   name="questionDifficultyId"
-                  rules={[{ required: true, message: 'Vui lòng chọn độ khó' }]}
+                  rules={[]}
+                  extra="Nhập ID độ khó từ database (để trống nếu không cần)"
                 >
-                  <Select placeholder="Chọn độ khó">
-                    {DIFFICULTY_LEVELS.map(level => (
-                      <Option key={level.value} value={level.value}>
-                        <Tag color={level.color}>{level.label}</Tag>
-                      </Option>
-                    ))}
-                  </Select>
+                  <InputNumber
+                    placeholder="Nhập ID độ khó (để trống nếu không cần)"
+                    min={1}
+                    style={{ width: '100%' }}
+                  />
                 </Form.Item>
               </Col>
             </Row>

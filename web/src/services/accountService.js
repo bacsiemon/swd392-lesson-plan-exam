@@ -448,42 +448,67 @@ const accountService = {
    */
   async resetPassword(resetData) {
     try {
-      // Convert to PascalCase format expected by backend
+      // Backend expects: { Email, ResetToken, NewPassword, ConfirmPassword }
       const requestData = {
         Email: resetData.email || resetData.Email,
         ResetToken: resetData.resetToken || resetData.ResetToken,
         NewPassword: resetData.newPassword || resetData.NewPassword,
+        ConfirmPassword: resetData.confirmPassword || resetData.ConfirmPassword || resetData.newPassword || resetData.NewPassword,
       };
+      
+      console.log('Resetting password with data:', { ...requestData, NewPassword: '***', ConfirmPassword: '***', ResetToken: '***' });
       
       const response = await api.post('/api/Account/reset-password', requestData);
       
       // Backend returns BaseResponse structure
       const baseResponse = response.data;
       
-      if (baseResponse.StatusCode === 200 || baseResponse.StatusCode === 201) {
+      // Handle both PascalCase and camelCase
+      const responseStatusCode = baseResponse?.StatusCode !== undefined 
+        ? baseResponse.StatusCode 
+        : (baseResponse?.statusCode !== undefined ? baseResponse.statusCode : null);
+      
+      if (responseStatusCode === 200 || response.status === 200) {
         return {
           success: true,
           data: baseResponse.Data || baseResponse.data,
-          message: baseResponse.Message || 'Đặt lại mật khẩu thành công',
+          message: baseResponse.Message || baseResponse.message || 'Đặt lại mật khẩu thành công',
         };
       } else {
         return {
           success: false,
           error: baseResponse,
-          message: baseResponse.Message || 'Không thể đặt lại mật khẩu',
-          statusCode: baseResponse.StatusCode,
+          message: baseResponse?.Message || baseResponse?.message || 'Không thể đặt lại mật khẩu',
+          statusCode: responseStatusCode,
         };
       }
     } catch (error) {
       console.error('Error resetting password:', error);
+      console.error('Error response:', error.response?.data);
+      
       const errorData = error.response?.data;
-      const errorMessage = errorData?.Message || errorData?.message || 'Không thể đặt lại mật khẩu';
+      let errorMessage = 'Không thể đặt lại mật khẩu. Vui lòng thử lại.';
+      
+      if (errorData) {
+        // Handle BaseResponse format
+        if (errorData.Message) {
+          errorMessage = errorData.Message;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        } else if (errorData.errors) {
+          // Validation errors
+          const errorMessages = Object.values(errorData.errors).flat();
+          errorMessage = errorMessages.join(', ');
+        }
+      }
       
       return {
         success: false,
         error: errorData || error.message,
         message: errorMessage,
-        statusCode: error.response?.status || errorData?.StatusCode,
+        statusCode: error.response?.status || errorData?.StatusCode || errorData?.statusCode,
       };
     }
   },
@@ -498,41 +523,72 @@ const accountService = {
    */
   async changePassword(changePasswordData) {
     try {
-      // Convert to PascalCase format expected by backend
+      // Backend expects: { CurrentPassword, NewPassword, ConfirmPassword }
       const requestData = {
         CurrentPassword: changePasswordData.currentPassword || changePasswordData.CurrentPassword,
         NewPassword: changePasswordData.newPassword || changePasswordData.NewPassword,
+        ConfirmPassword: changePasswordData.confirmPassword || changePasswordData.ConfirmPassword || changePasswordData.newPassword || changePasswordData.NewPassword,
       };
+      
+      console.log('Changing password with data:', { ...requestData, CurrentPassword: '***', NewPassword: '***', ConfirmPassword: '***' });
       
       const response = await api.post('/api/Account/change-password', requestData);
       
       // Backend returns BaseResponse structure
       const baseResponse = response.data;
       
-      if (baseResponse.StatusCode === 200 || baseResponse.StatusCode === 201) {
+      console.log('Change password response:', {
+        httpStatus: response.status,
+        statusCode: baseResponse?.StatusCode || baseResponse?.statusCode,
+        message: baseResponse?.Message || baseResponse?.message
+      });
+      
+      // Handle both PascalCase and camelCase
+      const responseStatusCode = baseResponse?.StatusCode !== undefined 
+        ? baseResponse.StatusCode 
+        : (baseResponse?.statusCode !== undefined ? baseResponse.statusCode : null);
+      
+      if (responseStatusCode === 200 || response.status === 200) {
         return {
           success: true,
           data: baseResponse.Data || baseResponse.data,
-          message: baseResponse.Message || 'Đổi mật khẩu thành công',
+          message: baseResponse.Message || baseResponse.message || 'Đổi mật khẩu thành công',
         };
       } else {
         return {
           success: false,
           error: baseResponse,
-          message: baseResponse.Message || 'Không thể đổi mật khẩu',
-          statusCode: baseResponse.StatusCode,
+          message: baseResponse?.Message || baseResponse?.message || 'Không thể đổi mật khẩu',
+          statusCode: responseStatusCode,
         };
       }
     } catch (error) {
       console.error('Error changing password:', error);
+      console.error('Error response:', error.response?.data);
+      
       const errorData = error.response?.data;
-      const errorMessage = errorData?.Message || errorData?.message || 'Không thể đổi mật khẩu';
+      let errorMessage = 'Không thể đổi mật khẩu. Vui lòng thử lại.';
+      
+      if (errorData) {
+        // Handle BaseResponse format
+        if (errorData.Message) {
+          errorMessage = errorData.Message;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        } else if (errorData.errors) {
+          // Validation errors
+          const errorMessages = Object.values(errorData.errors).flat();
+          errorMessage = errorMessages.join(', ');
+        }
+      }
       
       return {
         success: false,
         error: errorData || error.message,
         message: errorMessage,
-        statusCode: error.response?.status || errorData?.StatusCode,
+        statusCode: error.response?.status || errorData?.StatusCode || errorData?.statusCode,
       };
     }
   },

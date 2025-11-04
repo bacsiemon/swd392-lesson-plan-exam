@@ -17,7 +17,9 @@ import {
   Statistic,
   Empty,
   Badge,
-  Avatar
+  Avatar,
+  Form,
+  InputNumber
 } from 'antd';
 import {
   PlusOutlined,
@@ -34,10 +36,40 @@ import {
   ExclamationCircleOutlined,
   ExperimentOutlined
 } from '@ant-design/icons';
+import examMatrixService from '../services/examMatrixService';
 import '../styles/chemistryTheme.css';
+import api from '../services/axios';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+const { TextArea } = Input;
+
+// Helper function to get current user ID from JWT token
+const getCurrentTeacherId = async () => {
+  try {
+    // Try to get from API
+    const response = await api.get('/api/account/profile');
+    if (response.data?.data?.id || response.data?.data?.Id) {
+      return response.data.data.id || response.data.data.Id;
+    }
+    // Fallback: decode JWT token from localStorage
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      const decoded = JSON.parse(jsonPayload);
+      // Try different claim names that might contain user ID
+      const userId = decoded.userId || decoded.sub || decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || decoded.id;
+      return parseInt(userId) || 1;
+    }
+  } catch (error) {
+    console.error('Error getting current teacher ID:', error);
+  }
+  return 1; // Default fallback
+};
 
 const ExamMatrixManagement = () => {
   const [loading, setLoading] = useState(false);
@@ -54,73 +86,178 @@ const ExamMatrixManagement = () => {
   // Modal states
   const [isFormModalVisible, setIsFormModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
-
-  // Mock data for demonstration
-  const mockData = [
-    {
-      id: 1,
-      name: 'Ma trận đề Hóa học lớp 10 - HK1',
-      subject: 'Hóa học',
-      gradeLevel: 'Lớp 10',
-      totalQuestions: 30,
-      createdBy: 'Nguyễn Văn A',
-      createdAt: '2024-10-01',
-      status: 'active'
-    },
-    {
-      id: 2,
-      name: 'Ma trận đề Hóa học lớp 11 - HK2', 
-      subject: 'Hóa học',
-      gradeLevel: 'Lớp 11',
-      totalQuestions: 25,
-      createdBy: 'Trần Thị B',
-      createdAt: '2024-10-03',
-      status: 'draft'
-    }
-  ];
+  const [form] = Form.useForm();
+  const [currentTeacherId, setCurrentTeacherId] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchExamMatrixes();
+    // Load current teacher ID first, then fetch exam matrices
+    const loadData = async () => {
+      const teacherId = await getCurrentTeacherId();
+      setCurrentTeacherId(teacherId);
+      // Fetch exam matrices after teacherId is loaded
+      await fetchExamMatrixes();
+    };
+    loadData();
   }, []);
+
+  // Fetch exam matrices when currentTeacherId changes (if needed)
+  useEffect(() => {
+    if (currentTeacherId) {
+      // Optionally refetch when teacherId is loaded
+      // Uncomment if you want to refetch when teacherId changes
+      // fetchExamMatrixes();
+    }
+  }, [currentTeacherId]);
 
   const fetchExamMatrixes = async () => {
     setLoading(true);
     try {
-      // Simulate API call
-      setTimeout(() => {
-        setExamMatrixes(mockData);
-        setPagination(prev => ({ ...prev, total: mockData.length }));
-        setLoading(false);
-      }, 1000);
+      // Optionally filter by current teacher
+      const filters = currentTeacherId ? { teacherId: currentTeacherId } : {};
+      const result = await examMatrixService.getAllExamMatrices(filters);
+      
+      if (result.success) {
+        // Backend returns array directly: IEnumerable<ExamMatrixResponse>
+        // response.data should be an array
+        let data = [];
+        
+        if (Array.isArray(result.data)) {
+          data = result.data;
+        } else if (result.data && typeof result.data === 'object') {
+          // Handle wrapped response (BaseResponse or similar)
+          if (Array.isArray(result.data.data)) {
+            data = result.data.data;
+          } else if (result.data.items && Array.isArray(result.data.items)) {
+            data = result.data.items;
+          } else {
+            // Single object, convert to array
+            data = [result.data];
+          }
+        }
+        
+        console.log('Fetched exam matrices:', data);
+        setExamMatrixes(data);
+        setPagination(prev => ({ ...prev, total: data.length }));
+      } else {
+        console.error('Failed to fetch exam matrices:', result);
+        message.error(result.message || 'Có lỗi xảy ra khi tải dữ liệu');
+        setExamMatrixes([]);
+      }
     } catch (error) {
+      console.error('Error fetching exam matrices:', error);
+      console.error('Error response:', error.response?.data);
       message.error('Có lỗi xảy ra khi tải dữ liệu');
+      setExamMatrixes([]);
+    } finally {
       setLoading(false);
     }
   };
 
   const handleCreate = () => {
     setEditingRecord(null);
+    form.resetFields();
+    // Set teacherId in form
+    if (currentTeacherId) {
+      form.setFieldsValue({ 
+        teacherId: currentTeacherId
+      });
+    }
     setIsFormModalVisible(true);
   };
 
   const handleEdit = (record) => {
     setEditingRecord(record);
+    // Map backend response to form fields (convert PascalCase to camelCase)
+    form.setFieldsValue({
+      name: record.Name || record.name || '',
+      description: record.Description || record.description || '',
+      teacherId: record.TeacherId || record.teacherId || currentTeacherId,
+      totalQuestions: record.TotalQuestions || record.totalQuestions || null,
+      totalPoints: record.TotalPoints || record.totalPoints || null,
+      configuration: record.Configuration || record.configuration || null
+    });
     setIsFormModalVisible(true);
   };
 
   const handleDelete = async (id) => {
     try {
-      message.success('Xóa ma trận đề thành công');
-      fetchExamMatrixes();
+      const result = await examMatrixService.deleteExamMatrix(id);
+      if (result.success) {
+        message.success(result.message || 'Xóa ma trận đề thành công');
+        fetchExamMatrixes();
+      } else {
+        message.error(result.message || 'Có lỗi xảy ra khi xóa');
+      }
     } catch (error) {
+      console.error('Error deleting exam matrix:', error);
       message.error('Có lỗi xảy ra khi xóa');
     }
   };
 
-  const handleFormSubmit = () => {
-    message.success(editingRecord ? 'Cập nhật ma trận đề thành công' : 'Tạo ma trận đề thành công');
+  const handleFormSubmit = async () => {
+    try {
+      setSubmitting(true);
+      // Validate form
+      await form.validateFields();
+      
+      // Get form values
+      const formValues = form.getFieldsValue();
+      
+      // Prepare data according to BE format
+      // Order: name, description, teacherId, totalQuestions, totalPoints, configuration
+      // teacherId is automatically set from currentTeacherId, not from form
+      // configuration: if empty or null, send null; otherwise send the value
+      const configValue = formValues.configuration;
+      const configuration = (configValue === null || configValue === undefined || configValue === '' || configValue === 'null' || (typeof configValue === 'string' && configValue.trim() === ''))
+        ? null  // Send null if empty
+        : (typeof configValue === 'string' ? configValue : String(configValue));  // Send the value if provided
+      
+      const formData = {
+        name: formValues.name || '',
+        description: formValues.description || '',
+        teacherId: currentTeacherId || formValues.teacherId || 1, // Auto-fill from token
+        totalQuestions: formValues.totalQuestions || null,
+        totalPoints: formValues.totalPoints || null,
+        configuration: configuration
+      };
+
+      let result;
+      if (editingRecord) {
+        // Update existing exam matrix
+        const id = editingRecord.Id || editingRecord.id;
+        result = await examMatrixService.updateExamMatrix(id, formData);
+      } else {
+        // Create new exam matrix
+        result = await examMatrixService.createExamMatrix(formData);
+      }
+
+      if (result.success) {
+        message.success(result.message || (editingRecord ? 'Cập nhật ma trận đề thành công' : 'Tạo ma trận đề thành công'));
+        setIsFormModalVisible(false);
+        setEditingRecord(null);
+        form.resetFields();
+        fetchExamMatrixes();
+      } else {
+        message.error(result.message || (editingRecord ? 'Cập nhật ma trận đề thất bại' : 'Tạo ma trận đề thất bại'));
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      if (error.errorFields) {
+        // Form validation errors
+        message.error('Vui lòng điền đầy đủ thông tin bắt buộc');
+      } else {
+        message.error('Có lỗi xảy ra khi lưu ma trận đề');
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCancel = () => {
     setIsFormModalVisible(false);
-    fetchExamMatrixes();
+    setEditingRecord(null);
+    form.resetFields();
   };
 
   const getStatusTag = (status) => {
@@ -196,7 +333,25 @@ const ExamMatrixManagement = () => {
       render: (_, record) => (
         <Space size="small">
           <Tooltip title="Xem chi tiết">
-            <Button type="text" icon={<EyeOutlined />} />
+            <Button 
+              type="text" 
+              icon={<EyeOutlined />} 
+              onClick={async () => {
+                try {
+                  const result = await examMatrixService.getExamMatrixById(record.id);
+                  if (result.success) {
+                    // TODO: Show detail modal or navigate to detail page
+                    message.info('Xem chi tiết ma trận đề');
+                    console.log('Exam matrix details:', result.data);
+                  } else {
+                    message.error(result.message || 'Không thể lấy thông tin chi tiết');
+                  }
+                } catch (error) {
+                  console.error('Error getting exam matrix details:', error);
+                  message.error('Có lỗi xảy ra khi lấy thông tin chi tiết');
+                }
+              }}
+            />
           </Tooltip>
           <Tooltip title="Chỉnh sửa">
             <Button
@@ -299,23 +454,103 @@ const ExamMatrixManagement = () => {
         className="chemistry-modal"
         title={editingRecord ? 'Chỉnh sửa ma trận đề' : 'Tạo ma trận đề mới'}
         open={isFormModalVisible}
-        onCancel={() => setIsFormModalVisible(false)}
-        footer={null}
-        width={800}
-        destroyOnClose
-      >
-        <div style={{ padding: '20px 0' }}>
-          <Text>Form tạo ma trận đề sẽ được implement ở đây</Text>
-          <br />
-          <Button 
+        onCancel={handleCancel}
+        footer={[
+          <Button key="cancel" onClick={handleCancel}>
+            Hủy
+          </Button>,
+          <Button
+            key="submit"
             type="primary"
             className="chemistry-btn-primary"
+            loading={submitting}
             onClick={handleFormSubmit}
-            style={{ marginTop: '16px' }}
           >
             {editingRecord ? 'Cập nhật' : 'Tạo mới'}
           </Button>
-        </div>
+        ]}
+        width={600}
+        destroyOnClose
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          style={{ marginTop: '20px' }}
+        >
+          <Form.Item
+            label="Tên ma trận đề"
+            name="name"
+            rules={[
+              { required: true, message: 'Vui lòng nhập tên ma trận đề' },
+              { max: 255, message: 'Tên ma trận đề không được vượt quá 255 ký tự' }
+            ]}
+          >
+            <Input placeholder="Ví dụ: Chemistry Grade 10 Exam" />
+          </Form.Item>
+
+          <Form.Item
+            label="Mô tả"
+            name="description"
+          >
+            <TextArea
+              rows={4}
+              placeholder="Ví dụ: Random exam matrix for chemistry"
+            />
+          </Form.Item>
+
+          {/* Hidden teacherId field - automatically filled from token */}
+          <Form.Item
+            name="teacherId"
+            hidden
+            rules={[
+              { required: true, message: 'Teacher ID là bắt buộc' },
+              { type: 'number', message: 'Teacher ID phải là số' }
+            ]}
+          >
+            <InputNumber style={{ display: 'none' }} />
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Tổng số câu hỏi"
+                name="totalQuestions"
+              >
+                <InputNumber
+                  style={{ width: '100%' }}
+                  placeholder="50"
+                  min={0}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Tổng điểm"
+                name="totalPoints"
+              >
+                <InputNumber
+                  style={{ width: '100%' }}
+                  placeholder="100"
+                  min={0}
+                  step={0.1}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* Configuration field - optional JSON string */}
+          <Form.Item
+            label="Cấu hình (JSON)"
+            name="configuration"
+            tooltip="Cấu hình chi tiết của ma trận đề dưới dạng JSON string (tùy chọn). Để trống sẽ gửi null."
+          >
+            <TextArea
+              rows={4}
+              placeholder='Ví dụ: {"timeLimit": 60, "randomizeOrder": true} hoặc để trống'
+              allowClear
+            />
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );

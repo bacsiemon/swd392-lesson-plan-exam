@@ -169,12 +169,26 @@ const QuestionManagement = ({ questionBank }) => {
   const handleFormSubmit = async (values) => {
     try {
       // Ensure questionBankId is set
+      const bankId = questionBank.id || questionBank.Id || questionBank.questionBankId || questionBank.QuestionBankId;
+      
+      if (!bankId) {
+        message.error('Không tìm thấy ID ngân hàng câu hỏi. Vui lòng thử lại.');
+        console.error('QuestionBank object:', questionBank);
+        return;
+      }
+      
       const questionData = {
         ...values,
-        questionBankId: questionBank.id || questionBank.Id
+        questionBankId: parseInt(bankId) || bankId // Ensure it's a number
       };
 
-      console.log('Submitting question data:', questionData);
+      console.log('Submitting question data:', {
+        ...questionData,
+        questionBankId: questionData.questionBankId,
+        questionTypeEnum: questionData.questionTypeEnum,
+        multipleChoiceAnswers: questionData.multipleChoiceAnswers ? `${questionData.multipleChoiceAnswers.length} answers` : 'none',
+        fillBlankAnswers: questionData.fillBlankAnswers ? `${questionData.fillBlankAnswers.length} blanks` : 'none'
+      });
 
       let result;
       if (editingRecord) {
@@ -186,16 +200,60 @@ const QuestionManagement = ({ questionBank }) => {
       if (result.success) {
         message.success(result.message || 'Thao tác thành công');
         setIsFormModalVisible(false);
+        setEditingRecord(null);
         fetchQuestions();
       } else {
         // Display detailed error message
-        const errorMsg = result.message || 'Có lỗi xảy ra khi thao tác';
+        let errorMsg = result.message || 'Có lỗi xảy ra khi thao tác';
+        
+        // Map backend error messages to Vietnamese
+        if (result.error) {
+          if (result.error.errors) {
+            // FluentValidation errors
+            const errorMessages = [];
+            Object.keys(result.error.errors).forEach(key => {
+              const messages = result.error.errors[key];
+              if (Array.isArray(messages)) {
+                errorMessages.push(...messages);
+              }
+            });
+            if (errorMessages.length > 0) {
+              errorMsg = errorMessages.join(', ');
+            }
+          } else if (typeof result.error === 'string') {
+            errorMsg = result.error;
+          } else if (result.error.Message) {
+            errorMsg = result.error.Message;
+          } else if (result.error.message) {
+            errorMsg = result.error.message;
+          }
+        }
+        
+        // Map specific backend error codes to Vietnamese messages
+        if (errorMsg.includes('MC_ANSWERS_REQUIRED') || errorMsg.includes('MC_ANSWER_TEXT_REQUIRED')) {
+          errorMsg = 'Cần ít nhất 1 lựa chọn trả lời và mỗi lựa chọn phải có nội dung';
+        } else if (errorMsg.includes('FILLBLANK_ANSWERS_REQUIRED') || errorMsg.includes('FILLBLANK_CORRECT_ANSWER_REQUIRED')) {
+          errorMsg = 'Cần ít nhất 1 chỗ trống và mỗi chỗ trống phải có đáp án đúng';
+        } else if (errorMsg.includes('QUESTION_BANK_REQUIRED')) {
+          errorMsg = 'Vui lòng chọn ngân hàng câu hỏi';
+        } else if (errorMsg.includes('TITLE_REQUIRED')) {
+          errorMsg = 'Vui lòng nhập tiêu đề câu hỏi';
+        } else if (errorMsg.includes('CONTENT_REQUIRED')) {
+          errorMsg = 'Vui lòng nhập nội dung câu hỏi';
+        }
+        
         console.error('Question operation failed:', result.error);
         message.error(errorMsg);
       }
     } catch (error) {
       console.error('Error in handleFormSubmit:', error);
-      const errorMsg = error.message || 'Có lỗi xảy ra khi thao tác';
+      let errorMsg = error.message || 'Có lỗi xảy ra khi thao tác';
+      
+      // Handle validation errors from form
+      if (error.message && error.message.includes('Cần ít nhất')) {
+        errorMsg = error.message;
+      }
+      
       message.error(errorMsg);
     }
   };
@@ -538,7 +596,10 @@ const QuestionManagement = ({ questionBank }) => {
       <Modal
         title={editingRecord ? 'Chỉnh sửa câu hỏi' : 'Thêm câu hỏi mới'}
         open={isFormModalVisible}
-        onCancel={() => setIsFormModalVisible(false)}
+        onCancel={() => {
+          setIsFormModalVisible(false);
+          setEditingRecord(null);
+        }}
         footer={null}
         width="90%"
         style={{ top: 20 }}
@@ -547,7 +608,20 @@ const QuestionManagement = ({ questionBank }) => {
         <QuestionForm
           initialValues={editingRecord}
           onSubmit={handleFormSubmit}
-          onCancel={() => setIsFormModalVisible(false)}
+          onCancel={() => {
+            setIsFormModalVisible(false);
+            setEditingRecord(null);
+          }}
+          questionBankId={(() => {
+            // Get questionBankId from questionBank object
+            const bankId = questionBank?.id || questionBank?.Id || questionBank?.questionBankId || questionBank?.QuestionBankId;
+            console.log('QuestionManagement - Passing questionBankId to QuestionForm:', {
+              questionBank,
+              bankId,
+              editingRecord
+            });
+            return bankId;
+          })()}
         />
       </Modal>
 

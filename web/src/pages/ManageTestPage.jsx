@@ -42,6 +42,35 @@ import {
 } from '@ant-design/icons';
 import '../styles/chemistryTheme.css';
 import dayjs from 'dayjs';
+import examService from '../services/examService';
+import api from '../services/axios';
+
+// Helper function to get current user ID from JWT token
+const getCurrentUserId = async () => {
+  try {
+    // Try to get from API
+    const response = await api.get('/api/test/current-user');
+    if (response.data?.data?.userId || response.data?.data?.UserId) {
+      return response.data.data.userId || response.data.data.UserId;
+    }
+    // Fallback: decode JWT token from localStorage
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      const decoded = JSON.parse(jsonPayload);
+      // Try different claim names that might contain user ID
+      const userId = decoded.userId || decoded.sub || decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || decoded.id;
+      return parseInt(userId) || 1;
+    }
+  } catch (error) {
+    console.error('Error getting current user ID:', error);
+  }
+  return 1; // Default fallback
+};
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -110,79 +139,309 @@ const ManageTestPage = () => {
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [isDetailsModalVisible, setIsDetailsModalVisible] = useState(false);
   const [selectedTest, setSelectedTest] = useState(null);
-  const [tests, setTests] = useState(mockTests);
+  const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [statusFilter, setStatusFilter] = useState(null); // null = all, 0=Draft, 1=Inactive, 2=Active
+
+  // Load current user ID on mount
+  useEffect(() => {
+    const loadUserId = async () => {
+      const userId = await getCurrentUserId();
+      setCurrentUserId(userId);
+    };
+    loadUserId();
+  }, []);
+
+  // Load exams when component mounts or filters change
+  useEffect(() => {
+    if (currentUserId !== null) {
+      loadExams();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, searchText, currentUserId]);
+
+  const loadExams = async () => {
+    setFetching(true);
+    try {
+      const params = {
+        teacherId: currentUserId || undefined,
+        status: statusFilter !== null ? statusFilter : undefined,
+        q: searchText || undefined
+      };
+
+      console.log('Loading exams with params:', params);
+      const result = await examService.getExams(params);
+      
+      if (result.success && result.data) {
+        // Map backend ExamResponse to display format
+        // Backend returns: { Id, Title, Description, StatusEnum, DurationMinutes, TotalQuestions, TotalPoints, ... }
+        const mappedTests = result.data.map(exam => ({
+          id: exam.id || exam.Id,
+          title: exam.title || exam.Title || '',
+          description: exam.description || exam.Description || '',
+          // Map StatusEnum: 0=Draft, 1=Inactive, 2=Active to string
+          status: exam.statusEnum === 0 ? 'draft' : (exam.statusEnum === 2 ? 'active' : 'inactive'),
+          statusEnum: exam.statusEnum !== undefined ? exam.statusEnum : (exam.StatusEnum !== undefined ? exam.StatusEnum : 0),
+          totalQuestions: exam.totalQuestions || exam.TotalQuestions || 0,
+          totalPoints: exam.totalPoints || exam.TotalPoints || 0,
+          duration: exam.durationMinutes || exam.DurationMinutes || 0,
+          gradeLevel: exam.gradeLevel || exam.GradeLevel || null,
+          createdAt: exam.createdAt || exam.CreatedAt || null,
+          // These might not be in ExamResponse, set defaults
+          studentAttempts: exam.studentAttempts || 0,
+          averageScore: exam.averageScore || 0,
+          passRate: exam.passRate || 0,
+          // Keep original data for details
+          rawData: exam
+        }));
+        
+        console.log('Loaded and mapped exams:', mappedTests);
+        setTests(mappedTests);
+      } else {
+        console.error('Failed to load exams:', result.message);
+        message.error(result.message || 'Không thể tải danh sách bài kiểm tra');
+        setTests([]);
+      }
+    } catch (error) {
+      console.error('Error loading exams:', error);
+      message.error('Có lỗi xảy ra khi tải danh sách bài kiểm tra');
+      setTests([]);
+    } finally {
+      setFetching(false);
+    }
+  };
 
   const filteredTests = tests.filter(test => 
     test.title.toLowerCase().includes(searchText.toLowerCase()) ||
-    test.learningLevel.toLowerCase().includes(searchText.toLowerCase())
+    (test.description && test.description.toLowerCase().includes(searchText.toLowerCase()))
   );
 
   const handleCreateTest = async (values) => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Prepare exam data for API
+      // Check if creating from matrix or manually
+      const isFromMatrix = values.examMatrixId !== undefined && values.examMatrixId !== null;
       
-      const newTest = {
-        id: tests.length + 1,
-        ...values,
-        status: "draft",
-        studentAttempts: 0,
-        averageScore: 0,
-        passRate: 0,
-        createdAt: dayjs().format('YYYY-MM-DD')
+      const examData = {
+        title: values.title || '',
+        description: values.description || '',
+        createdByTeacher: currentUserId || 1, // Backend will override from JWT anyway
+        gradeLevel: values.learningLevel ? parseInt(values.learningLevel.replace('Lớp ', '')) : null,
+        durationMinutes: values.duration || null,
+        totalPoints: values.totalPoints || null,
+        totalQuestions: values.totalQuestions || null,
+        showResultsImmediately: values.showResultsImmediately !== undefined ? values.showResultsImmediately : null,
+        showCorrectAnswers: values.showCorrectAnswers !== undefined ? values.showCorrectAnswers : null,
+        randomizeQuestions: values.randomizeQuestions !== undefined ? values.randomizeQuestions : null,
+        randomizeAnswers: values.randomizeAnswers !== undefined ? values.randomizeAnswers : null,
+        maxAttempts: values.maxAttempts || null,
+        statusEnum: 0, // Draft
+        examMatrixId: values.examMatrixId || null
       };
-      
-      setTests([newTest, ...tests]);
-      setIsCreateModalVisible(false);
-      form.resetFields();
-      message.success('Tạo bài kiểm tra thành công!');
+
+      console.log('Creating exam with data:', examData);
+
+      let result;
+      if (isFromMatrix && examData.examMatrixId) {
+        // Create from matrix
+        result = await examService.createExamFromMatrix(examData);
+      } else {
+        // Create manually
+        result = await examService.createExam(examData);
+      }
+
+      if (result.success) {
+        message.success(result.message || 'Tạo bài kiểm tra thành công!');
+        setIsCreateModalVisible(false);
+        form.resetFields();
+        setSelectedTest(null);
+        // Refresh exams list
+        await loadExams();
+      } else {
+        message.error(result.message || 'Có lỗi xảy ra khi tạo bài kiểm tra!');
+      }
     } catch (error) {
+      console.error('Error creating exam:', error);
       message.error('Có lỗi xảy ra khi tạo bài kiểm tra!');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEditTest = (test) => {
-    setSelectedTest(test);
-    setIsCreateModalVisible(true);
-    form.setFieldsValue(test);
+  const handleEditTest = async (test) => {
+    setLoading(true);
+    try {
+      // Load full exam details first
+      const examId = test.id || test.Id || test.ID;
+      if (!examId) {
+        message.error('Không tìm thấy ID của bài kiểm tra');
+        return;
+      }
+
+      const result = await examService.getExamById(examId);
+      if (result.success && result.data) {
+        const examData = result.data;
+        // Map backend data to form format
+        form.setFieldsValue({
+          title: examData.title || examData.Title || '',
+          description: examData.description || examData.Description || '',
+          learningLevel: examData.gradeLevel || examData.GradeLevel ? `Lớp ${examData.gradeLevel || examData.GradeLevel}` : undefined,
+          duration: examData.durationMinutes || examData.DurationMinutes || null,
+          totalQuestions: examData.totalQuestions || examData.TotalQuestions || null,
+          totalPoints: examData.totalPoints || examData.TotalPoints || null,
+          showResultsImmediately: examData.showResultsImmediately !== undefined ? examData.showResultsImmediately : (examData.ShowResultsImmediately !== undefined ? examData.ShowResultsImmediately : null),
+          showCorrectAnswers: examData.showCorrectAnswers !== undefined ? examData.showCorrectAnswers : (examData.ShowCorrectAnswers !== undefined ? examData.ShowCorrectAnswers : null),
+          randomizeQuestions: examData.randomizeQuestions !== undefined ? examData.randomizeQuestions : (examData.RandomizeQuestions !== undefined ? examData.RandomizeQuestions : null),
+          randomizeAnswers: examData.randomizeAnswers !== undefined ? examData.randomizeAnswers : (examData.RandomizeAnswers !== undefined ? examData.RandomizeAnswers : null),
+          examMatrixId: examData.examMatrixId || examData.ExamMatrixId || null
+        });
+        
+        setSelectedTest({ ...examData, id: examId });
+        setIsCreateModalVisible(true);
+      } else {
+        message.error(result.message || 'Không thể tải thông tin bài kiểm tra');
+      }
+    } catch (error) {
+      console.error('Error loading exam for edit:', error);
+      message.error('Có lỗi xảy ra khi tải thông tin bài kiểm tra');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleViewDetails = (test) => {
-    setSelectedTest(test);
-    setIsDetailsModalVisible(true);
+  const handleViewDetails = async (test) => {
+    setLoading(true);
+    try {
+      // Load full exam details with questions
+      const examId = test.id || test.Id || test.ID;
+      if (!examId) {
+        message.error('Không tìm thấy ID của bài kiểm tra');
+        return;
+      }
+
+      const result = await examService.getExamById(examId);
+      if (result.success && result.data) {
+        // Also load questions if available
+        const questionsResult = await examService.getExamQuestions(examId);
+        const examWithQuestions = {
+          ...result.data,
+          questions: questionsResult.success ? questionsResult.data : []
+        };
+        
+        setSelectedTest(examWithQuestions);
+        setIsDetailsModalVisible(true);
+      } else {
+        message.error(result.message || 'Không thể tải thông tin bài kiểm tra');
+      }
+    } catch (error) {
+      console.error('Error loading exam details:', error);
+      message.error('Có lỗi xảy ra khi tải thông tin bài kiểm tra');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleToggleStatus = (testId) => {
-    setTests(tests.map(test => 
-      test.id === testId 
-        ? { ...test, status: test.status === 'active' ? 'draft' : 'active' }
-        : test
-    ));
-    message.success('Cập nhật trạng thái thành công!');
+  const handleUpdateTest = async (values) => {
+    if (!selectedTest || !selectedTest.id) {
+      message.error('Không tìm thấy bài kiểm tra để cập nhật');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const examId = selectedTest.id || selectedTest.Id || selectedTest.ID;
+      
+      const examData = {
+        title: values.title || '',
+        description: values.description || '',
+        gradeLevel: values.learningLevel ? parseInt(values.learningLevel.replace('Lớp ', '')) : null,
+        durationMinutes: values.duration || null,
+        totalPoints: values.totalPoints || null,
+        totalQuestions: values.totalQuestions || null,
+        showResultsImmediately: values.showResultsImmediately !== undefined ? values.showResultsImmediately : null,
+        showCorrectAnswers: values.showCorrectAnswers !== undefined ? values.showCorrectAnswers : null,
+        randomizeQuestions: values.randomizeQuestions !== undefined ? values.randomizeQuestions : null,
+        randomizeAnswers: values.randomizeAnswers !== undefined ? values.randomizeAnswers : null,
+        maxAttempts: values.maxAttempts || null
+      };
+
+      const result = await examService.updateExam(examId, examData);
+      
+      if (result.success) {
+        message.success(result.message || 'Cập nhật bài kiểm tra thành công!');
+        setIsCreateModalVisible(false);
+        form.resetFields();
+        setSelectedTest(null);
+        // Refresh exams list
+        await loadExams();
+      } else {
+        message.error(result.message || 'Có lỗi xảy ra khi cập nhật bài kiểm tra!');
+      }
+    } catch (error) {
+      console.error('Error updating exam:', error);
+      message.error('Có lỗi xảy ra khi cập nhật bài kiểm tra!');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleStatus = async (testId) => {
+    try {
+      // Find current test to get current status
+      const test = tests.find(t => (t.id || t.Id) === testId);
+      if (!test) {
+        message.error('Không tìm thấy bài kiểm tra');
+        return;
+      }
+
+      // Determine new status: Draft(0) <-> Active(2), Inactive(1) <-> Active(2)
+      const currentStatusEnum = test.statusEnum !== undefined ? test.statusEnum : (test.status === 'active' ? 2 : (test.status === 'inactive' ? 1 : 0));
+      const newStatusEnum = currentStatusEnum === 2 ? 0 : 2; // Toggle between Active(2) and Draft(0)
+
+      const result = await examService.updateExamStatus(testId, newStatusEnum);
+      
+      if (result.success) {
+        message.success('Cập nhật trạng thái thành công!');
+        // Refresh exams list
+        await loadExams();
+      } else {
+        message.error(result.message || 'Có lỗi xảy ra khi cập nhật trạng thái!');
+      }
+    } catch (error) {
+      console.error('Error updating exam status:', error);
+      message.error('Có lỗi xảy ra khi cập nhật trạng thái!');
+    }
   };
 
   const handleDeleteTest = (testId) => {
     Modal.confirm({
       title: 'Xác nhận xóa',
-      content: 'Bạn có chắc chắn muốn xóa bài kiểm tra này?',
-      onOk: () => {
-        setTests(tests.filter(test => test.id !== testId));
-        message.success('Xóa bài kiểm tra thành công!');
+      content: 'Bạn có chắc chắn muốn xóa bài kiểm tra này? Hành động này không thể hoàn tác.',
+      onOk: async () => {
+        // Note: Backend doesn't have delete exam endpoint in the image
+        // For now, we'll just show a message
+        // If delete endpoint exists, call examService.deleteExam(testId)
+        message.warning('Chức năng xóa bài kiểm tra chưa được triển khai ở backend');
       }
     });
   };
 
-  const getStatusTag = (status) => {
+  const getStatusTag = (status, statusEnum) => {
+    // Handle both string status and numeric statusEnum
+    let statusValue = status;
+    if (statusEnum !== undefined && statusEnum !== null) {
+      statusValue = statusEnum === 0 ? 'draft' : (statusEnum === 2 ? 'active' : 'inactive');
+    }
+    
     const statusConfig = {
       active: { color: 'green', text: 'Đang hoạt động' },
       draft: { color: 'orange', text: 'Bản nháp' },
       inactive: { color: 'red', text: 'Tạm dừng' }
     };
-    const config = statusConfig[status] || { color: 'default', text: status };
+    const config = statusConfig[statusValue] || { color: 'default', text: statusValue || status };
     return <Tag color={config.color}>{config.text}</Tag>;
   };
 
@@ -204,19 +463,25 @@ const ManageTestPage = () => {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      render: (status) => getStatusTag(status)
+      render: (status, record) => getStatusTag(status, record.statusEnum)
     },
     {
       title: 'Số câu hỏi',
       dataIndex: 'totalQuestions',
       key: 'totalQuestions',
-      render: (count) => `${count} câu`
+      render: (count, record) => {
+        const questionCount = count || record.TotalQuestions || 0;
+        return `${questionCount} câu`;
+      }
     },
     {
       title: 'Thời gian',
       dataIndex: 'duration',
       key: 'duration',
-      render: (duration) => `${duration} phút`
+      render: (duration, record) => {
+        const durationMinutes = duration || record.DurationMinutes || 0;
+        return `${durationMinutes} phút`;
+      }
     },
     {
       title: 'Lần thử',
@@ -403,16 +668,34 @@ const ManageTestPage = () => {
       {/* Search */}
       <Card className="chemistry-card" style={{ marginBottom: 24 }}>
         <Row gutter={16} align="middle">
-          <Col xs={24} sm={12} md={16}>
+          <Col xs={24} sm={12} md={10}>
             <div style={{ marginBottom: 8 }}>
               <Text strong>Tìm kiếm bài kiểm tra:</Text>
             </div>
             <Search
-              placeholder="Nhập tiêu đề hoặc cấp độ học..."
+              placeholder="Nhập tiêu đề hoặc mô tả..."
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
+              onSearch={() => loadExams()}
               size="large"
             />
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <div style={{ marginBottom: 8 }}>
+              <Text strong>Lọc theo trạng thái:</Text>
+            </div>
+            <Select
+              placeholder="Tất cả"
+              allowClear
+              value={statusFilter}
+              onChange={(value) => setStatusFilter(value)}
+              style={{ width: '100%' }}
+              size="large"
+            >
+              <Option value={0}>Bản nháp</Option>
+              <Option value={1}>Tạm dừng</Option>
+              <Option value={2}>Đang hoạt động</Option>
+            </Select>
           </Col>
         </Row>
       </Card>
@@ -432,7 +715,8 @@ const ManageTestPage = () => {
           <Table
             columns={testColumns}
             dataSource={filteredTests}
-            rowKey="id"
+            rowKey={(record) => record.id || record.Id || Math.random()}
+            loading={fetching}
             pagination={{
               pageSize: 10,
               showSizeChanger: true,
@@ -453,13 +737,17 @@ const ManageTestPage = () => {
           setSelectedTest(null);
           form.resetFields();
         }}
+        afterClose={() => {
+          setSelectedTest(null);
+          form.resetFields();
+        }}
         footer={null}
         width={800}
       >
         <Form
           form={form}
           layout="vertical"
-          onFinish={handleCreateTest}
+          onFinish={selectedTest ? handleUpdateTest : handleCreateTest}
           initialValues={{
             duration: 45,
             totalQuestions: 20,
