@@ -5,7 +5,9 @@ using LessonPlanExam.Repositories.Models;
 using LessonPlanExam.Repositories.UoW;
 using LessonPlanExam.Services.Interfaces;
 using LessonPlanExam.Services.Mapping;
+using LinqKit;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace LessonPlanExam.Services.Services
@@ -99,6 +101,36 @@ namespace LessonPlanExam.Services.Services
                 Message = "SUCCESS",
                 Data = response.Items.Select(e => e.ToResponse()),
                 AdditionalData = response.AdditionalData
+            };
+        }
+
+        public async Task<BaseResponse> SearchAsync(string? title, string? teacherName, int? gradeLevel, int page = 1, int size = 10)
+        {
+            var predicate = PredicateBuilder.New<LessonPlan>(e => e.DeletedAt == null);
+            
+            if (!string.IsNullOrEmpty(title))
+            {
+                predicate = predicate.And(e => EF.Functions.ILike(e.Title, $"%{title}%"));
+            }
+            
+            if (!string.IsNullOrEmpty(teacherName))
+            {
+                predicate = predicate.And(e => EF.Functions.ILike(e.CreatedByTeacherNavigation.Account.FullName, $"%{teacherName}%"));
+            }
+            
+            if (gradeLevel.HasValue)
+            {
+                predicate = predicate.And(e => e.GradeLevel == gradeLevel.Value);
+            }
+
+            var searchResult = await _unitOfWork.LessonPlanRepository.SearchAsync(predicate, page, size);
+
+            return new BaseResponse
+            {
+                StatusCode = 200,
+                Message = "SUCCESS",
+                Data = searchResult.Items.Select(e => e.ToResponse()),
+                AdditionalData = searchResult.AdditionalData
             };
         }
 
