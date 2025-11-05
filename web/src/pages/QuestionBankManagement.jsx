@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Card,
   Table,
@@ -48,6 +49,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 const QuestionBankManagement = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [questionBanks, setQuestionBanks] = useState([]);
   const [pagination, setPagination] = useState(DEFAULT_PAGINATION);
@@ -382,16 +384,25 @@ const QuestionBankManagement = () => {
             </div>
           </Col>
           <Col>
-            <Button
-              type="primary"
-              className="chemistry-btn-primary"
-              icon={<PlusOutlined />}
-              onClick={handleCreate}
-              size="large"
-              style={{ height: 48, fontSize: '16px' }}
-            >
-              Tạo ngân hàng mới
-            </Button>
+            <Space>
+              <Button
+                onClick={() => navigate('/dashboard')}
+                size="large"
+                style={{ height: 48, fontSize: '16px' }}
+              >
+                Quay lại Dashboard
+              </Button>
+              <Button
+                type="primary"
+                className="chemistry-btn-primary"
+                icon={<PlusOutlined />}
+                onClick={handleCreate}
+                size="large"
+                style={{ height: 48, fontSize: '16px' }}
+              >
+                Tạo ngân hàng mới
+              </Button>
+            </Space>
           </Col>
         </Row>
       </Card>
