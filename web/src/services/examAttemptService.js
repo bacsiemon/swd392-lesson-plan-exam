@@ -1,13 +1,39 @@
 import api from './axios';
 
+/**
+ * Helper function to format answer IDs
+ * @param {number|number[]|string} answerIds - Single ID, array of IDs, or comma-separated string
+ * @returns {string|null} Comma-separated string of IDs or null
+ */
+const formatAnswerIds = (answerIds) => {
+  if (answerIds == null) return null;
+  
+  if (Array.isArray(answerIds)) {
+    return answerIds.join(',');
+  }
+  
+  if (typeof answerIds === 'number') {
+    return String(answerIds);
+  }
+  
+  if (typeof answerIds === 'string') {
+    return answerIds;
+  }
+  
+  return null;
+};
+
 const examAttemptService = {
   /**
    * Start a new exam attempt
    * POST /api/exams/{examId}/attempts/start
+   * @param {number} examId - The exam ID
+   * @param {string} [password] - Optional password for protected exams
    */
-  async startAttempt(examId) {
+  async startAttempt(examId, password = null) {
     try {
-      const response = await api.post(`/api/exams/${examId}/attempts/start`);
+      const params = password ? { password } : {};
+      const response = await api.post(`/api/exams/${examId}/attempts/start`, null, { params });
       return {
         success: true,
         data: response.data,
@@ -26,10 +52,38 @@ const examAttemptService = {
   /**
    * Submit an answer for a question
    * POST /api/exams/{examId}/attempts/{attemptId}/answer
+   * @param {number} examId - The exam ID
+   * @param {number} attemptId - The attempt ID
+   * @param {Object} answerData - Answer data
+   * @param {number} answerData.questionId - Question ID
+   * @param {string|number|number[]} [answerData.answerIds] - Answer ID(s) - will be converted to comma-separated string
+   * @param {string} [answerData.selectedAnswerIds] - Comma-separated answer IDs (e.g., "10,11") - if already formatted
+   * @param {string} [answerData.textAnswer] - Text answer for fill-in-the-blank
    */
   async submitAnswer(examId, attemptId, answerData) {
     try {
-      const response = await api.post(`/api/exams/${examId}/attempts/${attemptId}/answer`, answerData);
+      // Format answer IDs according to backend SaveAnswerRequest
+      let selectedAnswerIds = null;
+      
+      if (answerData.selectedAnswerIds) {
+        // Already formatted
+        selectedAnswerIds = answerData.selectedAnswerIds;
+      } else if (answerData.answerIds != null) {
+        // Format using helper
+        selectedAnswerIds = formatAnswerIds(answerData.answerIds);
+      }
+
+      const requestBody = {
+        questionId: answerData.questionId,
+        selectedAnswerIds: selectedAnswerIds,
+        textAnswer: answerData.textAnswer || null
+      };
+
+      const response = await api.post(
+        `/api/exams/${examId}/attempts/${attemptId}/answer`,
+        requestBody
+      );
+      
       return {
         success: true,
         data: response.data,

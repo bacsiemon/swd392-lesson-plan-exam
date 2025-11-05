@@ -1,203 +1,63 @@
 // studentTestService.js - Service for student tests
+
+import api from './axios';
+
 class StudentTestService {
+
     constructor() {
         this.baseURL = '/api/student/tests';
     }
 
-    // Simulate network delay
-    delay(ms = 800) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    // ----- Analytics (Mock) -----
-    async getAnalyticsList() {
-        await this.delay(500);
-        // Mock list of tests/lessons with brief analytics summary
-        const items = [
-            { id: 'chem_midterm_inorganic', title: 'Giữa kỳ - Hóa vô cơ', type: 'test', totalStudents: 120, viewed: 108, completed: 92, avgScore: 7.8, attempts: 1.4 },
-            { id: 'quiz_periodic_table', title: 'Quiz - Bảng tuần hoàn', type: 'quiz', totalStudents: 120, viewed: 112, completed: 105, avgScore: 8.3, attempts: 1.6 },
-            { id: 'lesson_organic_reactions', title: 'Bài học - Phản ứng hữu cơ', type: 'lesson', totalStudents: 120, viewed: 98, completed: 74, avgScore: 7.1, attempts: 1.2 },
-            { id: 'final_exam_overview', title: 'Cuối kỳ - Tổng hợp', type: 'test', totalStudents: 120, viewed: 120, completed: 118, avgScore: 7.5, attempts: 1.1 }
-        ];
-        return { success: true, data: items };
-    }
-
-    async getAnalyticsById(id) {
-        await this.delay(500);
-        // Mock per-item analytics data
-        const catalog = {
-            chem_midterm_inorganic: {
-                id: 'chem_midterm_inorganic',
-                type: 'test',
-                title: 'Giữa kỳ - Hóa vô cơ',
-                totalStudents: 120,
-                viewed: 108,
-                completed: 92,
-                attempts: [ { x: 1, y: 92 }, { x: 2, y: 24 }, { x: 3, y: 6 } ],
-                scores: [9.5, 8.0, 7.0, 6.5, 7.5, 8.5, 9.0, 5.0, 4.5, 6.0, 9.5, 10.0, 3.5, 8.2, 7.8, 6.9, 8.9, 9.3, 5.7, 6.1, 7.4, 8.6, 9.9, 4.8, 5.2, 6.8, 7.1, 8.0, 8.1, 7.2, 6.3, 5.9, 9.1, 9.4, 7.7, 8.8, 6.4, 5.6, 4.2, 3.9, 2.8, 9.0, 8.7, 7.6, 6.2, 5.1, 4.7, 7.9, 8.3, 9.2, 5.8, 6.7, 7.3, 8.4, 9.6 ]
-            },
-            quiz_periodic_table: {
-                id: 'quiz_periodic_table',
-                type: 'quiz',
-                title: 'Quiz - Bảng tuần hoàn',
-                totalStudents: 120,
-                viewed: 112,
-                completed: 105,
-                attempts: [ { x: 1, y: 100 }, { x: 2, y: 45 }, { x: 3, y: 10 } ],
-                scores: [8.5, 8.1, 8.0, 8.2, 7.9, 9.0, 8.7, 9.2, 8.9, 8.6, 7.5, 7.2, 7.8, 8.3, 8.8, 9.1, 8.4, 8.0, 7.6, 8.2]
-            },
-            lesson_organic_reactions: {
-                id: 'lesson_organic_reactions',
-                type: 'lesson',
-                title: 'Bài học - Phản ứng hữu cơ',
-                totalStudents: 120,
-                viewed: 98,
-                // Lessons should not track score/attempts
-                attempts: [],
-                scores: []
-            },
-            final_exam_overview: {
-                id: 'final_exam_overview',
-                type: 'test',
-                title: 'Cuối kỳ - Tổng hợp',
-                totalStudents: 120,
-                viewed: 120,
-                completed: 118,
-                attempts: [ { x: 1, y: 118 }, { x: 2, y: 30 }, { x: 3, y: 8 } ],
-                scores: [7.5, 7.4, 7.6, 7.5, 7.3, 7.7, 7.5, 7.8, 7.2, 7.1, 7.9, 8.0, 6.9, 6.8, 8.1]
-            }
-        };
-        const item = catalog[id];
-        if (!item) return { success: false, message: 'Not found' };
-        return { success: true, data: item };
-    }
-
     // Get available tests for student
     async getAvailableTests() {
-        await this.delay(600);
-
         try {
-            // Mock data - In production, replace with actual API call
-            const mockTests = [
-                {
-                    id: 1,
-                    title: 'Kiểm tra giữa kỳ - Hóa vô cơ',
-                    description: 'Kiểm tra kiến thức về Hóa vô cơ: Bảng tuần hoàn, phản ứng oxi hóa khử, axit-bazơ',
-                    subject: 'Hóa học',
-                    duration: 60, // minutes
-                    totalQuestions: 30,
-                    totalPoints: 10,
-                    deadline: '2024-11-05T23:59:59',
-                    startDate: '2024-10-20T00:00:00',
-                    difficulty: 'medium',
-                    status: 'available', // available, completed, missed, locked
-                    teacher: 'Lê Thị Hương',
-                    attempts: 0,
-                    maxAttempts: 2,
-                    passScore: 5.0,
-                    tags: ['Giữa kỳ', 'Hóa vô cơ', 'Quan trọng']
-                },
-                {
-                    id: 2,
-                    title: 'Quiz nhanh - Bảng tuần hoàn',
-                    description: 'Câu hỏi trắc nghiệm về các nguyên tố và cấu trúc bảng tuần hoàn',
-                    subject: 'Hóa học',
-                    duration: 15,
-                    totalQuestions: 10,
-                    totalPoints: 10,
-                    deadline: '2024-11-02T23:59:59',
-                    startDate: '2024-10-28T00:00:00',
-                    difficulty: 'easy',
-                    status: 'available',
-                    teacher: 'Lê Thị Hương',
-                    attempts: 1,
-                    maxAttempts: 3,
-                    passScore: 6.0,
-                    lastScore: 7.5,
-                    tags: ['Quiz', 'Bảng tuần hoàn']
-                },
-                {
-                    id: 3,
-                    title: 'Bài tập về nhà - Hóa hữu cơ',
-                    description: 'Các bài tập về phản ứng hữu cơ, đồng phân và danh pháp',
-                    subject: 'Hóa học',
-                    duration: 45,
-                    totalQuestions: 20,
-                    totalPoints: 10,
-                    deadline: '2024-11-10T23:59:59',
-                    startDate: '2024-10-25T00:00:00',
-                    difficulty: 'medium',
-                    status: 'available',
-                    teacher: 'Lê Thị Hương',
-                    attempts: 0,
-                    maxAttempts: 1,
-                    passScore: 5.0,
-                    tags: ['Bài tập', 'Hóa hữu cơ']
-                },
-                {
-                    id: 4,
-                    title: 'Kiểm tra cuối kỳ - Tổng hợp',
-                    description: 'Kiểm tra tổng hợp kiến thức cả học kỳ: Hóa vô cơ và Hóa hữu cơ',
-                    subject: 'Hóa học',
-                    duration: 90,
-                    totalQuestions: 50,
-                    totalPoints: 10,
-                    deadline: '2024-11-30T23:59:59',
-                    startDate: '2024-11-20T00:00:00',
-                    difficulty: 'hard',
-                    status: 'locked',
-                    teacher: 'Lê Thị Hương',
-                    attempts: 0,
-                    maxAttempts: 1,
-                    passScore: 5.0,
-                    tags: ['Cuối kỳ', 'Tổng hợp', 'Quan trọng']
-                },
-                {
-                    id: 5,
-                    title: 'Kiểm tra 15 phút - Phản ứng hóa học',
-                    description: 'Kiểm tra nhanh về các loại phản ứng hóa học cơ bản',
-                    subject: 'Hóa học',
-                    duration: 15,
-                    totalQuestions: 8,
-                    totalPoints: 10,
-                    deadline: '2024-10-30T23:59:59',
-                    startDate: '2024-10-20T00:00:00',
-                    difficulty: 'easy',
-                    status: 'completed',
-                    teacher: 'Lê Thị Hương',
-                    attempts: 1,
-                    maxAttempts: 1,
-                    passScore: 5.0,
-                    lastScore: 8.5,
-                    completedDate: '2024-10-22T14:30:00',
-                    tags: ['Kiểm tra 15 phút']
-                },
-                {
-                    id: 6,
-                    title: 'Ôn tập - Axit và Bazơ',
-                    description: 'Bài tập ôn tập về tính chất và phản ứng của axit, bazơ',
-                    subject: 'Hóa học',
-                    duration: 30,
-                    totalQuestions: 15,
-                    totalPoints: 10,
-                    deadline: '2024-10-28T23:59:59',
-                    startDate: '2024-10-15T00:00:00',
-                    difficulty: 'medium',
-                    status: 'missed',
-                    teacher: 'Lê Thị Hương',
-                    attempts: 0,
-                    maxAttempts: 2,
-                    passScore: 5.0,
-                    tags: ['Ôn tập', 'Axit-Bazơ']
+            // Get the logged-in user info to determine role and ID
+            const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
+            const userId = userInfo.id;
+            
+            // Call the actual API endpoint
+            // Note: Adjust query parameters based on your needs
+            const response = await api.get('/api/exams', {
+                params: {
+                    // teacherId: userId, // Uncomment if needed for teacher filtering
+                    status: 0, // 0 = Active exams
+                    // q: '' // Search query if needed
                 }
-            ];
+            });
+
+            // Transform API response to match our component's expected format
+            const transformedTests = response.data.map(exam => ({
+                id: exam.id,
+                title: exam.title,
+                description: exam.description || 'Không có mô tả',
+                subject: 'Hóa học', // Default subject, can be mapped from exam data if available
+                duration: exam.durationMinutes,
+                totalQuestions: exam.totalQuestions || 0,
+                totalPoints: exam.totalPoints || 10,
+                deadline: exam.endTime,
+                startDate: exam.startTime,
+                difficulty: this.mapDifficulty(exam.gradeLevel),
+                status: this.mapStatus(exam.statusEnum, exam.startTime, exam.endTime),
+                teacher: exam.createdByTeacher ? `Giáo viên ${exam.createdByTeacher}` : 'Chưa xác định',
+                attempts: 0, // TODO: Get from exam attempts API if available
+                maxAttempts: exam.maxAttempts || 1,
+                passScore: exam.passThreshold || 5.0,
+                tags: this.generateTags(exam),
+                // Additional fields from API
+                showResultsImmediately: exam.showResultsImmediately,
+                showCorrectAnswers: exam.showCorrectAnswers,
+                randomizeQuestions: exam.randomizeQuestions,
+                randomizeAnswers: exam.randomizeAnswers,
+                examMatrixId: exam.examMatrixId
+            }));
 
             return {
                 success: true,
-                data: mockTests,
+                data: transformedTests,
                 message: 'Tests loaded successfully'
             };
         } catch (error) {
+            console.error('Error loading tests:', error);
             return {
                 success: false,
                 error: error.message,
@@ -206,22 +66,93 @@ class StudentTestService {
         }
     }
 
+    // Helper: Map grade level to difficulty
+    mapDifficulty(gradeLevel) {
+        if (!gradeLevel) return 'medium';
+        if (gradeLevel <= 8) return 'easy';
+        if (gradeLevel <= 10) return 'medium';
+        return 'hard';
+    }
+
+    // Helper: Map status enum and dates to status string
+    mapStatus(statusEnum, startTime, endTime) {
+        const now = new Date();
+        const start = new Date(startTime);
+        const end = new Date(endTime);
+
+        // statusEnum: 0 = Active, 1 = Inactive, etc.
+        if (statusEnum !== 0) return 'locked';
+        
+        if (now < start) return 'locked';
+        if (now > end) return 'missed';
+        
+        // TODO: Check if student has completed this exam
+        // For now, assume available if within date range and active
+        return 'available';
+    }
+
+    // Helper: Generate tags based on exam properties
+    generateTags(exam) {
+        const tags = [];
+        
+        if (exam.title.toLowerCase().includes('giữa kỳ') || exam.title.toLowerCase().includes('midterm')) {
+            tags.push('Giữa kỳ');
+        }
+        if (exam.title.toLowerCase().includes('cuối kỳ') || exam.title.toLowerCase().includes('final')) {
+            tags.push('Cuối kỳ');
+        }
+        if (exam.title.toLowerCase().includes('quiz')) {
+            tags.push('Quiz');
+        }
+        if (exam.randomizeQuestions) {
+            tags.push('Câu hỏi ngẫu nhiên');
+        }
+        if (exam.showResultsImmediately) {
+            tags.push('Xem kết quả ngay');
+        }
+        
+        return tags;
+    }
+
     // Get test details by ID
     async getTestById(testId) {
-        await this.delay(500);
-
         try {
-            // Mock single test data
+            const response = await api.get(`/api/exams/${testId}`);
+            const exam = response.data;
+
+            // Transform single exam to match component format
+            const transformedTest = {
+                id: exam.id,
+                title: exam.title,
+                description: exam.description || 'Không có mô tả',
+                subject: 'Hóa học',
+                duration: exam.durationMinutes,
+                totalQuestions: exam.totalQuestions || 0,
+                totalPoints: exam.totalPoints || 10,
+                deadline: exam.endTime,
+                startDate: exam.startTime,
+                difficulty: this.mapDifficulty(exam.gradeLevel),
+                status: this.mapStatus(exam.statusEnum, exam.startTime, exam.endTime),
+                teacher: exam.createdByTeacher ? `Giáo viên ${exam.createdByTeacher}` : 'Chưa xác định',
+                attempts: 0,
+                maxAttempts: exam.maxAttempts || 1,
+                passScore: exam.passThreshold || 5.0,
+                tags: this.generateTags(exam),
+                showResultsImmediately: exam.showResultsImmediately,
+                showCorrectAnswers: exam.showCorrectAnswers,
+                randomizeQuestions: exam.randomizeQuestions,
+                randomizeAnswers: exam.randomizeAnswers,
+                examMatrixId: exam.examMatrixId,
+                questions: exam.questions || []
+            };
+
             return {
                 success: true,
-                data: {
-                    id: testId,
-                    title: 'Kiểm tra giữa kỳ - Hóa vô cơ',
-                    // ... other fields
-                },
+                data: transformedTest,
                 message: 'Test details loaded successfully'
             };
         } catch (error) {
+            console.error('Error loading test details:', error);
             return {
                 success: false,
                 error: error.message,

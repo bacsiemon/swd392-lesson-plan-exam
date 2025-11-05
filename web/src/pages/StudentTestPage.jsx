@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, Typography, Button, Radio, Space, message, Spin, Alert } from 'antd';
-import { ExperimentOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { Card, Typography, Button, Radio, Space, message, Spin, Alert, Modal, Input } from 'antd';
+import { ExperimentOutlined, CheckCircleOutlined, ClockCircleOutlined, LockOutlined } from '@ant-design/icons';
 import examAttemptService from '../services/examAttemptService';
 import examService from '../services/examService';
 import '../styles/chemistryTheme.css';
@@ -21,6 +21,9 @@ function StudentTestPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   
   const examId = searchParams.get('id') || searchParams.get('examId');
 
@@ -46,19 +49,24 @@ function StudentTestPage() {
         }
 
         setExam(examResponse.data);
-
+        
         // Check if there's a latest attempt that might be resumed
         const latestAttemptResponse = await examAttemptService.getLatestAttempt(examId);
         if (latestAttemptResponse.success && latestAttemptResponse.data) {
           const latestAttempt = latestAttemptResponse.data;
           // If attempt is not submitted, resume it
-          if (latestAttempt.status !== 'Submitted' && latestAttempt.status !== 'Completed') {
-            setAttemptId(latestAttempt.id);
+          if (latestAttempt.statusEnum !== 2 && latestAttempt.status !== 'Submitted') {
+            setAttemptId(latestAttempt.attemptId || latestAttempt.id);
+            
             // Load saved answers if any
-            if (latestAttempt.answers) {
+            if (latestAttempt.answers && Array.isArray(latestAttempt.answers)) {
               const savedAnswers = {};
               latestAttempt.answers.forEach(ans => {
-                savedAnswers[ans.questionId] = ans.selectedAnswerIndex ?? ans.answerText;
+                if (ans.selectedAnswerIds && ans.selectedAnswerIds.length > 0) {
+                  savedAnswers[ans.questionId] = ans.selectedAnswerIds[0];
+                } else if (ans.textAnswer) {
+                  savedAnswers[ans.questionId] = ans.textAnswer;
+                }
               });
               setAnswers(savedAnswers);
             }
@@ -68,20 +76,23 @@ function StudentTestPage() {
           }
         }
 
-        // Start new attempt
-        const startResponse = await examAttemptService.startAttempt(examId);
-        if (!startResponse.success) {
-          setError(startResponse.message || 'Không thể bắt đầu bài thi');
+        // Try to start new attempt without password first
+        const startResponse = await examAttemptService.startAttempt(examId, null);
+        
+        if (startResponse.success) {
+          // Started successfully without password
+          setAttemptId(startResponse.data.id || startResponse.data.attemptId);
+          message.success('Đã bắt đầu bài thi');
           setLoading(false);
-          return;
+        } else {
+          // Failed to start - assume it needs password since all other errors would be caught earlier
+          // Show password modal for any failure at this point
+          setShowPasswordModal(true);
+          setLoading(false);
         }
-
-        setAttemptId(startResponse.data.id || startResponse.data.attemptId);
-        message.success('Đã bắt đầu bài thi');
       } catch (err) {
         console.error('Error loading exam:', err);
         setError('Có lỗi xảy ra khi tải bài thi');
-      } finally {
         setLoading(false);
       }
     };
@@ -89,19 +100,80 @@ function StudentTestPage() {
     loadExamAndStartAttempt();
   }, [examId]);
 
-  const handleOptionChange = async (questionId, answerIndex) => {
-    const newAnswers = { ...answers, [questionId]: answerIndex };
+  const startNewAttempt = async (examPassword) => {
+    try {
+      setLoading(true);
+      const startResponse = await examAttemptService.startAttempt(examId, examPassword);
+      
+      if (!startResponse.success) {
+        // Log the full error for debugging
+        console.log('Start attempt failed:', startResponse);
+        console.log('Error details:', startResponse.error);
+        
+        const errorMsg = startResponse.error?.Message || 
+                        startResponse.error?.message || 
+                        startResponse.message || 
+                        'Không thể bắt đầu bài thi';
+        
+        if (examPassword) {
+          // If password was provided but failed
+          // Show the actual error message from backend
+          setPasswordError(errorMsg);
+          setLoading(false);
+          return false;
+        } else {
+          setError(errorMsg);
+          setLoading(false);
+          return false;
+        }
+      }
+
+      setAttemptId(startResponse.data.id || startResponse.data.attemptId);
+      setShowPasswordModal(false);
+      setPasswordError('');
+      message.success('Đã bắt đầu bài thi');
+      setLoading(false);
+      return true;
+    } catch (err) {
+      console.error('Error starting attempt:', err);
+      if (examPassword) {
+        setPasswordError('Có lỗi xảy ra. Vui lòng thử lại');
+      } else {
+        setError('Có lỗi xảy ra khi bắt đầu bài thi');
+      }
+      setLoading(false);
+      return false;
+    }
+  };
+
+  const handlePasswordSubmit = () => {
+    if (!password || password.trim() === '') {
+      setPasswordError('Vui lòng nhập mật khẩu');
+      return;
+    }
+    startNewAttempt(password);
+  };
+
+  const handleOptionChange = async (questionId, answerId) => {
+    const newAnswers = { ...answers, [questionId]: answerId };
     setAnswers(newAnswers);
 
     // Submit answer to API if attemptId exists
     if (attemptId && examId) {
       try {
-        await examAttemptService.submitAnswer(examId, attemptId, {
+        // Backend expects: { questionId, selectedAnswerIds: "10,11", textAnswer }
+        // The service will format answerId to the correct format
+        const result = await examAttemptService.submitAnswer(examId, attemptId, {
           questionId: questionId,
-          selectedAnswerIndex: answerIndex,
-          // If text answer is needed, add answerText field
+          answerIds: answerId, // Can be number, array, or string - service will format it
         });
-        // Optionally show a subtle notification
+        
+        if (result.success) {
+          // Optionally show a subtle notification
+          console.log('Answer saved successfully for question', questionId);
+        } else {
+          console.warn('Failed to save answer:', result.message);
+        }
       } catch (err) {
         console.error('Error saving answer:', err);
         // Don't show error to user on every answer change, just log it
@@ -221,6 +293,44 @@ function StudentTestPage() {
     <div className="chemistry-page">
       <div className="chemistry-molecules-bg"></div>
       
+      {/* Password Modal */}
+      <Modal
+        title={
+          <Space>
+            <LockOutlined style={{ color: 'var(--chem-purple)' }} />
+            <span>Bài thi được bảo vệ</span>
+          </Space>
+        }
+        open={showPasswordModal}
+        onOk={handlePasswordSubmit}
+        onCancel={() => navigate('/exams')}
+        okText="Bắt đầu làm bài"
+        cancelText="Hủy"
+        confirmLoading={loading}
+      >
+        <div style={{ marginTop: 16, marginBottom: 16 }}>
+          <Text>Bài thi này yêu cầu mật khẩu. Vui lòng nhập mật khẩu để tiếp tục:</Text>
+          <Input.Password
+            placeholder="Nhập mật khẩu"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setPasswordError('');
+            }}
+            onPressEnter={handlePasswordSubmit}
+            style={{ marginTop: 12 }}
+            size="large"
+            prefix={<LockOutlined />}
+            status={passwordError ? 'error' : ''}
+          />
+          {passwordError && (
+            <Text type="danger" style={{ display: 'block', marginTop: 8 }}>
+              {passwordError}
+            </Text>
+          )}
+        </div>
+      </Modal>
+
       {/* Header Card */}
       <Card className="chemistry-header-card" style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -284,10 +394,13 @@ function StudentTestPage() {
                     >
                       <Space direction="vertical" style={{ width: '100%' }}>
                         {options.map((opt, oidx) => {
-                          const optionText = typeof opt === 'string' ? opt : (opt.text || opt.option || '');
-                          const optionValue = opt.value !== undefined ? opt.value : oidx;
+                          // Backend returns answer objects with id field
+                          // Use opt.id as the answer ID if available, otherwise fall back to index
+                          const optionText = typeof opt === 'string' ? opt : (opt.text || opt.option || opt.answerText || '');
+                          const answerId = opt.id || opt.answerId || oidx;
+                          
                           return (
-                            <Radio key={oidx} value={optionValue} style={{ fontSize: 16, padding: '8px 0' }}>
+                            <Radio key={answerId} value={answerId} style={{ fontSize: 16, padding: '8px 0' }}>
                               {optionText}
                             </Radio>
                           );
