@@ -39,6 +39,7 @@ import {
 import examMatrixService from '../services/examMatrixService';
 import '../styles/chemistryTheme.css';
 import api from '../services/axios';
+import accountService from '../services/accountService';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -89,12 +90,40 @@ const ExamMatrixManagement = () => {
   const [form] = Form.useForm();
   const [currentTeacherId, setCurrentTeacherId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [currentUserName, setCurrentUserName] = useState('');
 
   useEffect(() => {
-    // Load current teacher ID first, then fetch exam matrices
+    // Load current teacher ID and profile first, then fetch exam matrices
     const loadData = async () => {
       const teacherId = await getCurrentTeacherId();
       setCurrentTeacherId(teacherId);
+      
+      // Load current user profile to get name
+      try {
+        // First try to get from localStorage (fast)
+        const savedName = localStorage.getItem('user_name');
+        if (savedName) {
+          setCurrentUserName(savedName);
+        }
+        
+        // Then try to get from API (more reliable)
+        const profileResult = await accountService.getProfile();
+        if (profileResult.success && profileResult.data) {
+          const fullName = profileResult.data.FullName || profileResult.data.fullName || profileResult.data.Name || profileResult.data.name || savedName || '';
+          if (fullName) {
+            setCurrentUserName(fullName);
+            localStorage.setItem('user_name', fullName);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading user profile:', error);
+        // Fallback to localStorage if API fails
+        const savedName = localStorage.getItem('user_name');
+        if (savedName) {
+          setCurrentUserName(savedName);
+        }
+      }
+      
       // Fetch exam matrices after teacherId is loaded
       await fetchExamMatrixes();
     };
@@ -174,8 +203,7 @@ const ExamMatrixManagement = () => {
       description: record.Description || record.description || '',
       teacherId: record.TeacherId || record.teacherId || currentTeacherId,
       totalQuestions: record.TotalQuestions || record.totalQuestions || null,
-      totalPoints: record.TotalPoints || record.totalPoints || null,
-      configuration: record.Configuration || record.configuration || null
+      totalPoints: record.TotalPoints || record.totalPoints || null
     });
     setIsFormModalVisible(true);
   };
@@ -207,19 +235,13 @@ const ExamMatrixManagement = () => {
       // Prepare data according to BE format
       // Order: name, description, teacherId, totalQuestions, totalPoints, configuration
       // teacherId is automatically set from currentTeacherId, not from form
-      // configuration: if empty or null, send null; otherwise send the value
-      const configValue = formValues.configuration;
-      const configuration = (configValue === null || configValue === undefined || configValue === '' || configValue === 'null' || (typeof configValue === 'string' && configValue.trim() === ''))
-        ? null  // Send null if empty
-        : (typeof configValue === 'string' ? configValue : String(configValue));  // Send the value if provided
-      
       const formData = {
         name: formValues.name || '',
         description: formValues.description || '',
         teacherId: currentTeacherId || formValues.teacherId || 1, // Auto-fill from token
         totalQuestions: formValues.totalQuestions || null,
         totalPoints: formValues.totalPoints || null,
-        configuration: configuration
+        configuration: null
       };
 
       let result;
@@ -279,10 +301,10 @@ const ExamMatrixManagement = () => {
       width: 300,
       render: (name, record) => (
         <div>
-          <Text strong style={{ color: '#1890ff' }}>{name}</Text>
+          <Text strong style={{ color: '#1890ff' }}>{name || 'N/A'}</Text>
           <br />
           <Text type="secondary" style={{ fontSize: '12px' }}>
-            {record.subject} - {record.gradeLevel}
+            {record.subject || 'N/A'} - {record.gradeLevel || 'N/A'}
           </Text>
         </div>
       ),
@@ -293,7 +315,7 @@ const ExamMatrixManagement = () => {
       key: 'totalQuestions',
       width: 120,
       align: 'center',
-      render: (count) => <Badge count={count} showZero color="#52c41a" />,
+      render: (count) => <Badge count={count || 0} showZero color="#52c41a" />,
     },
     {
       title: 'Trạng thái',
@@ -308,22 +330,94 @@ const ExamMatrixManagement = () => {
       dataIndex: 'createdBy',
       key: 'createdBy',
       width: 130,
-      render: (name) => (
-        <div style={{ textAlign: 'center' }}>
-          <Avatar size="small" style={{ backgroundColor: '#1890ff' }}>
-            {name.charAt(name.length - 1)}
-          </Avatar>
-          <br />
-          <Text style={{ fontSize: '12px' }}>{name}</Text>
-        </div>
-      ),
+      render: (name, record) => {
+        // Try to get name from multiple sources:
+        // 1. createdBy field from record
+        // 2. If teacherId matches currentTeacherId, use currentUserName
+        // 3. Fallback to localStorage
+        // 4. Last resort: show teacherId or N/A
+        
+        const recordTeacherId = record.TeacherId || record.teacherId;
+        const isCurrentUser = recordTeacherId && currentTeacherId && recordTeacherId === currentTeacherId;
+        
+        let displayName = name;
+        if (!displayName && isCurrentUser) {
+          displayName = currentUserName || localStorage.getItem('user_name');
+        }
+        if (!displayName) {
+          // Try to get from localStorage as fallback
+          displayName = localStorage.getItem('user_name');
+        }
+        if (!displayName) {
+          // Last resort: show teacherId or email if available
+          displayName = record.teacherEmail || record.TeacherEmail || 
+                       (recordTeacherId ? `ID: ${recordTeacherId}` : 'N/A');
+        }
+        
+        const avatarChar = displayName && displayName.length > 0 && displayName !== 'N/A' && !displayName.startsWith('ID:')
+          ? displayName.charAt(displayName.length - 1).toUpperCase()
+          : '?';
+        
+        return (
+          <div style={{ textAlign: 'center' }}>
+            <Avatar size="small" style={{ backgroundColor: '#1890ff' }}>
+              {avatarChar}
+            </Avatar>
+            <br />
+            <Text style={{ fontSize: '12px' }}>{displayName}</Text>
+          </div>
+        );
+      },
     },
     {
       title: 'Ngày tạo',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      width: 120,
-      render: (date) => <Text style={{ fontSize: '12px' }}>{date}</Text>,
+      width: 180,
+      render: (date, record) => {
+        // Try multiple possible field names from backend
+        const dateValue = date || 
+                         record.CreatedAt || 
+                         record.createdAt || 
+                         record.CreatedDate || 
+                         record.createdDate ||
+                         record.DateCreated ||
+                         record.dateCreated ||
+                         record.CreatedTime ||
+                         record.createdTime;
+        
+        if (!dateValue) {
+          return <Text style={{ fontSize: '12px' }}>N/A</Text>;
+        }
+        
+        try {
+          // Parse and format the date
+          const dateObj = new Date(dateValue);
+          
+          // Check if date is valid
+          if (isNaN(dateObj.getTime())) {
+            return <Text style={{ fontSize: '12px' }}>{dateValue}</Text>;
+          }
+          
+          // Format: DD/MM/YYYY HH:mm
+          const day = String(dateObj.getDate()).padStart(2, '0');
+          const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+          const year = dateObj.getFullYear();
+          const hours = String(dateObj.getHours()).padStart(2, '0');
+          const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+          
+          const formattedDate = `${day}/${month}/${year} ${hours}:${minutes}`;
+          
+          return (
+            <Text style={{ fontSize: '12px' }}>
+              {formattedDate}
+            </Text>
+          );
+        } catch (error) {
+          console.error('Error formatting date:', error);
+          return <Text style={{ fontSize: '12px' }}>{dateValue}</Text>;
+        }
+      },
     },
     {
       title: 'Thao tác',
@@ -537,19 +631,6 @@ const ExamMatrixManagement = () => {
               </Form.Item>
             </Col>
           </Row>
-
-          {/* Configuration field - optional JSON string */}
-          <Form.Item
-            label="Cấu hình (JSON)"
-            name="configuration"
-            tooltip="Cấu hình chi tiết của ma trận đề dưới dạng JSON string (tùy chọn). Để trống sẽ gửi null."
-          >
-            <TextArea
-              rows={4}
-              placeholder='Ví dụ: {"timeLimit": 60, "randomizeOrder": true} hoặc để trống'
-              allowClear
-            />
-          </Form.Item>
         </Form>
       </Modal>
     </div>

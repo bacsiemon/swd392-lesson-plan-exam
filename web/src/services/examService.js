@@ -43,6 +43,18 @@ const examService = {
         maxAttempts: examData.maxAttempts !== undefined && examData.maxAttempts !== null
           ? examData.maxAttempts
           : (examData.MaxAttempts !== undefined && examData.MaxAttempts !== null ? examData.MaxAttempts : null),
+        scoringMethodEnum: examData.scoringMethodEnum !== undefined && examData.scoringMethodEnum !== null
+          ? examData.scoringMethodEnum
+          : (examData.ScoringMethodEnum !== undefined && examData.ScoringMethodEnum !== null ? examData.ScoringMethodEnum : null),
+        startTime: examData.startTime !== undefined && examData.startTime !== null
+          ? examData.startTime
+          : (examData.StartTime !== undefined && examData.StartTime !== null ? examData.StartTime : null),
+        endTime: examData.endTime !== undefined && examData.endTime !== null
+          ? examData.endTime
+          : (examData.EndTime !== undefined && examData.EndTime !== null ? examData.EndTime : null),
+        password: examData.password !== undefined 
+          ? (examData.password !== null ? examData.password : null)
+          : (examData.Password !== undefined ? (examData.Password !== null ? examData.Password : null) : null),
         totalPoints: examData.totalPoints !== undefined && examData.totalPoints !== null
           ? examData.totalPoints
           : (examData.TotalPoints !== undefined && examData.TotalPoints !== null ? examData.TotalPoints : null),
@@ -147,7 +159,19 @@ const examService = {
           : (examData.RandomizeAnswers !== undefined ? examData.RandomizeAnswers : null),
         maxAttempts: examData.maxAttempts !== undefined && examData.maxAttempts !== null
           ? examData.maxAttempts
-          : (examData.MaxAttempts !== undefined && examData.MaxAttempts !== null ? examData.MaxAttempts : null)
+          : (examData.MaxAttempts !== undefined && examData.MaxAttempts !== null ? examData.MaxAttempts : null),
+        scoringMethodEnum: examData.scoringMethodEnum !== undefined && examData.scoringMethodEnum !== null
+          ? examData.scoringMethodEnum
+          : (examData.ScoringMethodEnum !== undefined && examData.ScoringMethodEnum !== null ? examData.ScoringMethodEnum : null),
+        startTime: examData.startTime !== undefined && examData.startTime !== null
+          ? examData.startTime
+          : (examData.StartTime !== undefined && examData.StartTime !== null ? examData.StartTime : null),
+        endTime: examData.endTime !== undefined && examData.endTime !== null
+          ? examData.endTime
+          : (examData.EndTime !== undefined && examData.EndTime !== null ? examData.EndTime : null),
+        password: examData.password !== undefined && examData.password !== null
+          ? examData.password
+          : (examData.Password !== undefined && examData.Password !== null ? examData.Password : null)
       };
 
       console.log('Creating exam from matrix with data:', JSON.stringify(requestData, null, 2));
@@ -348,6 +372,18 @@ const examService = {
         maxAttempts: examData.maxAttempts !== undefined && examData.maxAttempts !== null
           ? examData.maxAttempts
           : (examData.MaxAttempts !== undefined && examData.MaxAttempts !== null ? examData.MaxAttempts : null),
+        scoringMethodEnum: examData.scoringMethodEnum !== undefined && examData.scoringMethodEnum !== null
+          ? examData.scoringMethodEnum
+          : (examData.ScoringMethodEnum !== undefined && examData.ScoringMethodEnum !== null ? examData.ScoringMethodEnum : null),
+        startTime: examData.startTime !== undefined && examData.startTime !== null
+          ? examData.startTime
+          : (examData.StartTime !== undefined && examData.StartTime !== null ? examData.StartTime : null),
+        endTime: examData.endTime !== undefined && examData.endTime !== null
+          ? examData.endTime
+          : (examData.EndTime !== undefined && examData.EndTime !== null ? examData.EndTime : null),
+        password: examData.password !== undefined 
+          ? (examData.password !== null ? examData.password : null)
+          : (examData.Password !== undefined ? (examData.Password !== null ? examData.Password : null) : null),
         totalPoints: examData.totalPoints !== undefined && examData.totalPoints !== null
           ? examData.totalPoints
           : (examData.TotalPoints !== undefined && examData.TotalPoints !== null ? examData.TotalPoints : null),

@@ -43,6 +43,8 @@ import {
 import '../styles/chemistryTheme.css';
 import dayjs from 'dayjs';
 import examService from '../services/examService';
+import examMatrixService from '../services/examMatrixService';
+import { questionBankService } from '../services/questionBankService';
 import api from '../services/axios';
 
 // Helper function to get current user ID from JWT token
@@ -114,17 +116,6 @@ const mockTests = [
   }
 ];
 
-const mockQuestionBanks = [
-  { id: 1, name: "Ngân hàng câu hỏi Hóa học 10", gradeLevel: 10, questionCount: 150 },
-  { id: 2, name: "Ngân hàng câu hỏi Hóa học 11", gradeLevel: 11, questionCount: 200 },
-  { id: 3, name: "Ngân hàng câu hỏi Hóa học 12", gradeLevel: 12, questionCount: 300 }
-];
-
-const mockTestMatrices = [
-  { id: 1, name: "Ma trận đề kiểm tra 15 phút", totalQuestions: 20, totalPoints: 100 },
-  { id: 2, name: "Ma trận đề thi 1 tiết", totalQuestions: 40, totalPoints: 100 },
-  { id: 3, name: "Ma trận đề thi cuối kỳ", totalQuestions: 50, totalPoints: 100 }
-];
 
 const mockStudents = [
   { id: 1, name: "Nguyễn Văn A", studentId: "HS001", score: 8.5, attemptTime: "2024-01-20 14:30", status: "completed" },
@@ -144,14 +135,24 @@ const ManageTestPage = () => {
   const [fetching, setFetching] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [statusFilter, setStatusFilter] = useState(null); // null = all, 0=Draft, 1=Inactive, 2=Active
+  const [questionBanks, setQuestionBanks] = useState([]);
+  const [examMatrices, setExamMatrices] = useState([]);
+  const [loadingQuestionBanks, setLoadingQuestionBanks] = useState(false);
+  const [loadingExamMatrices, setLoadingExamMatrices] = useState(false);
 
-  // Load current user ID on mount
+  // Load current user ID and initial data on mount
   useEffect(() => {
-    const loadUserId = async () => {
+    const loadInitialData = async () => {
       const userId = await getCurrentUserId();
       setCurrentUserId(userId);
+      
+      // Load question banks
+      await loadQuestionBanks(userId);
+      
+      // Load exam matrices
+      await loadExamMatrices(userId);
     };
-    loadUserId();
+    loadInitialData();
   }, []);
 
   // Load exams when component mounts or filters change
@@ -161,6 +162,80 @@ const ManageTestPage = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, searchText, currentUserId]);
+
+  // Load question banks
+  const loadQuestionBanks = async (teacherId) => {
+    setLoadingQuestionBanks(true);
+    try {
+      const result = await questionBankService.getQuestionBanks({
+        teacherId: teacherId,
+        page: 1,
+        pageSize: 100 // Get all available question banks
+      });
+      
+      if (result.success && result.data) {
+        // Map backend data to display format
+        const mappedBanks = result.data.map(bank => ({
+          id: bank.id || bank.Id || null,
+          name: bank.name || bank.Name || '',
+          gradeLevel: bank.gradeLevel || bank.GradeLevel || null,
+          questionCount: bank.questionCount || bank.QuestionCount || bank.totalQuestions || bank.TotalQuestions || 0
+        }));
+        setQuestionBanks(mappedBanks);
+      } else {
+        console.error('Failed to load question banks:', result.message);
+        setQuestionBanks([]);
+      }
+    } catch (error) {
+      console.error('Error loading question banks:', error);
+      setQuestionBanks([]);
+    } finally {
+      setLoadingQuestionBanks(false);
+    }
+  };
+
+  // Load exam matrices
+  const loadExamMatrices = async (teacherId) => {
+    setLoadingExamMatrices(true);
+    try {
+      const result = await examMatrixService.getAllExamMatrices({
+        teacherId: teacherId
+      });
+      
+      if (result.success && result.data) {
+        // Map backend data to display format
+        let matricesArray = [];
+        if (Array.isArray(result.data)) {
+          matricesArray = result.data;
+        } else if (result.data && typeof result.data === 'object') {
+          if (Array.isArray(result.data.data)) {
+            matricesArray = result.data.data;
+          } else if (Array.isArray(result.data.items)) {
+            matricesArray = result.data.items;
+          } else {
+            matricesArray = [result.data];
+          }
+        }
+        
+        const mappedMatrices = matricesArray.map(matrix => ({
+          id: matrix.id || matrix.Id || null,
+          name: matrix.name || matrix.Name || '',
+          totalQuestions: matrix.totalQuestions || matrix.TotalQuestions || 0,
+          totalPoints: matrix.totalPoints || matrix.TotalPoints || 0,
+          description: matrix.description || matrix.Description || ''
+        }));
+        setExamMatrices(mappedMatrices);
+      } else {
+        console.error('Failed to load exam matrices:', result.message);
+        setExamMatrices([]);
+      }
+    } catch (error) {
+      console.error('Error loading exam matrices:', error);
+      setExamMatrices([]);
+    } finally {
+      setLoadingExamMatrices(false);
+    }
+  };
 
   const loadExams = async () => {
     setFetching(true);
@@ -252,7 +327,27 @@ const ManageTestPage = () => {
     try {
       // Prepare exam data for API
       // Check if creating from matrix or manually
-      const isFromMatrix = values.examMatrixId !== undefined && values.examMatrixId !== null;
+      // examMatrixId should be the ID from the select dropdown
+      const examMatrixId = values.examMatrixId !== undefined && values.examMatrixId !== null && values.examMatrixId !== ''
+        ? (typeof values.examMatrixId === 'number' ? values.examMatrixId : parseInt(values.examMatrixId))
+        : null;
+      
+      const isFromMatrix = examMatrixId !== null && !isNaN(examMatrixId);
+      
+      // Format dates for API
+      const startTime = values.startTime ? dayjs(values.startTime).toISOString() : null;
+      const endTime = values.endTime ? dayjs(values.endTime).toISOString() : null;
+      
+      // Ensure password is always a string or null
+      let passwordValue = null;
+      if (values.password !== undefined && values.password !== null && values.password !== '') {
+        // Convert to string explicitly to handle numbers
+        passwordValue = String(values.password).trim();
+        // If after trimming it's empty, set to null
+        if (passwordValue === '') {
+          passwordValue = null;
+        }
+      }
       
       const examData = {
         title: values.title || '',
@@ -260,26 +355,32 @@ const ManageTestPage = () => {
         createdByTeacher: currentUserId || 1, // Backend will override from JWT anyway
         gradeLevel: values.learningLevel ? parseInt(values.learningLevel.replace('Lớp ', '')) : null,
         durationMinutes: values.duration || null,
-        totalPoints: values.totalPoints || null,
-        totalQuestions: values.totalQuestions || null,
+        passThreshold: values.passThreshold !== undefined && values.passThreshold !== null ? values.passThreshold : null,
         showResultsImmediately: values.showResultsImmediately !== undefined ? values.showResultsImmediately : null,
         showCorrectAnswers: values.showCorrectAnswers !== undefined ? values.showCorrectAnswers : null,
         randomizeQuestions: values.randomizeQuestions !== undefined ? values.randomizeQuestions : null,
         randomizeAnswers: values.randomizeAnswers !== undefined ? values.randomizeAnswers : null,
-        maxAttempts: values.maxAttempts || null,
+        scoringMethodEnum: values.scoringMethodEnum !== undefined && values.scoringMethodEnum !== null ? values.scoringMethodEnum : null,
+        maxAttempts: values.maxAttempts !== undefined && values.maxAttempts !== null ? values.maxAttempts : null,
+        startTime: startTime,
+        endTime: endTime,
+        password: passwordValue,
         statusEnum: 0, // Draft
-        examMatrixId: values.examMatrixId || null
+        examMatrixId: examMatrixId,
+        totalQuestions: values.totalQuestions || null,
+        totalPoints: values.totalPoints || null
       };
 
       console.log('Creating exam with data:', examData);
 
       let result;
-      if (isFromMatrix && examData.examMatrixId) {
-        // Create from matrix
+      if (isFromMatrix && examMatrixId) {
+        // Create from matrix - examMatrixId is required
         result = await examService.createExamFromMatrix(examData);
       } else {
-        // Create manually
-        result = await examService.createExam(examData);
+        // Create manually - no examMatrixId
+        const { examMatrixId: _, ...examDataWithoutMatrix } = examData; // Remove examMatrixId for manual creation
+        result = await examService.createExam(examDataWithoutMatrix);
       }
 
       if (result.success) {
@@ -314,6 +415,10 @@ const ManageTestPage = () => {
       if (result.success && result.data) {
         const examData = result.data;
         // Map backend data to form format
+        // Parse dates from backend
+        const startTimeValue = examData.startTime || examData.StartTime;
+        const endTimeValue = examData.endTime || examData.EndTime;
+        
         form.setFieldsValue({
           title: examData.title || examData.Title || '',
           description: examData.description || examData.Description || '',
@@ -321,11 +426,19 @@ const ManageTestPage = () => {
           duration: examData.durationMinutes || examData.DurationMinutes || null,
           totalQuestions: examData.totalQuestions || examData.TotalQuestions || null,
           totalPoints: examData.totalPoints || examData.TotalPoints || null,
+          passThreshold: examData.passThreshold !== undefined ? examData.passThreshold : (examData.PassThreshold !== undefined ? examData.PassThreshold : null),
           showResultsImmediately: examData.showResultsImmediately !== undefined ? examData.showResultsImmediately : (examData.ShowResultsImmediately !== undefined ? examData.ShowResultsImmediately : null),
           showCorrectAnswers: examData.showCorrectAnswers !== undefined ? examData.showCorrectAnswers : (examData.ShowCorrectAnswers !== undefined ? examData.ShowCorrectAnswers : null),
           randomizeQuestions: examData.randomizeQuestions !== undefined ? examData.randomizeQuestions : (examData.RandomizeQuestions !== undefined ? examData.RandomizeQuestions : null),
           randomizeAnswers: examData.randomizeAnswers !== undefined ? examData.randomizeAnswers : (examData.RandomizeAnswers !== undefined ? examData.RandomizeAnswers : null),
-          examMatrixId: examData.examMatrixId || examData.ExamMatrixId || null
+          scoringMethodEnum: examData.scoringMethodEnum !== undefined ? examData.scoringMethodEnum : (examData.ScoringMethodEnum !== undefined ? examData.ScoringMethodEnum : null),
+          maxAttempts: examData.maxAttempts !== undefined ? examData.maxAttempts : (examData.MaxAttempts !== undefined ? examData.MaxAttempts : null),
+          startTime: startTimeValue ? dayjs(startTimeValue) : null,
+          endTime: endTimeValue ? dayjs(endTimeValue) : null,
+          password: examData.password || examData.Password || null,
+          examMatrixId: examData.examMatrixId !== undefined && examData.examMatrixId !== null 
+            ? (typeof examData.examMatrixId === 'number' ? examData.examMatrixId : parseInt(examData.examMatrixId))
+            : (examData.ExamMatrixId !== undefined && examData.ExamMatrixId !== null ? (typeof examData.ExamMatrixId === 'number' ? examData.ExamMatrixId : parseInt(examData.ExamMatrixId)) : null)
         });
         
         setSelectedTest({ ...examData, id: examId });
@@ -383,18 +496,39 @@ const ManageTestPage = () => {
     try {
       const examId = selectedTest.id || selectedTest.Id || selectedTest.ID;
       
+      // Format dates for API
+      const startTime = values.startTime ? dayjs(values.startTime).toISOString() : null;
+      const endTime = values.endTime ? dayjs(values.endTime).toISOString() : null;
+      
+      // Ensure password is always a string or null
+      let passwordValue = null;
+      if (values.password !== undefined && values.password !== null && values.password !== '') {
+        // Convert to string explicitly to handle numbers
+        passwordValue = String(values.password).trim();
+        // If after trimming it's empty, set to null
+        if (passwordValue === '') {
+          passwordValue = null;
+        }
+      }
+      
       const examData = {
         title: values.title || '',
         description: values.description || '',
+        createdByTeacher: currentUserId || 1, // Backend will override from JWT anyway, but required field
         gradeLevel: values.learningLevel ? parseInt(values.learningLevel.replace('Lớp ', '')) : null,
         durationMinutes: values.duration || null,
-        totalPoints: values.totalPoints || null,
-        totalQuestions: values.totalQuestions || null,
+        passThreshold: values.passThreshold !== undefined && values.passThreshold !== null ? values.passThreshold : null,
         showResultsImmediately: values.showResultsImmediately !== undefined ? values.showResultsImmediately : null,
         showCorrectAnswers: values.showCorrectAnswers !== undefined ? values.showCorrectAnswers : null,
         randomizeQuestions: values.randomizeQuestions !== undefined ? values.randomizeQuestions : null,
         randomizeAnswers: values.randomizeAnswers !== undefined ? values.randomizeAnswers : null,
-        maxAttempts: values.maxAttempts || null
+        scoringMethodEnum: values.scoringMethodEnum !== undefined && values.scoringMethodEnum !== null ? values.scoringMethodEnum : null,
+        maxAttempts: values.maxAttempts !== undefined && values.maxAttempts !== null ? values.maxAttempts : null,
+        startTime: startTime,
+        endTime: endTime,
+        password: passwordValue,
+        totalPoints: values.totalPoints || null,
+        totalQuestions: values.totalQuestions || null
       };
 
       const result = await examService.updateExam(examId, examData);
@@ -800,20 +934,7 @@ const ManageTestPage = () => {
           </Row>
 
           <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="difficulty"
-                label="Độ khó"
-                rules={[{ required: true, message: 'Vui lòng chọn độ khó!' }]}
-              >
-                <Select placeholder="Chọn độ khó">
-                  <Option value="Dễ">Dễ</Option>
-                  <Option value="Trung bình">Trung bình</Option>
-                  <Option value="Khó">Khó</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
+            <Col span={24}>
               <Form.Item
                 name="learningLevel"
                 label="Cấp độ học"
@@ -831,14 +952,18 @@ const ManageTestPage = () => {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                name="questionBank"
+                name="questionBankId"
                 label="Ngân hàng câu hỏi"
-                rules={[{ required: true, message: 'Vui lòng chọn ngân hàng câu hỏi!' }]}
+                tooltip="Chọn ngân hàng câu hỏi (tùy chọn - chỉ để tham khảo)"
               >
-                <Select placeholder="Chọn ngân hàng câu hỏi">
-                  {mockQuestionBanks.map(bank => (
-                    <Option key={bank.id} value={bank.name}>
-                      {bank.name} ({bank.questionCount} câu hỏi)
+                <Select 
+                  placeholder="Chọn ngân hàng câu hỏi (tùy chọn)"
+                  loading={loadingQuestionBanks}
+                  allowClear
+                >
+                  {questionBanks.map(bank => (
+                    <Option key={bank.id} value={bank.id}>
+                      {bank.name} {bank.gradeLevel ? `(Lớp ${bank.gradeLevel})` : ''} - {bank.questionCount} câu hỏi
                     </Option>
                   ))}
                 </Select>
@@ -846,13 +971,17 @@ const ManageTestPage = () => {
             </Col>
             <Col span={12}>
               <Form.Item
-                name="testMatrix"
+                name="examMatrixId"
                 label="Ma trận đề"
-                rules={[{ required: true, message: 'Vui lòng chọn ma trận đề!' }]}
+                tooltip="Chọn ma trận đề để tạo bài thi tự động từ ma trận. Nếu không chọn, bạn sẽ tạo bài thi thủ công."
               >
-                <Select placeholder="Chọn ma trận đề">
-                  {mockTestMatrices.map(matrix => (
-                    <Option key={matrix.id} value={matrix.name}>
+                <Select 
+                  placeholder="Chọn ma trận đề (tùy chọn)"
+                  loading={loadingExamMatrices}
+                  allowClear
+                >
+                  {examMatrices.map(matrix => (
+                    <Option key={matrix.id} value={matrix.id}>
                       {matrix.name} ({matrix.totalQuestions} câu, {matrix.totalPoints} điểm)
                     </Option>
                   ))}
@@ -860,6 +989,23 @@ const ManageTestPage = () => {
               </Form.Item>
             </Col>
           </Row>
+          <Form.Item shouldUpdate={(prevValues, currentValues) => prevValues.examMatrixId !== currentValues.examMatrixId}>
+            {({ getFieldValue }) => {
+              const examMatrixId = getFieldValue('examMatrixId');
+              if (examMatrixId) {
+                return (
+                  <Row>
+                    <Col span={24}>
+                      <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginBottom: 16 }}>
+                        <ExperimentOutlined /> Bài thi sẽ được tạo tự động từ ma trận đề đã chọn. Các câu hỏi sẽ được chọn ngẫu nhiên theo cấu hình ma trận.
+                      </Text>
+                    </Col>
+                  </Row>
+                );
+              }
+              return null;
+            }}
+          </Form.Item>
 
           <Row gutter={16}>
             <Col span={8}>
@@ -896,6 +1042,92 @@ const ManageTestPage = () => {
             label="Mô tả"
           >
             <TextArea rows={3} placeholder="Nhập mô tả bài kiểm tra..." />
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item
+                name="passThreshold"
+                label="Ngưỡng điểm đạt"
+                tooltip="Điểm tối thiểu để đạt (ví dụ: 5.0)"
+              >
+                <InputNumber 
+                  min={0} 
+                  max={10} 
+                  step={0.1}
+                  style={{ width: '100%' }} 
+                  placeholder="5.0"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                name="maxAttempts"
+                label="Số lần thử tối đa"
+                tooltip="Số lần học sinh có thể làm bài (0 = không giới hạn)"
+              >
+                <InputNumber 
+                  min={0} 
+                  style={{ width: '100%' }} 
+                  placeholder="1"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                name="scoringMethodEnum"
+                label="Phương thức chấm điểm"
+                tooltip="0=Trung bình, 1=Cao nhất, 2=Lần làm gần nhất"
+              >
+                <Select style={{ width: '100%' }} placeholder="Chọn phương thức">
+                  <Option value={0}>Trung bình các lần làm</Option>
+                  <Option value={1}>Điểm cao nhất</Option>
+                  <Option value={2}>Lần làm gần nhất</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="startTime"
+                label="Thời gian bắt đầu"
+                tooltip="Thời gian bắt đầu cho phép làm bài"
+              >
+                <DatePicker
+                  showTime
+                  format="DD/MM/YYYY HH:mm"
+                  style={{ width: '100%' }}
+                  placeholder="Chọn thời gian bắt đầu"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="endTime"
+                label="Thời gian kết thúc"
+                tooltip="Thời gian kết thúc cho phép làm bài"
+              >
+                <DatePicker
+                  showTime
+                  format="DD/MM/YYYY HH:mm"
+                  style={{ width: '100%' }}
+                  placeholder="Chọn thời gian kết thúc"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item
+            name="password"
+            label="Mật khẩu truy cập"
+            tooltip="Mật khẩu để học sinh có thể truy cập bài thi (tùy chọn)"
+          >
+            <Input.Password 
+              placeholder="Nhập mật khẩu (để trống nếu không cần)"
+              allowClear
+            />
           </Form.Item>
 
           <Row gutter={16}>
