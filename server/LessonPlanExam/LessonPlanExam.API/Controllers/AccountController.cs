@@ -92,32 +92,32 @@ namespace LessonPlanExam.API.Controllers
         }
 
         /// <summary>
-        /// API yêu cầu đặt lại mật khẩu qua email
-        /// Gửi email chứa token để reset mật khẩu đến địa chỉ email của người dùng
+        /// API yêu cầu gửi OTP qua email để reset mật khẩu
+        /// Gửi mã OTP 6 chữ số đến email người dùng, có hiệu lực 5 phút
         /// </summary>
         /// <param name="request">Email của người dùng cần reset mật khẩu</param>
-        /// <returns>Xác nhận đã gửi email reset mật khẩu</returns>
-        [HttpPost("forgot-password")]
+        /// <returns>Xác nhận đã gửi OTP qua email</returns>
+        [HttpPost("forgot-password-otp")]
         [AllowAnonymous] // Cho phép truy cập không cần xác thực
-        public async Task<IActionResult> ForgotPasswordAsync([FromBody] ForgotPasswordRequest request)
+        public async Task<IActionResult> ForgotPasswordWithOtpAsync([FromBody] ForgotPasswordWithOtpRequest request)
         {
-            // Gọi service để xử lý logic gửi email reset password
-            var response = await _accountService.ForgotPasswordAsync(request);
+            // Gọi service để gửi OTP qua email
+            var response = await _accountService.ForgotPasswordWithOtpAsync(request);
             return StatusCode(response.StatusCode, response);
         }
 
         /// <summary>
-        /// API đặt lại mật khẩu bằng token reset
-        /// Sử dụng token từ email để đặt mật khẩu mới
+        /// API xác thực OTP và đặt lại mật khẩu mới
+        /// Verify mã OTP và cập nhật mật khẩu mới cho tài khoản
         /// </summary>
-        /// <param name="request">Token reset và mật khẩu mới</param>
+        /// <param name="request">Email, mã OTP và mật khẩu mới</param>
         /// <returns>Xác nhận đã đổi mật khẩu thành công</returns>
-        [HttpPost("reset-password")]
+        [HttpPost("verify-otp-reset-password")]
         [AllowAnonymous] // Cho phép truy cập không cần xác thực
-        public async Task<IActionResult> ResetPasswordAsync([FromBody] ResetPasswordRequest request)
+        public async Task<IActionResult> VerifyOtpResetPasswordAsync([FromBody] VerifyOtpResetPasswordRequest request)
         {
-            // Gọi service để xử lý logic reset password với token
-            var response = await _accountService.ResetPasswordAsync(request);
+            // Gọi service để verify OTP và reset password
+            var response = await _accountService.VerifyOtpResetPasswordAsync(request);
             return StatusCode(response.StatusCode, response);
         }
 
@@ -176,6 +176,22 @@ namespace LessonPlanExam.API.Controllers
         {
             // Gọi service để lấy thông tin profile của user hiện tại
             var response = await _accountService.GetCurrentUserProfileAsync();
+            return StatusCode(response.StatusCode, response);
+        }
+
+        /// <summary>
+        /// API cập nhật thông tin profile của người dùng hiện tại
+        /// Cho phép user thay đổi FullName, Phone, AvatarUrl, DateOfBirth
+        /// Không cho phép thay đổi Email (cần API riêng để đảm bảo bảo mật)
+        /// </summary>
+        /// <param name="request">Thông tin cần cập nhật</param>
+        /// <returns>Thông tin profile sau khi cập nhật</returns>
+        [HttpPut("profile")]
+        [Authorize] // Yêu cầu phải đăng nhập (có JWT token hợp lệ)
+        public async Task<IActionResult> UpdateProfileAsync([FromBody] UpdateProfileRequest request)
+        {
+            // Gọi service để cập nhật profile
+            var response = await _accountService.UpdateProfileAsync(request);
             return StatusCode(response.StatusCode, response);
         }
 
