@@ -4,6 +4,7 @@ import { Card, Typography, Button, Radio, Space, message, Spin, Alert, Modal, In
 import { ExperimentOutlined, CheckCircleOutlined, ClockCircleOutlined, LockOutlined } from '@ant-design/icons';
 import examAttemptService from '../services/examAttemptService';
 import examService from '../services/examService';
+import questionService from '../services/questionService';
 import '../styles/chemistryTheme.css';
 import '../styles/Home.css';
 
@@ -48,7 +49,86 @@ function StudentTestPage() {
           return;
         }
 
-        setExam(examResponse.data);
+        // Load questions for the exam
+        const questionsResponse = await examService.getExamQuestions(examId);
+        const examData = examResponse.data;
+        
+        // Attach questions to exam data
+        if (questionsResponse.success && questionsResponse.data && questionsResponse.data.length > 0) {
+          // Backend returns ExamQuestionResponse which has QuestionId but not full question details
+          // We need to load full question details with answers for each question
+          const examQuestions = questionsResponse.data;
+          console.log('Loading questions for exam:', examId, 'Found', examQuestions.length, 'exam questions');
+          
+          const fullQuestions = await Promise.all(
+            examQuestions.map(async (examQuestion) => {
+              const questionId = examQuestion.questionId || examQuestion.QuestionId;
+              console.log('Loading question details for questionId:', questionId, 'examQuestion:', examQuestion);
+              
+              if (questionId) {
+                try {
+                  // Load full question details with answers
+                  const questionResponse = await questionService.getQuestionById(questionId);
+                  console.log('Question response for', questionId, ':', questionResponse);
+                  
+                  if (questionResponse.success && questionResponse.data) {
+                    const fullQuestion = questionResponse.data;
+                    console.log('Full question loaded:', fullQuestion);
+                    
+                    const mappedQuestion = {
+                      ...examQuestion,
+                      question: fullQuestion,
+                      // Map for easier access
+                      questionId: questionId,
+                      id: examQuestion.id || examQuestion.Id || examQuestion.examQuestionId || examQuestion.ExamQuestionId,
+                      text: fullQuestion.title || fullQuestion.Title || fullQuestion.content || fullQuestion.Content || examQuestion.questionTitle || examQuestion.QuestionTitle,
+                      title: fullQuestion.title || fullQuestion.Title || examQuestion.questionTitle || examQuestion.QuestionTitle,
+                      content: fullQuestion.content || fullQuestion.Content || examQuestion.questionContent || examQuestion.QuestionContent,
+                      questionTypeEnum: fullQuestion.questionTypeEnum !== undefined ? fullQuestion.questionTypeEnum : (fullQuestion.QuestionTypeEnum !== undefined ? fullQuestion.QuestionTypeEnum : examQuestion.questionTypeEnum || examQuestion.QuestionTypeEnum),
+                      // Map options/answers
+                      options: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || [],
+                      multipleChoiceAnswers: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || []
+                    };
+                    
+                    console.log('Mapped question:', mappedQuestion);
+                    return mappedQuestion;
+                  } else {
+                    console.warn('Failed to load question', questionId, ':', questionResponse);
+                  }
+                } catch (error) {
+                  console.error(`Error loading question ${questionId}:`, error);
+                }
+              } else {
+                console.warn('No questionId found in examQuestion:', examQuestion);
+              }
+              
+              // Fallback: return exam question with basic info
+              return {
+                ...examQuestion,
+                questionId: questionId,
+                id: examQuestion.id || examQuestion.Id || examQuestion.examQuestionId || examQuestion.ExamQuestionId,
+                text: examQuestion.questionTitle || examQuestion.QuestionTitle || examQuestion.questionContent || examQuestion.QuestionContent,
+                title: examQuestion.questionTitle || examQuestion.QuestionTitle,
+                content: examQuestion.questionContent || examQuestion.QuestionContent,
+                options: []
+              };
+            })
+          );
+          
+          // Filter out any null/undefined questions
+          const validQuestions = fullQuestions.filter(q => q != null);
+          console.log('Valid questions after filtering:', validQuestions.length, 'out of', fullQuestions.length);
+          console.log('Questions data:', validQuestions);
+          
+          examData.questions = validQuestions;
+          examData.examQuestions = validQuestions;
+        } else {
+          console.warn('No questions found in response:', questionsResponse);
+          // If questions API fails, use questions from exam response if available
+          examData.questions = examData.questions || examData.examQuestions || [];
+        }
+
+        setExam(examData);
         
         // Check if there's a latest attempt that might be resumed
         const latestAttemptResponse = await examAttemptService.getLatestAttempt(examId);
@@ -81,7 +161,113 @@ function StudentTestPage() {
         
         if (startResponse.success) {
           // Started successfully without password
-          setAttemptId(startResponse.data.id || startResponse.data.attemptId);
+          const attemptData = startResponse.data;
+          console.log('StartAttempt response data:', attemptData);
+          setAttemptId(attemptData.attemptId || attemptData.id || attemptData.AttemptId);
+          
+          // Load questions from startAttempt response if available
+          // startAttempt returns AttemptStartResponse with Questions array containing QuestionId, OrderIndex, PointsPossible
+          // Backend uses PascalCase, but JSON serializer might convert to camelCase
+          const questionsArray = attemptData.questions || attemptData.Questions || [];
+          console.log('Questions array from startAttempt:', questionsArray);
+          
+          if (Array.isArray(questionsArray) && questionsArray.length > 0) {
+            console.log('Loading questions from startAttempt response:', questionsArray);
+            const questionIds = questionsArray.map(q => q.questionId || q.QuestionId).filter(id => id != null);
+            console.log('Question IDs from startAttempt:', questionIds);
+            
+            // Load full question details for each QuestionId
+            const fullQuestions = await Promise.all(
+              questionIds.map(async (questionId, index) => {
+                try {
+                  const questionResponse = await questionService.getQuestionById(questionId);
+                  if (questionResponse.success && questionResponse.data) {
+                    const fullQuestion = questionResponse.data;
+                    const questionItem = questionsArray[index];
+                    console.log(`Loaded question ${questionId}:`, fullQuestion);
+                    return {
+                      questionId: questionId,
+                      id: questionId, // Use QuestionId as the id for rendering
+                      orderIndex: questionItem?.orderIndex || questionItem?.OrderIndex || index + 1,
+                      points: questionItem?.pointsPossible || questionItem?.PointsPossible,
+                      text: fullQuestion.title || fullQuestion.Title || fullQuestion.content || fullQuestion.Content,
+                      title: fullQuestion.title || fullQuestion.Title,
+                      content: fullQuestion.content || fullQuestion.Content,
+                      questionTypeEnum: fullQuestion.questionTypeEnum !== undefined ? fullQuestion.questionTypeEnum : (fullQuestion.QuestionTypeEnum !== undefined ? fullQuestion.QuestionTypeEnum : 0),
+                      options: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || [],
+                      multipleChoiceAnswers: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || [],
+                      question: fullQuestion
+                    };
+                  } else {
+                    console.warn(`Failed to load question ${questionId}:`, questionResponse);
+                  }
+                } catch (error) {
+                  console.error(`Error loading question ${questionId}:`, error);
+                }
+                return null;
+              })
+            );
+            
+            // Filter out null questions and sort by orderIndex
+            const validQuestions = fullQuestions.filter(q => q != null).sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+            console.log('Valid questions loaded from startAttempt:', validQuestions.length);
+            console.log('Valid questions:', validQuestions);
+            
+            examData.questions = validQuestions;
+            examData.examQuestions = validQuestions;
+            examData.totalQuestions = validQuestions.length; // Update totalQuestions
+            setExam(examData);
+          } else {
+            console.warn('No questions found in startAttempt response. Response data:', attemptData);
+            // Fallback: use getExamQuestions if startAttempt doesn't return questions
+            console.log('No questions in startAttempt response, using getExamQuestions fallback');
+            const questionsResponse = await examService.getExamQuestions(examId);
+            if (questionsResponse.success && questionsResponse.data && questionsResponse.data.length > 0) {
+              const examQuestions = questionsResponse.data;
+              const fullQuestions = await Promise.all(
+                examQuestions.map(async (examQuestion) => {
+                  const questionId = examQuestion.questionId || examQuestion.QuestionId;
+                  if (questionId) {
+                    try {
+                      const questionResponse = await questionService.getQuestionById(questionId);
+                      if (questionResponse.success && questionResponse.data) {
+                        const fullQuestion = questionResponse.data;
+                        return {
+                          ...examQuestion,
+                          question: fullQuestion,
+                          questionId: questionId,
+                          id: examQuestion.id || examQuestion.Id || examQuestion.examQuestionId || examQuestion.ExamQuestionId,
+                          text: fullQuestion.title || fullQuestion.Title || fullQuestion.content || fullQuestion.Content || examQuestion.questionTitle || examQuestion.QuestionTitle,
+                          title: fullQuestion.title || fullQuestion.Title || examQuestion.questionTitle || examQuestion.QuestionTitle,
+                          content: fullQuestion.content || fullQuestion.Content || examQuestion.questionContent || examQuestion.QuestionContent,
+                          questionTypeEnum: fullQuestion.questionTypeEnum !== undefined ? fullQuestion.questionTypeEnum : (fullQuestion.QuestionTypeEnum !== undefined ? fullQuestion.QuestionTypeEnum : examQuestion.questionTypeEnum || examQuestion.QuestionTypeEnum),
+                          options: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || [],
+                          multipleChoiceAnswers: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || []
+                        };
+                      }
+                    } catch (error) {
+                      console.error(`Error loading question ${questionId}:`, error);
+                    }
+                  }
+                  return {
+                    ...examQuestion,
+                    questionId: questionId,
+                    id: examQuestion.id || examQuestion.Id || examQuestion.examQuestionId || examQuestion.ExamQuestionId,
+                    text: examQuestion.questionTitle || examQuestion.QuestionTitle || examQuestion.questionContent || examQuestion.QuestionContent,
+                    title: examQuestion.questionTitle || examQuestion.QuestionTitle,
+                    content: examQuestion.questionContent || examQuestion.QuestionContent,
+                    options: []
+                  };
+                })
+              );
+              
+              const validQuestions = fullQuestions.filter(q => q != null);
+              examData.questions = validQuestions;
+              examData.examQuestions = validQuestions;
+              setExam(examData);
+            }
+          }
+          
           message.success('Đã bắt đầu bài thi');
           setLoading(false);
         } else {
@@ -103,17 +289,20 @@ function StudentTestPage() {
   const startNewAttempt = async (examPassword) => {
     try {
       setLoading(true);
+      setPasswordError(''); // Clear previous errors
       const startResponse = await examAttemptService.startAttempt(examId, examPassword);
       
       if (!startResponse.success) {
         // Log the full error for debugging
-        console.log('Start attempt failed:', startResponse);
-        console.log('Error details:', startResponse.error);
+        console.error('Start attempt failed:', startResponse);
+        console.error('Error details:', {
+          statusCode: startResponse.statusCode,
+          error: startResponse.error,
+          message: startResponse.message
+        });
         
-        const errorMsg = startResponse.error?.Message || 
-                        startResponse.error?.message || 
-                        startResponse.message || 
-                        'Không thể bắt đầu bài thi';
+        // Use the message from service (already processed and user-friendly)
+        const errorMsg = startResponse.message || 'Không thể bắt đầu bài thi';
         
         if (examPassword) {
           // If password was provided but failed
@@ -128,18 +317,144 @@ function StudentTestPage() {
         }
       }
 
-      setAttemptId(startResponse.data.id || startResponse.data.attemptId);
+      const attemptData = startResponse.data;
+      console.log('StartAttempt response data in startNewAttempt:', attemptData);
+      setAttemptId(attemptData?.attemptId || attemptData?.id || attemptData?.AttemptId);
+      
+      // Load questions from startAttempt response if available
+      // startAttempt returns AttemptStartResponse with Questions array containing QuestionId, OrderIndex, PointsPossible
+      // Backend uses PascalCase, but JSON serializer might convert to camelCase
+      const questionsArray = attemptData?.questions || attemptData?.Questions || [];
+      console.log('Questions array from startAttempt in startNewAttempt:', questionsArray);
+      
+      if (Array.isArray(questionsArray) && questionsArray.length > 0) {
+        console.log('Loading questions from startAttempt response in startNewAttempt:', questionsArray);
+        const questionIds = questionsArray.map(q => q.questionId || q.QuestionId).filter(id => id != null);
+        console.log('Question IDs from startAttempt:', questionIds);
+        
+        // Load full question details for each QuestionId
+        const fullQuestions = await Promise.all(
+          questionIds.map(async (questionId, index) => {
+            try {
+              const questionResponse = await questionService.getQuestionById(questionId);
+              if (questionResponse.success && questionResponse.data) {
+                const fullQuestion = questionResponse.data;
+                const questionItem = questionsArray[index];
+                console.log(`Loaded question ${questionId} in startNewAttempt:`, fullQuestion);
+                return {
+                  questionId: questionId,
+                  id: questionId, // Use QuestionId as the id for rendering
+                  orderIndex: questionItem?.orderIndex || questionItem?.OrderIndex || index + 1,
+                  points: questionItem?.pointsPossible || questionItem?.PointsPossible,
+                  text: fullQuestion.title || fullQuestion.Title || fullQuestion.content || fullQuestion.Content,
+                  title: fullQuestion.title || fullQuestion.Title,
+                  content: fullQuestion.content || fullQuestion.Content,
+                  questionTypeEnum: fullQuestion.questionTypeEnum !== undefined ? fullQuestion.questionTypeEnum : (fullQuestion.QuestionTypeEnum !== undefined ? fullQuestion.QuestionTypeEnum : 0),
+                  options: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || [],
+                  multipleChoiceAnswers: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || [],
+                  question: fullQuestion
+                };
+              } else {
+                console.warn(`Failed to load question ${questionId} in startNewAttempt:`, questionResponse);
+              }
+            } catch (error) {
+              console.error(`Error loading question ${questionId} in startNewAttempt:`, error);
+            }
+            return null;
+          })
+        );
+        
+        // Filter out null questions and sort by orderIndex
+        const validQuestions = fullQuestions.filter(q => q != null).sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+        console.log('Valid questions loaded from startAttempt in startNewAttempt:', validQuestions.length);
+        console.log('Valid questions:', validQuestions);
+        
+        setExam(prev => ({
+          ...prev,
+          questions: validQuestions,
+          examQuestions: validQuestions,
+          totalQuestions: validQuestions.length // Update totalQuestions
+        }));
+      } else if (!exam || !exam.questions || exam.questions.length === 0) {
+        // Fallback: use getExamQuestions if startAttempt doesn't return questions
+        console.log('No questions in startAttempt response, using getExamQuestions fallback');
+        const questionsResponse = await examService.getExamQuestions(examId);
+        console.log('Loading questions in startNewAttempt, response:', questionsResponse);
+        
+        if (questionsResponse.success && questionsResponse.data && questionsResponse.data.length > 0) {
+          // Load full question details with answers
+          const examQuestions = questionsResponse.data;
+          console.log('Found', examQuestions.length, 'exam questions to load');
+          
+          const fullQuestions = await Promise.all(
+            examQuestions.map(async (examQuestion) => {
+              const questionId = examQuestion.questionId || examQuestion.QuestionId;
+              console.log('Loading question', questionId);
+              
+              if (questionId) {
+                try {
+                  const questionResponse = await questionService.getQuestionById(questionId);
+                  if (questionResponse.success && questionResponse.data) {
+                    const fullQuestion = questionResponse.data;
+                    return {
+                      ...examQuestion,
+                      question: fullQuestion,
+                      questionId: questionId,
+                      id: examQuestion.id || examQuestion.Id || examQuestion.examQuestionId || examQuestion.ExamQuestionId,
+                      text: fullQuestion.title || fullQuestion.Title || fullQuestion.content || fullQuestion.Content || examQuestion.questionTitle || examQuestion.QuestionTitle,
+                      title: fullQuestion.title || fullQuestion.Title || examQuestion.questionTitle || examQuestion.QuestionTitle,
+                      content: fullQuestion.content || fullQuestion.Content || examQuestion.questionContent || examQuestion.QuestionContent,
+                      questionTypeEnum: fullQuestion.questionTypeEnum !== undefined ? fullQuestion.questionTypeEnum : (fullQuestion.QuestionTypeEnum !== undefined ? fullQuestion.QuestionTypeEnum : examQuestion.questionTypeEnum || examQuestion.QuestionTypeEnum),
+                      options: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || [],
+                      multipleChoiceAnswers: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || []
+                    };
+                  } else {
+                    console.warn('Failed to load question', questionId, ':', questionResponse);
+                  }
+                } catch (error) {
+                  console.error(`Error loading question ${questionId}:`, error);
+                }
+              }
+              
+              return {
+                ...examQuestion,
+                questionId: questionId,
+                id: examQuestion.id || examQuestion.Id || examQuestion.examQuestionId || examQuestion.ExamQuestionId,
+                text: examQuestion.questionTitle || examQuestion.QuestionTitle || examQuestion.questionContent || examQuestion.QuestionContent,
+                title: examQuestion.questionTitle || examQuestion.QuestionTitle,
+                content: examQuestion.questionContent || examQuestion.QuestionContent,
+                options: []
+              };
+            })
+          );
+          
+          // Filter out any null/undefined questions
+          const validQuestions = fullQuestions.filter(q => q != null);
+          console.log('Valid questions loaded:', validQuestions.length);
+          
+          setExam(prev => ({
+            ...prev,
+            questions: validQuestions,
+            examQuestions: validQuestions
+          }));
+        } else {
+          console.warn('No questions found in startNewAttempt:', questionsResponse);
+        }
+      }
+      
       setShowPasswordModal(false);
       setPasswordError('');
+      setPassword(''); // Clear password field
       message.success('Đã bắt đầu bài thi');
       setLoading(false);
       return true;
     } catch (err) {
       console.error('Error starting attempt:', err);
+      const errorMsg = 'Có lỗi xảy ra khi bắt đầu bài thi. Vui lòng thử lại.';
       if (examPassword) {
-        setPasswordError('Có lỗi xảy ra. Vui lòng thử lại');
+        setPasswordError(errorMsg);
       } else {
-        setError('Có lỗi xảy ra khi bắt đầu bài thi');
+        setError(errorMsg);
       }
       setLoading(false);
       return false;
@@ -288,6 +603,12 @@ function StudentTestPage() {
   // Get questions from exam
   const questions = exam.questions || exam.examQuestions || [];
   const duration = exam.durationMinutes || exam.duration || 0;
+  
+  // Debug logging
+  console.log('Render - Exam data:', exam);
+  console.log('Render - Questions:', questions);
+  console.log('Render - Questions length:', questions.length);
+  console.log('Render - Total questions:', exam.totalQuestions);
 
   return (
     <div className="chemistry-page">
@@ -376,9 +697,11 @@ function StudentTestPage() {
           ) : (
             questions.map((q, idx) => {
               // Handle different question formats
-              const questionId = q.id || q.questionId || q.examQuestionId;
-              const questionText = q.question?.text || q.text || q.question || 'Câu hỏi';
-              const options = q.question?.options || q.options || [];
+              // Backend returns ExamQuestionResponse with QuestionId, we've loaded full question details
+              const questionId = q.questionId || q.QuestionId || q.id || q.Id || q.examQuestionId || q.ExamQuestionId;
+              const questionText = q.text || q.title || q.content || q.questionTitle || q.QuestionTitle || q.questionContent || q.QuestionContent || q.question?.title || q.question?.Title || q.question?.content || q.question?.Content || 'Câu hỏi';
+              // Use options from loaded question data
+              const options = q.options || q.multipleChoiceAnswers || q.MultipleChoiceAnswers || q.question?.multipleChoiceAnswers || q.question?.MultipleChoiceAnswers || [];
               
               return (
                 <Card key={questionId} className="chemistry-card">
@@ -394,13 +717,20 @@ function StudentTestPage() {
                     >
                       <Space direction="vertical" style={{ width: '100%' }}>
                         {options.map((opt, oidx) => {
-                          // Backend returns answer objects with id field
-                          // Use opt.id as the answer ID if available, otherwise fall back to index
-                          const optionText = typeof opt === 'string' ? opt : (opt.text || opt.option || opt.answerText || '');
-                          const answerId = opt.id || opt.answerId || oidx;
+                          // Backend returns MultipleChoiceAnswerPayload: { Id, AnswerText, IsCorrect, Explanation, OrderIndex }
+                          const optionText = typeof opt === 'string' 
+                            ? opt 
+                            : (opt.answerText || opt.AnswerText || opt.text || opt.option || opt.Text || '');
+                          
+                          // Use answer ID from backend if available, otherwise use composite key
+                          const answerId = opt.id !== undefined && opt.id !== null ? opt.id : 
+                                         (opt.Id !== undefined && opt.Id !== null ? opt.Id :
+                                         (opt.answerId !== undefined && opt.answerId !== null ? opt.answerId :
+                                         (opt.AnswerId !== undefined && opt.AnswerId !== null ? opt.AnswerId :
+                                         `${questionId}_${oidx}`)));
                           
                           return (
-                            <Radio key={answerId} value={answerId} style={{ fontSize: 16, padding: '8px 0' }}>
+                            <Radio key={`${questionId}_opt_${oidx}`} value={answerId} style={{ fontSize: 16, padding: '8px 0' }}>
                               {optionText}
                             </Radio>
                           );

@@ -264,6 +264,30 @@ export const questionBankService = {
       const questionBankData = baseResponse.Data || baseResponse.data;
 
       if (responseStatusCode === 201 || responseStatusCode === 200) {
+        const createdBankId = questionBankData?.Id || questionBankData?.id;
+        
+        // Automatically set status to Active (1) after creation
+        // This removes the need for approval workflow - questions are immediately available
+        if (createdBankId) {
+          try {
+            const statusResult = await this.updateQuestionBankStatus(createdBankId, 1); // 1 = Active
+            if (statusResult.success) {
+              console.log('Auto-activated question bank:', createdBankId);
+              // Update questionBankData with Active status
+              if (questionBankData) {
+                questionBankData.StatusEnum = 1;
+                questionBankData.statusEnum = 1;
+              }
+            } else {
+              console.warn('Failed to auto-activate question bank:', statusResult.message);
+              // Don't fail the creation if status update fails
+            }
+          } catch (statusError) {
+            console.error('Error auto-activating question bank:', statusError);
+            // Don't fail the creation if status update fails
+          }
+        }
+        
         return {
           success: true,
           data: questionBankData,

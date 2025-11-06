@@ -58,20 +58,36 @@ namespace LessonPlanExam.Services.Services
             attempt = await _attemptRepo.CreateAttemptAsync(attempt, ct);
 
             // Snapshot questions order - if RandomizeQuestions then shuffle presentation
-            var qitems = exam.ExamQuestions.OrderBy(x => x.OrderIndex).ToList();
+            // Check if ExamQuestions is null or empty
+            var qitems = exam.ExamQuestions?.OrderBy(x => x.OrderIndex).ToList() ?? new List<ExamQuestion>();
+            
+            // Log for debugging
+            System.Diagnostics.Debug.WriteLine($"[StartAttempt] ExamId: {examId}, ExamQuestions count: {qitems.Count}");
+            
             var presentation = new List<AttemptQuestionItem>();
             var rnd = new Random();
             var toPresent = exam.RandomizeQuestions == true ? qitems.OrderBy(x => rnd.Next()).ToList() : qitems;
             int idx = 1;
             foreach (var q in toPresent)
             {
-                presentation.Add(new AttemptQuestionItem
+                // Only add if QuestionId is valid
+                if (q.QuestionId > 0)
                 {
-                    QuestionId = q.QuestionId,
-                    OrderIndex = idx++,
-                    PointsPossible = q.Points
-                });
+                    presentation.Add(new AttemptQuestionItem
+                    {
+                        QuestionId = q.QuestionId,
+                        OrderIndex = idx++,
+                        PointsPossible = q.Points
+                    });
+                    System.Diagnostics.Debug.WriteLine($"[StartAttempt] Added question: QuestionId={q.QuestionId}, OrderIndex={idx-1}, Points={q.Points}");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"[StartAttempt] Skipped question with invalid QuestionId: {q.QuestionId}");
+                }
             }
+
+            System.Diagnostics.Debug.WriteLine($"[StartAttempt] Final presentation count: {presentation.Count}");
 
             return new AttemptStartResponse
             {

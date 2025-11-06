@@ -45,6 +45,7 @@ import dayjs from 'dayjs';
 import examService from '../services/examService';
 import examMatrixService from '../services/examMatrixService';
 import { questionBankService } from '../services/questionBankService';
+import questionService from '../services/questionService';
 import api from '../services/axios';
 
 // Helper function to get current user ID from JWT token
@@ -139,6 +140,8 @@ const ManageTestPage = () => {
   const [examMatrices, setExamMatrices] = useState([]);
   const [loadingQuestionBanks, setLoadingQuestionBanks] = useState(false);
   const [loadingExamMatrices, setLoadingExamMatrices] = useState(false);
+  const [availableQuestions, setAvailableQuestions] = useState([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
 
   // Load current user ID and initial data on mount
   useEffect(() => {
@@ -163,12 +166,13 @@ const ManageTestPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, searchText, currentUserId]);
 
-  // Load question banks
+  // Load question banks (only Active status to ensure questions are available)
   const loadQuestionBanks = async (teacherId) => {
     setLoadingQuestionBanks(true);
     try {
       const result = await questionBankService.getQuestionBanks({
         teacherId: teacherId,
+        status: 1, // Only load Active QuestionBanks (status = 1)
         page: 1,
         pageSize: 100 // Get all available question banks
       });
@@ -191,6 +195,59 @@ const ManageTestPage = () => {
       setQuestionBanks([]);
     } finally {
       setLoadingQuestionBanks(false);
+    }
+  };
+
+  // Load questions from a QuestionBank
+  const loadQuestionsFromBank = async (questionBankId) => {
+    setLoadingQuestions(true);
+    try {
+      const result = await questionService.getQuestions({
+        bankId: questionBankId,
+        active: true
+      });
+      
+      if (result.success && result.data) {
+        setAvailableQuestions(result.data || []);
+      } else {
+        console.error('Failed to load questions:', result.message);
+        setAvailableQuestions([]);
+        message.warning(result.message || 'Không thể tải danh sách câu hỏi');
+      }
+    } catch (error) {
+      console.error('Error loading questions:', error);
+      setAvailableQuestions([]);
+      message.error('Có lỗi xảy ra khi tải danh sách câu hỏi');
+    } finally {
+      setLoadingQuestions(false);
+    }
+  };
+
+  // Add question to exam
+  const handleAddQuestionToExam = async (questionId, examId) => {
+    try {
+      const result = await examService.addQuestionToExam(examId, {
+        questionId: questionId
+      });
+      
+      if (result.success) {
+        message.success('Đã thêm câu hỏi vào bài thi');
+        // Refresh exam details if modal is open
+        if (selectedTest && selectedTest.id === examId) {
+          const questionsResult = await examService.getExamQuestions(examId);
+          if (questionsResult.success) {
+            setSelectedTest({
+              ...selectedTest,
+              questions: questionsResult.data || []
+            });
+          }
+        }
+      } else {
+        message.error(result.message || 'Không thể thêm câu hỏi vào bài thi');
+      }
+    } catch (error) {
+      console.error('Error adding question to exam:', error);
+      message.error('Có lỗi xảy ra khi thêm câu hỏi');
     }
   };
 
@@ -384,11 +441,78 @@ const ManageTestPage = () => {
       }
 
       if (result.success) {
-        message.success(result.message || 'Tạo bài kiểm tra thành công!');
+        const createdExamId = result.data?.id || result.data?.Id;
+        
+        // If questionBankId is selected, add questions from QuestionBank to the exam
+        const questionBankId = values.questionBankId;
+        if (questionBankId && createdExamId) {
+          try {
+            // Load questions from QuestionBank
+            const questionsResult = await questionService.getQuestions({
+              bankId: questionBankId,
+              active: true
+            });
+            
+            if (questionsResult.success && questionsResult.data && questionsResult.data.length > 0) {
+              // Add all questions from QuestionBank to the exam
+              const questionsToAdd = questionsResult.data;
+              const totalQuestions = questionsToAdd.length;
+              const totalPoints = values.totalPoints || 100;
+              const pointsPerQuestion = totalPoints / totalQuestions;
+              
+              let addedCount = 0;
+              for (let i = 0; i < questionsToAdd.length; i++) {
+                const question = questionsToAdd[i];
+                const questionId = question.id || question.Id;
+                
+                if (questionId) {
+                  try {
+                    const addResult = await examService.addQuestionToExam(createdExamId, {
+                      questionId: questionId,
+                      points: pointsPerQuestion,
+                      orderIndex: i + 1
+                    });
+                    
+                    if (addResult.success) {
+                      addedCount++;
+                    }
+                  } catch (error) {
+                    console.error(`Error adding question ${questionId}:`, error);
+                  }
+                }
+              }
+              
+              if (addedCount > 0) {
+                // Update exam with correct totalQuestions and totalPoints after adding questions
+                try {
+                  await examService.updateExam(createdExamId, {
+                    totalQuestions: addedCount,
+                    totalPoints: values.totalPoints || (addedCount * pointsPerQuestion)
+                  });
+                } catch (updateError) {
+                  console.error('Error updating exam totals:', updateError);
+                }
+                
+                message.success(`Tạo bài kiểm tra thành công! Đã thêm ${addedCount}/${totalQuestions} câu hỏi từ ngân hàng câu hỏi.`);
+              } else {
+                message.warning('Tạo bài kiểm tra thành công nhưng không thể thêm câu hỏi từ ngân hàng câu hỏi.');
+              }
+            } else {
+              message.warning('Tạo bài kiểm tra thành công nhưng ngân hàng câu hỏi không có câu hỏi nào.');
+            }
+          } catch (error) {
+            console.error('Error adding questions from QuestionBank:', error);
+            message.warning('Tạo bài kiểm tra thành công nhưng có lỗi khi thêm câu hỏi từ ngân hàng câu hỏi.');
+          }
+        } else {
+          message.success(result.message || 'Tạo bài kiểm tra thành công!');
+        }
+        
         setIsCreateModalVisible(false);
         form.resetFields();
         setSelectedTest(null);
-        // Refresh exams list
+        setAvailableQuestions([]);
+        // Refresh exams list to show updated question count
         await loadExams();
       } else {
         message.error(result.message || 'Có lỗi xảy ra khi tạo bài kiểm tra!');
@@ -468,9 +592,46 @@ const ManageTestPage = () => {
       if (result.success && result.data) {
         // Also load questions if available
         const questionsResult = await examService.getExamQuestions(examId);
+        let examQuestions = [];
+        
+        // Load full question details with answers for display
+        if (questionsResult.success && questionsResult.data && questionsResult.data.length > 0) {
+          examQuestions = await Promise.all(
+            questionsResult.data.map(async (examQuestion) => {
+              const questionId = examQuestion.questionId || examQuestion.QuestionId;
+              if (questionId) {
+                try {
+                  const questionResponse = await questionService.getQuestionById(questionId);
+                  if (questionResponse.success && questionResponse.data) {
+                    return {
+                      ...examQuestion,
+                      question: questionResponse.data,
+                      questionId: questionId,
+                      id: examQuestion.id || examQuestion.Id || examQuestion.examQuestionId || examQuestion.ExamQuestionId,
+                      title: questionResponse.data.title || questionResponse.data.Title || examQuestion.questionTitle || examQuestion.QuestionTitle,
+                      content: questionResponse.data.content || questionResponse.data.Content || examQuestion.questionContent || examQuestion.QuestionContent,
+                      questionTypeEnum: questionResponse.data.questionTypeEnum !== undefined ? questionResponse.data.questionTypeEnum : (questionResponse.data.QuestionTypeEnum !== undefined ? questionResponse.data.QuestionTypeEnum : examQuestion.questionTypeEnum || examQuestion.QuestionTypeEnum),
+                      multipleChoiceAnswers: questionResponse.data.multipleChoiceAnswers || questionResponse.data.MultipleChoiceAnswers || []
+                    };
+                  }
+                } catch (error) {
+                  console.error(`Error loading question ${questionId}:`, error);
+                }
+              }
+              return {
+                ...examQuestion,
+                questionId: questionId,
+                id: examQuestion.id || examQuestion.Id || examQuestion.examQuestionId || examQuestion.ExamQuestionId,
+                title: examQuestion.questionTitle || examQuestion.QuestionTitle,
+                content: examQuestion.questionContent || examQuestion.QuestionContent
+              };
+            })
+          );
+        }
+        
         const examWithQuestions = {
           ...result.data,
-          questions: questionsResult.success ? questionsResult.data : []
+          questions: examQuestions
         };
         
         setSelectedTest(examWithQuestions);
@@ -954,12 +1115,19 @@ const ManageTestPage = () => {
               <Form.Item
                 name="questionBankId"
                 label="Ngân hàng câu hỏi"
-                tooltip="Chọn ngân hàng câu hỏi (tùy chọn - chỉ để tham khảo)"
+                tooltip="Chọn ngân hàng câu hỏi để xem danh sách câu hỏi (tùy chọn)"
               >
                 <Select 
                   placeholder="Chọn ngân hàng câu hỏi (tùy chọn)"
                   loading={loadingQuestionBanks}
                   allowClear
+                  onChange={(value) => {
+                    if (value) {
+                      loadQuestionsFromBank(value);
+                    } else {
+                      setAvailableQuestions([]);
+                    }
+                  }}
                 >
                   {questionBanks.map(bank => (
                     <Option key={bank.id} value={bank.id}>
@@ -989,9 +1157,11 @@ const ManageTestPage = () => {
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item shouldUpdate={(prevValues, currentValues) => prevValues.examMatrixId !== currentValues.examMatrixId}>
+          <Form.Item shouldUpdate={(prevValues, currentValues) => prevValues.examMatrixId !== currentValues.examMatrixId || prevValues.questionBankId !== currentValues.questionBankId}>
             {({ getFieldValue }) => {
               const examMatrixId = getFieldValue('examMatrixId');
+              const questionBankId = getFieldValue('questionBankId');
+              
               if (examMatrixId) {
                 return (
                   <Row>
@@ -1003,6 +1173,96 @@ const ManageTestPage = () => {
                   </Row>
                 );
               }
+              
+              // Show question bank selection UI when:
+              // 1. Editing existing exam (selectedTest.id exists) OR
+              // 2. Creating new exam (selectedTest is null but questionBankId is selected)
+              if (questionBankId && (selectedTest?.id || (!selectedTest && questionBankId))) {
+                return (
+                  <Row gutter={16} style={{ marginBottom: 16 }}>
+                    <Col span={24}>
+                      <Card size="small" title={`Câu hỏi từ ngân hàng (${availableQuestions.length})`} style={{ marginBottom: 16 }}>
+                        {loadingQuestions ? (
+                          <div style={{ textAlign: 'center', padding: 20 }}>
+                            <Text>Đang tải câu hỏi...</Text>
+                          </div>
+                        ) : availableQuestions.length > 0 ? (
+                          <Table
+                            columns={[
+                              {
+                                title: 'STT',
+                                key: 'index',
+                                width: 60,
+                                render: (_, __, index) => index + 1
+                              },
+                              {
+                                title: 'Nội dung',
+                                key: 'content',
+                                render: (record) => {
+                                  const text = record.title || record.Title || record.content || record.Content || 'Câu hỏi';
+                                  return <Text>{text.length > 80 ? text.substring(0, 80) + '...' : text}</Text>;
+                                }
+                              },
+                              {
+                                title: 'Loại',
+                                key: 'type',
+                                width: 100,
+                                render: (record) => {
+                                  const type = record.questionTypeEnum !== undefined ? record.questionTypeEnum : (record.QuestionTypeEnum !== undefined ? record.QuestionTypeEnum : 0);
+                                  return <Tag color={type === 0 ? 'blue' : 'green'}>{type === 0 ? 'Trắc nghiệm' : 'Điền từ'}</Tag>;
+                                }
+                              },
+                              {
+                                title: 'Thao tác',
+                                key: 'action',
+                                width: 120,
+                                render: (record) => {
+                                  const questionId = record.id || record.Id;
+                                  const examId = selectedTest?.id;
+                                  
+                                  // Only show "Already added" if editing existing exam
+                                  const isAlreadyAdded = examId && selectedTest?.questions?.some(q => {
+                                    const qId = (q.question || q).id || (q.question || q).Id || q.questionId || q.QuestionId;
+                                    return qId === questionId;
+                                  });
+                                  
+                                  // When creating new exam, show "Sẽ thêm" instead of "Thêm"
+                                  const buttonText = isAlreadyAdded ? 'Đã thêm' : (examId ? 'Thêm' : 'Sẽ thêm');
+                                  const buttonDisabled = isAlreadyAdded;
+                                  
+                                  return (
+                                    <Button
+                                      size="small"
+                                      type="primary"
+                                      disabled={buttonDisabled}
+                                      onClick={() => {
+                                        if (examId) {
+                                          handleAddQuestionToExam(questionId, examId);
+                                        } else {
+                                          message.info('Câu hỏi sẽ được thêm vào bài thi sau khi tạo xong.');
+                                        }
+                                      }}
+                                    >
+                                      {buttonText}
+                                    </Button>
+                                  );
+                                }
+                              }
+                            ]}
+                            dataSource={availableQuestions}
+                            rowKey={(record) => record.id || record.Id || Math.random()}
+                            pagination={{ pageSize: 5 }}
+                            size="small"
+                          />
+                        ) : (
+                          <Text type="secondary">Ngân hàng này không có câu hỏi nào</Text>
+                        )}
+                      </Card>
+                    </Col>
+                  </Row>
+                );
+              }
+              
               return null;
             }}
           </Form.Item>
@@ -1253,6 +1513,57 @@ const ManageTestPage = () => {
                   <Text strong>Tổng điểm:</Text> {selectedTest.totalPoints}
                 </Col>
               </Row>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <Title level={5}>Danh sách câu hỏi ({selectedTest.questions?.length || 0})</Title>
+              {selectedTest.questions && selectedTest.questions.length > 0 ? (
+                <Table
+                  columns={[
+                    {
+                      title: 'STT',
+                      key: 'index',
+                      width: 60,
+                      render: (_, __, index) => index + 1
+                    },
+                    {
+                      title: 'Nội dung câu hỏi',
+                      key: 'content',
+                      render: (record) => {
+                        // Try multiple paths to get question text
+                        const question = record.question || record;
+                        const questionText = question.title || question.Title || question.content || question.Content || 
+                                            record.title || record.Title || record.content || record.Content ||
+                                            record.questionTitle || record.QuestionTitle || record.questionContent || record.QuestionContent ||
+                                            'Câu hỏi';
+                        return <Text>{questionText.length > 100 ? questionText.substring(0, 100) + '...' : questionText}</Text>;
+                      }
+                    },
+                    {
+                      title: 'Loại',
+                      key: 'type',
+                      width: 120,
+                      render: (record) => {
+                        const question = record.question || record;
+                        const type = question.questionTypeEnum !== undefined ? question.questionTypeEnum : (question.QuestionTypeEnum !== undefined ? question.QuestionTypeEnum : 0);
+                        return <Tag color={type === 0 ? 'blue' : 'green'}>{type === 0 ? 'Trắc nghiệm' : 'Điền từ'}</Tag>;
+                      }
+                    },
+                    {
+                      title: 'Điểm',
+                      key: 'points',
+                      width: 80,
+                      render: (record) => record.points || record.Points || '-'
+                    }
+                  ]}
+                  dataSource={selectedTest.questions || []}
+                  rowKey={(record) => record.id || record.Id || record.examQuestionId || record.ExamQuestionId || Math.random()}
+                  pagination={{ pageSize: 5 }}
+                  size="small"
+                />
+              ) : (
+                <Text type="secondary">Bài thi này chưa có câu hỏi nào</Text>
+              )}
             </div>
 
             <div style={{ marginBottom: 16 }}>

@@ -505,14 +505,21 @@ const examService = {
    */
   async addQuestionToExam(examId, questionData) {
     try {
-      // Map to backend expected format (camelCase)
-      // Backend expects: { questionId (Required), points?, orderIndex? }
+      // Map to backend expected format (PascalCase to match C# DTO)
+      // Backend DTO: ExamQuestionAddRequest { QuestionId (Required), Points?, OrderIndex? }
+      // Use PascalCase to match C# property names exactly
+      const questionIdValue = questionData.questionId !== undefined ? questionData.questionId : (questionData.QuestionId !== undefined ? questionData.QuestionId : null);
+      
+      if (!questionIdValue) {
+        throw new Error('questionId is required');
+      }
+      
       const requestData = {
-        questionId: questionData.questionId !== undefined ? questionData.questionId : (questionData.QuestionId !== undefined ? questionData.QuestionId : null),
-        points: questionData.points !== undefined && questionData.points !== null
+        QuestionId: questionIdValue,
+        Points: questionData.points !== undefined && questionData.points !== null
           ? questionData.points
           : (questionData.Points !== undefined && questionData.Points !== null ? questionData.Points : null),
-        orderIndex: questionData.orderIndex !== undefined && questionData.orderIndex !== null
+        OrderIndex: questionData.orderIndex !== undefined && questionData.orderIndex !== null
           ? questionData.orderIndex
           : (questionData.OrderIndex !== undefined && questionData.OrderIndex !== null ? questionData.OrderIndex : null)
       };

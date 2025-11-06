@@ -177,55 +177,19 @@ const ExamMatrixManagement = () => {
   };
 
   const handleFormSubmit = async () => {
-    try {
-      setSubmitting(true);
-      // Validate form
-      await form.validateFields();
-      
-      // Get form values
-      const formValues = form.getFieldsValue();
-      
-      // Prepare data according to BE format
-      // Order: name, description, teacherId, totalQuestions, totalPoints, configuration
-      // teacherId is automatically set from currentTeacherId, not from form
-      const formData = {
-        name: formValues.name || '',
-        description: formValues.description || '',
-        teacherId: currentTeacherId || formValues.teacherId || 1, // Auto-fill from token
-        totalQuestions: formValues.totalQuestions || null,
-        totalPoints: formValues.totalPoints || null,
-        configuration: null
-      };
+    // This will be handled by ExamMatrixForm component
+    // We just need to refresh the list after success
+  };
 
-      let result;
-      if (editingRecord) {
-        // Update existing exam matrix
-        const id = editingRecord.Id || editingRecord.id;
-        result = await examMatrixService.updateExamMatrix(id, formData);
-      } else {
-        // Create new exam matrix
-        result = await examMatrixService.createExamMatrix(formData);
-      }
-
-      if (result.success) {
-        message.success(result.message || (editingRecord ? 'Cập nhật ma trận đề thành công' : 'Tạo ma trận đề thành công'));
-        setIsFormModalVisible(false);
-        setEditingRecord(null);
-        form.resetFields();
-        fetchExamMatrixes();
-      } else {
-        message.error(result.message || (editingRecord ? 'Cập nhật ma trận đề thất bại' : 'Tạo ma trận đề thất bại'));
-      }
-    } catch (error) {
-      console.error('Error submitting form:', error);
-      if (error.errorFields) {
-        // Form validation errors
-        message.error('Vui lòng điền đầy đủ thông tin bắt buộc');
-      } else {
-        message.error('Có lỗi xảy ra khi lưu ma trận đề');
-      }
-    } finally {
-      setSubmitting(false);
+  const handleFormSuccess = (createdData) => {
+    // After creating/updating, refresh the list
+    fetchExamMatrixes();
+    // If it's a new matrix, we might want to keep the modal open to add items
+    // But for now, we'll close it
+    if (editingRecord) {
+      setIsFormModalVisible(false);
+      setEditingRecord(null);
+      form.resetFields();
     }
   };
 
@@ -309,6 +273,7 @@ const ExamMatrixManagement = () => {
         submitting={submitting}
         onCancel={handleCancel}
         onSubmit={handleFormSubmit}
+        onSuccess={handleFormSuccess}
       />
     </div>
   );

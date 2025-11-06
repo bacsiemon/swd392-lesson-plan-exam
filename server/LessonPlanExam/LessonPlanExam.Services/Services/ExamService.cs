@@ -186,7 +186,8 @@ namespace LessonPlanExam.Services.Services
                 QuestionTitle = q.Question?.Title,
                 QuestionContent = q.Question?.Content,
                 QuestionDifficultyId = q.Question?.QuestionDifficultyId ?? 0,
-                QuestionTypeEnum = (int)q.Question?.QuestionTypeEnum
+                // Safely handle nullable - if Question is null or QuestionTypeEnum is null, default to 0 (MultipleChoice)
+                QuestionTypeEnum = q.Question?.QuestionTypeEnum != null ? (int)q.Question.QuestionTypeEnum : 0
             };
         }
     }

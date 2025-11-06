@@ -32,8 +32,11 @@ const examAttemptService = {
    */
   async startAttempt(examId, password = null) {
     try {
+      console.log('Starting exam attempt:', { examId, hasPassword: !!password });
       const params = password ? { password } : {};
       const response = await api.post(`/api/exams/${examId}/attempts/start`, null, { params });
+      
+      console.log('Start attempt success:', response.data);
       return {
         success: true,
         data: response.data,
@@ -41,10 +44,51 @@ const examAttemptService = {
       };
     } catch (error) {
       console.error('Error starting exam attempt:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+        config: error.config
+      });
+      
+      const errorData = error.response?.data;
+      let errorMessage = 'Không thể bắt đầu bài thi';
+      
+      // Handle BaseResponse format (from ExceptionMiddleware)
+      if (errorData) {
+        if (errorData.StatusCode === 500 || error.response?.status === 500) {
+          errorMessage = 'Lỗi máy chủ. Vui lòng thử lại sau hoặc liên hệ quản trị viên.';
+          // Log the actual error for debugging
+          if (errorData.Errors) {
+            console.error('Server error details:', errorData.Errors);
+          }
+        } else if (errorData.Message) {
+          errorMessage = errorData.Message;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+      }
+      
+      // Handle specific error cases
+      if (error.response?.status === 400) {
+        // BadRequest - could be password error, attempt limit, etc.
+        if (errorData?.Message === 'CANNOT_START_ATTEMPT') {
+          errorMessage = 'Không thể bắt đầu bài thi. Vui lòng kiểm tra mật khẩu, thời gian làm bài hoặc số lần làm bài còn lại.';
+        }
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Bạn cần đăng nhập để làm bài thi';
+      }
+      
       return {
         success: false,
-        error: error.response?.data || error.message,
-        message: error.response?.data?.message || 'Không thể bắt đầu bài thi'
+        error: errorData || error.message,
+        message: errorMessage,
+        statusCode: error.response?.status
       };
     }
   },

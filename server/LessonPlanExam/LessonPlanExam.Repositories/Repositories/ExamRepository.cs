@@ -190,9 +190,28 @@ namespace LessonPlanExam.Repositories.Repositories
 
         public async Task<Exam> GetExamWithQuestionsAsync(int id, CancellationToken ct = default)
         {
-            var exam = await _db.Exams.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
+            // Use Include to load ExamQuestions and Question in one query
+            // AsNoTracking() can cause issues with loading navigation properties, so we'll load without it first
+            var exam = await _db.Exams
+                .Include(e => e.ExamQuestions)
+                    .ThenInclude(eq => eq.Question)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id, ct);
+            
             if (exam == null) return null;
-            await _db.Entry(exam).Collection(x => x.ExamQuestions).Query().Include(eq => eq.Question).LoadAsync(ct);
+            
+            // Debug logging
+            var examQuestionsCount = exam.ExamQuestions?.Count ?? 0;
+            System.Diagnostics.Debug.WriteLine($"[GetExamWithQuestionsAsync] ExamId: {id}, ExamQuestions count: {examQuestionsCount}");
+            
+            if (exam.ExamQuestions != null)
+            {
+                foreach (var eq in exam.ExamQuestions)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[GetExamWithQuestionsAsync] ExamQuestion: Id={eq.Id}, ExamId={eq.ExamId}, QuestionId={eq.QuestionId}, OrderIndex={eq.OrderIndex}, Points={eq.Points}");
+                }
+            }
+            
             return exam;
         }
 
@@ -247,6 +266,10 @@ namespace LessonPlanExam.Repositories.Repositories
             };
             await _db.ExamQuestions.AddAsync(entity, ct);
             await _db.SaveChangesAsync(ct);
+            
+            // Load Question navigation property using Include, similar to GetExamWithQuestionsAsync
+            await _db.Entry(entity).Reference(x => x.Question).LoadAsync(ct);
+            
             return entity;
         }
 

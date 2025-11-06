@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 import Logo from '../Assets/Logo.png';
 import ChemistryBackground from '../components/ChemistryBackground';
+import accountService from '../services/accountService';
 
 const { Title, Text, Link } = Typography;
 const { Content } = Layout;
@@ -23,75 +24,122 @@ const ForgotPasswordPage = () => {
     const [currentStep, setCurrentStep] = useState(0);
     const [emailForm] = Form.useForm();
     const [otpForm] = Form.useForm();
-    const [resetForm] = Form.useForm();
     const [userEmail, setUserEmail] = useState('');
     const navigate = useNavigate();
 
-    // Bước 1: Gửi email
-    const onSendEmail = (values) => {
+    // Bước 1: Gửi email để nhận OTP
+    const onSendEmail = async (values) => {
         setLoading(true);
         setUserEmail(values.email);
 
-        setTimeout(() => {
-            setLoading(false);
-            openNotification(
-                'success',
-                'Đã gửi mã xác thực',
-                `Mã xác thực đã được gửi đến email ${values.email}. Vui lòng kiểm tra hộp thư của bạn.`
-            );
-            setCurrentStep(1);
-        }, 1500);
-    };
+        try {
+            const result = await accountService.forgotPasswordWithOtp(values.email);
 
-    // Bước 2: Xác thực OTP
-    const onVerifyOtp = (values) => {
-        setLoading(true);
-
-        setTimeout(() => {
-            setLoading(false);
-            if (values.otp === '123456') { // Mock OTP validation
+            if (result.success) {
                 openNotification(
                     'success',
-                    'Xác thực thành công',
-                    'Mã xác thực chính xác. Bạn có thể đặt lại mật khẩu mới.'
+                    'Đã gửi mã xác thực',
+                    result.message || `Mã xác thực đã được gửi đến email ${values.email}. Vui lòng kiểm tra hộp thư của bạn.`
                 );
-                setCurrentStep(2);
+                setCurrentStep(1);
             } else {
                 openNotification(
                     'error',
-                    'Mã xác thực không đúng',
-                    'Vui lòng kiểm tra lại mã xác thực hoặc yêu cầu gửi mã mới.'
+                    'Lỗi gửi mã xác thực',
+                    result.message || 'Không thể gửi mã xác thực. Vui lòng thử lại.'
                 );
             }
-        }, 1500);
+        } catch (error) {
+            console.error('Error sending OTP:', error);
+            openNotification(
+                'error',
+                'Lỗi gửi mã xác thực',
+                'Có lỗi xảy ra khi gửi mã xác thực. Vui lòng thử lại.'
+            );
+        } finally {
+            setLoading(false);
+        }
     };
 
-    // Bước 3: Đặt lại mật khẩu
-    const onResetPassword = (values) => {
+    // Bước 2: Xác thực OTP và đặt lại mật khẩu (gộp 2 bước thành 1 do API)
+    const onVerifyOtpAndResetPassword = async (values) => {
         setLoading(true);
 
-        setTimeout(() => {
-            setLoading(false);
-            openNotification(
-                'success',
-                'Đổi mật khẩu thành công',
-                'Mật khẩu của bạn đã được thay đổi thành công. Bạn có thể đăng nhập với mật khẩu mới.'
-            );
+        try {
+            const result = await accountService.verifyOtpResetPassword({
+                email: userEmail,
+                otp: values.otp,
+                newPassword: values.newPassword,
+                confirmPassword: values.confirmPassword,
+            });
 
-            // Chuyển về trang đăng nhập sau 2 giây
-            setTimeout(() => {
-                navigate('/login');
-            }, 2000);
-        }, 1500);
+            if (result.success) {
+                openNotification(
+                    'success',
+                    'Đổi mật khẩu thành công',
+                    result.message || 'Mật khẩu của bạn đã được thay đổi thành công. Bạn có thể đăng nhập với mật khẩu mới.'
+                );
+
+                // Chuyển về trang đăng nhập sau 2 giây
+                setTimeout(() => {
+                    navigate('/login');
+                }, 2000);
+            } else {
+                openNotification(
+                    'error',
+                    'Lỗi xác thực hoặc đặt lại mật khẩu',
+                    result.message || 'Mã xác thực không đúng hoặc không thể đặt lại mật khẩu. Vui lòng thử lại.'
+                );
+            }
+        } catch (error) {
+            console.error('Error verifying OTP and resetting password:', error);
+            openNotification(
+                'error',
+                'Lỗi xác thực',
+                'Có lỗi xảy ra khi xác thực mã OTP hoặc đặt lại mật khẩu. Vui lòng thử lại.'
+            );
+        } finally {
+            setLoading(false);
+        }
     };
 
     // Gửi lại mã OTP
-    const resendOtp = () => {
-        openNotification(
-            'info',
-            'Đã gửi lại mã xác thực',
-            `Mã xác thực mới đã được gửi đến email ${userEmail}.`
-        );
+    const resendOtp = async () => {
+        if (!userEmail) {
+            openNotification(
+                'warning',
+                'Không có email',
+                'Vui lòng nhập email trước.'
+            );
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const result = await accountService.forgotPasswordWithOtp(userEmail);
+            if (result.success) {
+                openNotification(
+                    'success',
+                    'Đã gửi lại mã xác thực',
+                    result.message || `Mã xác thực mới đã được gửi đến email ${userEmail}.`
+                );
+            } else {
+                openNotification(
+                    'error',
+                    'Lỗi gửi mã xác thực',
+                    result.message || 'Không thể gửi lại mã xác thực. Vui lòng thử lại.'
+                );
+            }
+        } catch (error) {
+            console.error('Error resending OTP:', error);
+            openNotification(
+                'error',
+                'Lỗi gửi mã xác thực',
+                'Có lỗi xảy ra khi gửi lại mã xác thực. Vui lòng thử lại.'
+            );
+        } finally {
+            setLoading(false);
+        }
     };
 
     // Quay về trang đăng nhập
@@ -151,12 +199,12 @@ const ForgotPasswordPage = () => {
                 return (
                     <Form
                         form={otpForm}
-                        name="verify_otp_form"
-                        onFinish={onVerifyOtp}
+                        name="verify_otp_and_reset_form"
+                        onFinish={onVerifyOtpAndResetPassword}
                         layout="vertical"
                     >
                         <Alert
-                            message="Nhập mã xác thực"
+                            message="Nhập mã xác thực và mật khẩu mới"
                             description={`Mã xác thực đã được gửi đến email ${userEmail}. Mã có hiệu lực trong 5 phút.`}
                             type="warning"
                             showIcon
@@ -167,7 +215,8 @@ const ForgotPasswordPage = () => {
                             name="otp"
                             rules={[
                                 { required: true, message: 'Vui lòng nhập mã xác thực!' },
-                                { len: 6, message: 'Mã xác thực phải có 6 chữ số!' }
+                                { len: 6, message: 'Mã xác thực phải có 6 chữ số!' },
+                                { pattern: /^\d{6}$/, message: 'Mã xác thực phải là 6 chữ số!' }
                             ]}
                             label="Mã xác thực (6 chữ số)"
                         >
@@ -179,43 +228,6 @@ const ForgotPasswordPage = () => {
                                 style={{ textAlign: 'center', fontSize: '18px', letterSpacing: '4px' }}
                             />
                         </Form.Item>
-
-                        <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-                            <Text type="secondary">Không nhận được mã? </Text>
-                            <Link onClick={resendOtp} style={{ color: '#1890ff' }}>
-                                Gửi lại
-                            </Link>
-                        </div>
-
-                        <Form.Item style={{ marginBottom: 0 }}>
-                            <Button
-                                type="primary"
-                                htmlType="submit"
-                                size="large"
-                                loading={loading}
-                                style={{ width: '100%' }}
-                            >
-                                Xác thực mã
-                            </Button>
-                        </Form.Item>
-                    </Form>
-                );
-
-            case 2:
-                return (
-                    <Form
-                        form={resetForm}
-                        name="reset_password_form"
-                        onFinish={onResetPassword}
-                        layout="vertical"
-                    >
-                        <Alert
-                            message="Đặt mật khẩu mới"
-                            description="Vui lòng nhập mật khẩu mới cho tài khoản của bạn."
-                            type="success"
-                            showIcon
-                            style={{ marginBottom: '24px' }}
-                        />
 
                         <Form.Item
                             name="newPassword"
@@ -255,19 +267,30 @@ const ForgotPasswordPage = () => {
                             />
                         </Form.Item>
 
+                        <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+                            <Text type="secondary">Không nhận được mã? </Text>
+                            <Link onClick={resendOtp} style={{ color: '#1890ff' }}>
+                                Gửi lại
+                            </Link>
+                        </div>
+
                         <Form.Item style={{ marginBottom: 0 }}>
                             <Button
                                 type="primary"
                                 htmlType="submit"
                                 size="large"
                                 loading={loading}
-                                style={{ width: '100%', marginTop: '16px' }}
+                                style={{ width: '100%' }}
                             >
-                                Đặt lại mật khẩu
+                                Xác thực và đặt lại mật khẩu
                             </Button>
                         </Form.Item>
                     </Form>
                 );
+
+            case 2:
+                // Case 2 không còn cần thiết vì đã gộp vào case 1
+                return null;
 
             default:
                 return null;
@@ -276,8 +299,7 @@ const ForgotPasswordPage = () => {
 
     const stepTitles = [
         'Nhập Email',
-        'Xác thực OTP',
-        'Đặt lại mật khẩu'
+        'Xác thực OTP và đặt lại mật khẩu'
     ];
 
     return (

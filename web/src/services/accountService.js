@@ -878,6 +878,156 @@ const accountService = {
       };
     }
   },
+
+  /**
+   * Request OTP via email to reset password
+   * POST /api/Account/forgot-password-otp
+   * @param {string} email - User email
+   * @returns {Promise<{success: boolean, message?: string}>}
+   */
+  async forgotPasswordWithOtp(email) {
+    try {
+      // Backend expects: { Email }
+      const requestData = {
+        Email: email,
+      };
+
+      const response = await api.post('/api/Account/forgot-password-otp', requestData);
+
+      // Backend returns BaseResponse structure: { StatusCode, Message, Data }
+      const baseResponse = response.data;
+
+      // Handle both PascalCase and camelCase
+      const responseStatusCode = baseResponse?.StatusCode !== undefined 
+        ? baseResponse.StatusCode 
+        : (baseResponse?.statusCode !== undefined ? baseResponse.statusCode : null);
+
+      if (responseStatusCode === 200 || responseStatusCode === 201) {
+        return {
+          success: true,
+          data: baseResponse.Data || baseResponse.data,
+          message: baseResponse.Message || baseResponse.message || 'Mã OTP đã được gửi đến email của bạn',
+        };
+      } else {
+        return {
+          success: false,
+          error: baseResponse,
+          message: baseResponse?.Message || baseResponse?.message || 'Không thể gửi mã OTP',
+          statusCode: responseStatusCode,
+        };
+      }
+    } catch (error) {
+      console.error('Error requesting OTP for password reset:', error);
+      console.error('Error response:', error.response?.data);
+      
+      const errorData = error.response?.data;
+      let errorMessage = 'Không thể gửi mã OTP. Vui lòng thử lại.';
+      
+      if (errorData) {
+        // Handle BaseResponse format
+        if (errorData.Message) {
+          errorMessage = errorData.Message;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        } else if (errorData.errors) {
+          // Validation errors
+          const errorMessages = Object.values(errorData.errors).flat();
+          errorMessage = errorMessages.join(', ');
+        }
+      }
+      
+      return {
+        success: false,
+        error: errorData || error.message,
+        message: errorMessage,
+        statusCode: error.response?.status || errorData?.StatusCode || errorData?.statusCode,
+      };
+    }
+  },
+
+  /**
+   * Verify OTP and reset password
+   * POST /api/Account/verify-otp-reset-password
+   * @param {object} resetData - Reset password data with OTP
+   * @param {string} resetData.email - User email
+   * @param {string} resetData.otp - OTP code (6 digits)
+   * @param {string} resetData.newPassword - New password
+   * @param {string} resetData.confirmPassword - Confirm password
+   * @returns {Promise<{success: boolean, message?: string}>}
+   */
+  async verifyOtpResetPassword(resetData) {
+    try {
+      // Backend expects: { Email, Otp, NewPassword, ConfirmPassword }
+      const requestData = {
+        Email: resetData.email || resetData.Email,
+        Otp: resetData.otp || resetData.Otp,
+        NewPassword: resetData.newPassword || resetData.NewPassword,
+        ConfirmPassword: resetData.confirmPassword || resetData.ConfirmPassword,
+      };
+
+      console.log('Verifying OTP and resetting password with data:', { 
+        ...requestData, 
+        NewPassword: '***', 
+        ConfirmPassword: '***', 
+        Otp: '***' 
+      });
+
+      const response = await api.post('/api/Account/verify-otp-reset-password', requestData);
+
+      // Backend returns BaseResponse structure: { StatusCode, Message, Data }
+      const baseResponse = response.data;
+
+      // Handle both PascalCase and camelCase
+      const responseStatusCode = baseResponse?.StatusCode !== undefined 
+        ? baseResponse.StatusCode 
+        : (baseResponse?.statusCode !== undefined ? baseResponse.statusCode : null);
+
+      if (responseStatusCode === 200 || response.status === 200) {
+        return {
+          success: true,
+          data: baseResponse.Data || baseResponse.data,
+          message: baseResponse.Message || baseResponse.message || 'Đặt lại mật khẩu thành công',
+        };
+      } else {
+        return {
+          success: false,
+          error: baseResponse,
+          message: baseResponse?.Message || baseResponse?.message || 'Không thể đặt lại mật khẩu',
+          statusCode: responseStatusCode,
+        };
+      }
+    } catch (error) {
+      console.error('Error verifying OTP and resetting password:', error);
+      console.error('Error response:', error.response?.data);
+      
+      const errorData = error.response?.data;
+      let errorMessage = 'Không thể đặt lại mật khẩu. Vui lòng thử lại.';
+      
+      if (errorData) {
+        // Handle BaseResponse format
+        if (errorData.Message) {
+          errorMessage = errorData.Message;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        } else if (errorData.errors) {
+          // Validation errors
+          const errorMessages = Object.values(errorData.errors).flat();
+          errorMessage = errorMessages.join(', ');
+        }
+      }
+      
+      return {
+        success: false,
+        error: errorData || error.message,
+        message: errorMessage,
+        statusCode: error.response?.status || errorData?.StatusCode || errorData?.statusCode,
+      };
+    }
+  },
 };
 
 export default accountService;

@@ -25,6 +25,7 @@ namespace LessonPlanExam.Repositories.DTOs.QuestionDTOs
 
     public class MultipleChoiceAnswerPayload
     {
+        public int? Id { get; set; } // Answer ID from database
         [Required]
         public string AnswerText { get; set; }
         public bool IsCorrect { get; set; }

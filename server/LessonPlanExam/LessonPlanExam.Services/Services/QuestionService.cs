@@ -29,6 +29,7 @@ namespace LessonPlanExam.Services.Services {
             };
             if (q.QuestionTypeEnum == Repositories.Enums.EQuestionType.MultipleChoice && q.QuestionMultipleChoiceAnswers != null) {
                 resp.MultipleChoiceAnswers = q.QuestionMultipleChoiceAnswers.Select(a => new MultipleChoiceAnswerPayload {
+                    Id = a.Id, // Include answer ID so frontend can use it for submitting answers
                     AnswerText = a.AnswerText,
                     IsCorrect = a.IsCorrect ?? false,
                     Explanation = a.Explanation,

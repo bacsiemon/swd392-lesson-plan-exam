@@ -70,10 +70,17 @@ const StudentTestListPage = () => {
     try {
       const response = await studentTestService.getAvailableTests();
       if (response.success) {
-        setTests(response.data);
+        setTests(response.data || []);
+      } else {
+        // Handle error response
+        console.error('Failed to load tests:', response.message, response.error);
+        // Optionally show error message to user
+        // You can add a notification/toast here if needed
       }
     } catch (error) {
       console.error('Failed to load tests:', error);
+      // Set empty array on error to prevent UI crash
+      setTests([]);
     } finally {
       setLoading(false);
     }

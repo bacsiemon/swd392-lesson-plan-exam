@@ -11,57 +11,104 @@ class StudentTestService {
     // Get available tests for student
     async getAvailableTests() {
         try {
-            // Get the logged-in user info to determine role and ID
-            const userInfo = JSON.parse(localStorage.getItem('user_info') || '{}');
-            const userId = userInfo.id;
+            console.log('Fetching exams from /api/exams...');
             
-            // Call the actual API endpoint
-            // Note: Adjust query parameters based on your needs
-            const response = await api.get('/api/exams', {
-                params: {
-                    // teacherId: userId, // Uncomment if needed for teacher filtering
-                    status: 0, // 0 = Active exams
-                    // q: '' // Search query if needed
-                }
+            // Call the actual API endpoint GET /api/exams
+            const response = await api.get('/api/exams');
+            
+            console.log('API Response:', {
+                status: response.status,
+                dataType: Array.isArray(response.data) ? 'array' : typeof response.data,
+                dataLength: Array.isArray(response.data) ? response.data.length : 'N/A',
+                data: response.data
             });
 
+            // Check if response.data is an array
+            // API returns IEnumerable<ExamResponse> directly (status 200)
+            const examsData = Array.isArray(response.data) ? response.data : [];
+            
+            if (examsData.length === 0) {
+                console.log('No exams found in response');
+                return {
+                    success: true,
+                    data: [],
+                    message: 'Không có bài thi nào'
+                };
+            }
+            
             // Transform API response to match our component's expected format
-            const transformedTests = response.data.map(exam => ({
-                id: exam.id,
-                title: exam.title,
-                description: exam.description || 'Không có mô tả',
-                subject: 'Hóa học', // Default subject, can be mapped from exam data if available
-                duration: exam.durationMinutes,
-                totalQuestions: exam.totalQuestions || 0,
-                totalPoints: exam.totalPoints || 10,
-                deadline: exam.endTime,
-                startDate: exam.startTime,
-                difficulty: this.mapDifficulty(exam.gradeLevel),
-                status: this.mapStatus(exam.statusEnum, exam.startTime, exam.endTime),
-                teacher: exam.createdByTeacher ? `Giáo viên ${exam.createdByTeacher}` : 'Chưa xác định',
-                attempts: 0, // TODO: Get from exam attempts API if available
-                maxAttempts: exam.maxAttempts || 1,
-                passScore: exam.passThreshold || 5.0,
-                tags: this.generateTags(exam),
-                // Additional fields from API
-                showResultsImmediately: exam.showResultsImmediately,
-                showCorrectAnswers: exam.showCorrectAnswers,
-                randomizeQuestions: exam.randomizeQuestions,
-                randomizeAnswers: exam.randomizeAnswers,
-                examMatrixId: exam.examMatrixId
-            }));
+            const transformedTests = examsData.map((exam, index) => {
+                try {
+                    return {
+                        id: exam.id || exam.Id || null,
+                        title: exam.title || exam.Title || 'Không có tiêu đề',
+                        description: exam.description || exam.Description || 'Không có mô tả',
+                        subject: 'Hóa học', // Default subject, can be mapped from exam data if available
+                        duration: exam.durationMinutes || exam.DurationMinutes || 60,
+                        totalQuestions: exam.totalQuestions || exam.TotalQuestions || 0,
+                        totalPoints: exam.totalPoints || exam.TotalPoints || 10,
+                        deadline: exam.endTime || exam.EndTime || null,
+                        startDate: exam.startTime || exam.StartTime || null,
+                        difficulty: this.mapDifficulty(exam.gradeLevel || exam.GradeLevel),
+                        status: this.mapStatus(exam.statusEnum || exam.StatusEnum, exam.startTime || exam.StartTime, exam.endTime || exam.EndTime),
+                        teacher: exam.createdByTeacher || exam.CreatedByTeacher ? `Giáo viên ${exam.createdByTeacher || exam.CreatedByTeacher}` : 'Chưa xác định',
+                        attempts: 0, // TODO: Get from exam attempts API if available
+                        maxAttempts: exam.maxAttempts || exam.MaxAttempts || 1,
+                        passScore: exam.passThreshold || exam.PassThreshold || 5.0,
+                        tags: this.generateTags(exam),
+                        // Additional fields from API
+                        showResultsImmediately: exam.showResultsImmediately || exam.ShowResultsImmediately || false,
+                        showCorrectAnswers: exam.showCorrectAnswers || exam.ShowCorrectAnswers || false,
+                        randomizeQuestions: exam.randomizeQuestions || exam.RandomizeQuestions || false,
+                        randomizeAnswers: exam.randomizeAnswers || exam.RandomizeAnswers || false,
+                        examMatrixId: exam.examMatrixId || exam.ExamMatrixId || null
+                    };
+                } catch (transformError) {
+                    console.error(`Error transforming exam at index ${index}:`, transformError, exam);
+                    return null;
+                }
+            }).filter(test => test !== null); // Remove any failed transforms
 
             return {
                 success: true,
                 data: transformedTests,
-                message: 'Tests loaded successfully'
+                message: 'Lấy danh sách bài thi thành công'
             };
         } catch (error) {
             console.error('Error loading tests:', error);
+            console.error('Error details:', {
+                message: error.message,
+                response: error.response,
+                responseData: error.response?.data,
+                responseStatus: error.response?.status,
+                request: error.config
+            });
+            
+            const errorData = error.response?.data;
+            let errorMessage = 'Không thể tải danh sách bài thi';
+            
+            if (errorData) {
+                if (typeof errorData === 'string') {
+                    errorMessage = errorData;
+                } else if (errorData.Message) {
+                    errorMessage = errorData.Message;
+                } else if (errorData.message) {
+                    errorMessage = errorData.message;
+                } else if (errorData.error) {
+                    errorMessage = errorData.error;
+                }
+            }
+            
+            // If it's a 500 error, provide more specific message
+            if (error.response?.status === 500) {
+                errorMessage = 'Lỗi máy chủ. Vui lòng thử lại sau hoặc liên hệ quản trị viên.';
+            }
+            
             return {
                 success: false,
-                error: error.message,
-                message: 'Failed to load tests'
+                error: errorData || error.message,
+                message: errorMessage,
+                statusCode: error.response?.status
             };
         }
     }
@@ -75,43 +122,77 @@ class StudentTestService {
     }
 
     // Helper: Map status enum and dates to status string
+    // EExamStatus: Draft = 0, Inactive = 1, Active = 2
     mapStatus(statusEnum, startTime, endTime) {
-        const now = new Date();
-        const start = new Date(startTime);
-        const end = new Date(endTime);
-
-        // statusEnum: 0 = Active, 1 = Inactive, etc.
-        if (statusEnum !== 0) return 'locked';
-        
-        if (now < start) return 'locked';
-        if (now > end) return 'missed';
-        
-        // TODO: Check if student has completed this exam
-        // For now, assume available if within date range and active
-        return 'available';
+        try {
+            const now = new Date();
+            
+            // Handle null/undefined statusEnum
+            if (statusEnum === null || statusEnum === undefined) {
+                return 'locked';
+            }
+            
+            // Only Active (2) exams can be available
+            if (statusEnum !== 2) {
+                return 'locked';
+            }
+            
+            // Check date range only if startTime and endTime are provided
+            if (startTime && endTime) {
+                try {
+                    const start = new Date(startTime);
+                    const end = new Date(endTime);
+                    
+                    // Validate dates
+                    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+                        console.warn('Invalid date range:', { startTime, endTime });
+                        return 'available'; // Default to available if dates are invalid
+                    }
+                    
+                    if (now < start) return 'locked';
+                    if (now > end) return 'missed';
+                } catch (dateError) {
+                    console.warn('Error parsing dates:', dateError, { startTime, endTime });
+                    return 'available'; // Default to available if date parsing fails
+                }
+            }
+            
+            // TODO: Check if student has completed this exam
+            // For now, assume available if Active and within date range
+            return 'available';
+        } catch (error) {
+            console.error('Error in mapStatus:', error, { statusEnum, startTime, endTime });
+            return 'locked'; // Default to locked on error
+        }
     }
 
     // Helper: Generate tags based on exam properties
     generateTags(exam) {
-        const tags = [];
-        
-        if (exam.title.toLowerCase().includes('giữa kỳ') || exam.title.toLowerCase().includes('midterm')) {
-            tags.push('Giữa kỳ');
+        try {
+            const tags = [];
+            const title = (exam.title || exam.Title || '').toLowerCase();
+            
+            if (title.includes('giữa kỳ') || title.includes('midterm')) {
+                tags.push('Giữa kỳ');
+            }
+            if (title.includes('cuối kỳ') || title.includes('final')) {
+                tags.push('Cuối kỳ');
+            }
+            if (title.includes('quiz')) {
+                tags.push('Quiz');
+            }
+            if (exam.randomizeQuestions || exam.RandomizeQuestions) {
+                tags.push('Câu hỏi ngẫu nhiên');
+            }
+            if (exam.showResultsImmediately || exam.ShowResultsImmediately) {
+                tags.push('Xem kết quả ngay');
+            }
+            
+            return tags;
+        } catch (error) {
+            console.warn('Error generating tags:', error, exam);
+            return [];
         }
-        if (exam.title.toLowerCase().includes('cuối kỳ') || exam.title.toLowerCase().includes('final')) {
-            tags.push('Cuối kỳ');
-        }
-        if (exam.title.toLowerCase().includes('quiz')) {
-            tags.push('Quiz');
-        }
-        if (exam.randomizeQuestions) {
-            tags.push('Câu hỏi ngẫu nhiên');
-        }
-        if (exam.showResultsImmediately) {
-            tags.push('Xem kết quả ngay');
-        }
-        
-        return tags;
     }
 
     // Get test details by ID
