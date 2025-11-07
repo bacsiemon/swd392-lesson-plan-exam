@@ -28,14 +28,24 @@ namespace LessonPlanExam.Repositories.DTOs.AttemptDTOs
         [Required]
         public int QuestionId { get; set; }
 
-        // Comma separated selected answer ids for MCQ
-        public string SelectedAnswerIds { get; set; }
+        // Selected answer ids for MCQ (JSON array)
+        public List<int>? SelectedAnswerIds { get; set; }
 
         // For fill blank
-        public string TextAnswer { get; set; }
+        public string? TextAnswer { get; set; }
 
-        // Additional data (json)
-        public string AnswerData { get; set; }
+        // Additional data (json string)
+        public string? AnswerData { get; set; }
+    }
+
+    public class SaveAnswerResult
+    {
+        public bool Success { get; set; }
+        public string? ErrorCode { get; set; }
+        public string? Message { get; set; }
+
+        public static SaveAnswerResult Ok() => new SaveAnswerResult { Success = true };
+        public static SaveAnswerResult Fail(string errorCode, string? message = null) => new SaveAnswerResult { Success = false, ErrorCode = errorCode, Message = message };
     }
 
     public class SubmitResponse
@@ -53,7 +63,7 @@ namespace LessonPlanExam.Repositories.DTOs.AttemptDTOs
         public decimal PointsPossible { get; set; }
         public decimal PointsEarned { get; set; }
         public bool Correct { get; set; }
-        public string Explanation { get; set; }
+        public string? Explanation { get; set; }
     }
 
     public class AttemptDetailResponse
@@ -74,9 +84,9 @@ namespace LessonPlanExam.Repositories.DTOs.AttemptDTOs
     public class AttemptAnswerItem
     {
         public int QuestionId { get; set; }
-        public List<int> SelectedAnswerIds { get; set; } = new List<int>();
-        public string TextAnswer { get; set; }
-        public string AnswerData { get; set; }
+        public List<int>? SelectedAnswerIds { get; set; }
+        public string? TextAnswer { get; set; }
+        public string? AnswerData { get; set; }
         public decimal? PointsEarned { get; set; }
         public decimal? PointsPossible { get; set; }
         public bool? IsCorrect { get; set; }

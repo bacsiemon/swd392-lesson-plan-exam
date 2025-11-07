@@ -100,35 +100,44 @@ namespace LessonPlanExam.Services.Services
             };
         }
 
-        public async Task<bool> SaveAnswerAsync(int examId, int attemptId, SaveAnswerRequest request, CancellationToken ct = default)
+        public async Task<SaveAnswerResult> SaveAnswerAsync(int examId, int attemptId, SaveAnswerRequest request, CancellationToken ct = default)
         {
             // Validate attempt exists
             var att = await _attemptRepo.GetAttemptWithAnswersAsync(attemptId, ct);
-            if (att == null) return false;
+            if (att == null) return SaveAnswerResult.Fail("ATTEMPT_NOT_FOUND", "Attempt does not exist or is not accessible.");
 
-            List<int> selectedIds = new List<int>();
-            if (!string.IsNullOrWhiteSpace(request.SelectedAnswerIds))
+            // Validate attempt belongs to exam
+            if (att.ExamId != examId) return SaveAnswerResult.Fail("ATTEMPT_EXAM_MISMATCH", "Attempt does not belong to the specified exam.");
+
+            // Load question to validate payload type
+            var question = await _questionRepo.GetWithAnswersAsync(request.QuestionId, ct);
+            if (question == null) return SaveAnswerResult.Fail("QUESTION_NOT_FOUND", "Question not found.");
+
+            if (question.QuestionTypeEnum == LessonPlanExam.Repositories.Enums.EQuestionType.MultipleChoice)
             {
-                selectedIds = request.SelectedAnswerIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(s => {
-                        if (int.TryParse(s.Trim(), out var v)) return v;
-                        return -1;
-                    })
-                    .Where(v => v > 0)
-                    .ToList();
+                // require selected ids
+                if (request.SelectedAnswerIds == null || !request.SelectedAnswerIds.Any()) return SaveAnswerResult.Fail("MCQ_SELECTION_REQUIRED", "Selected answer ids are required for multiple choice questions.");
+                // optional: validate ids exist in question options
+                var optionIds = question.QuestionMultipleChoiceAnswers?.Select(a => a.Id).ToHashSet() ?? new HashSet<int>();
+                if (!request.SelectedAnswerIds.All(id => optionIds.Contains(id))) return SaveAnswerResult.Fail("MCQ_OPTION_INVALID", "One or more selected answer ids are invalid.");
+            }
+            else if (question.QuestionTypeEnum == LessonPlanExam.Repositories.Enums.EQuestionType.FillBlank)
+            {
+                if (string.IsNullOrWhiteSpace(request.TextAnswer)) return SaveAnswerResult.Fail("FILLBLANK_TEXT_REQUIRED", "Text answer is required for fill-blank questions.");
             }
 
             var answer = new ExamAttemptAnswer
             {
                 ExamAttemptId = attemptId,
                 QuestionId = request.QuestionId,
-                SelectedAnswerIds = selectedIds,
+                SelectedAnswerIds = request.SelectedAnswerIds ?? new List<int>(),
                 TextAnswer = request.TextAnswer,
                 AnswerData = request.AnswerData,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
             await _answerRepo.SaveAnswerAsync(answer, ct);
-            return true;
+            return SaveAnswerResult.Ok();
         }
 
         public async Task<SubmitResponse> SubmitAttemptAsync(int examId, int attemptId, CancellationToken ct = default)
