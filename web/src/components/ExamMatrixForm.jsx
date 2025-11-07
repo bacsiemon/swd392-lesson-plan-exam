@@ -25,6 +25,8 @@ import {
 } from '@ant-design/icons';
 import examMatrixService from '../services/examMatrixService';
 import { questionBankService } from '../services/questionBankService';
+import questionDifficultyService from '../services/questionDifficultyService';
+import questionService from '../services/questionService';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -46,12 +48,17 @@ const ExamMatrixForm = ({
   const [itemForm] = Form.useForm();
   const [questionBanks, setQuestionBanks] = useState([]);
   const [loadingBanks, setLoadingBanks] = useState(false);
+  const [questionDifficulties, setQuestionDifficulties] = useState([]);
+  const [loadingDifficulties, setLoadingDifficulties] = useState(false);
   const [matrixId, setMatrixId] = useState(null);
+  const [availableQuestionCount, setAvailableQuestionCount] = useState(0);
+  const [loadingQuestionCount, setLoadingQuestionCount] = useState(false);
 
-  // Load question banks
+  // Load question banks and difficulties
   useEffect(() => {
     if (visible) {
       loadQuestionBanks();
+      loadQuestionDifficulties();
       if (editingRecord) {
         const id = editingRecord.Id || editingRecord.id;
         setMatrixId(id);
@@ -62,6 +69,29 @@ const ExamMatrixForm = ({
       }
     }
   }, [visible, editingRecord]);
+
+  const loadQuestionDifficulties = async () => {
+    setLoadingDifficulties(true);
+    try {
+      const result = await questionDifficultyService.getAllQuestionDifficulties({
+        page: 1,
+        size: 1000 // Get all
+      });
+      
+      if (result.success && result.data) {
+        const data = Array.isArray(result.data) ? result.data : [];
+        setQuestionDifficulties(data);
+      } else {
+        console.error('Failed to load question difficulties:', result.message);
+        setQuestionDifficulties([]);
+      }
+    } catch (error) {
+      console.error('Error loading question difficulties:', error);
+      setQuestionDifficulties([]);
+    } finally {
+      setLoadingDifficulties(false);
+    }
+  };
 
   const loadQuestionBanks = async () => {
     setLoadingBanks(true);
@@ -101,25 +131,73 @@ const ExamMatrixForm = ({
     }
   };
 
+  // Load available question count when questionBankId or difficultyLevel changes
+  const loadAvailableQuestionCount = async (questionBankId, difficultyLevel) => {
+    if (!questionBankId) {
+      setAvailableQuestionCount(0);
+      return;
+    }
+
+    setLoadingQuestionCount(true);
+    try {
+      const params = {
+        bankId: questionBankId,
+        active: true // Only active questions
+      };
+
+      // If difficultyLevel is selected, filter by it
+      if (difficultyLevel !== undefined && difficultyLevel !== null) {
+        params.difficultyId = difficultyLevel;
+      }
+
+      const result = await questionService.getQuestions(params);
+      
+      if (result.success && result.data) {
+        const count = Array.isArray(result.data) ? result.data.length : 0;
+        setAvailableQuestionCount(count);
+        console.log(`[ExamMatrixForm] Available questions: ${count} for bankId=${questionBankId}, difficultyId=${difficultyLevel}`);
+      } else {
+        setAvailableQuestionCount(0);
+        console.error('Failed to load question count:', result.message);
+      }
+    } catch (error) {
+      console.error('Error loading question count:', error);
+      setAvailableQuestionCount(0);
+    } finally {
+      setLoadingQuestionCount(false);
+    }
+  };
+
   const handleAddItem = () => {
     setEditingItem(null);
     itemForm.resetFields();
+    setAvailableQuestionCount(0);
     setIsItemModalVisible(true);
   };
 
-  const handleEditItem = (item) => {
+  const handleEditItem = async (item) => {
     setEditingItem(item);
+    // Handle both camelCase and PascalCase - prioritize camelCase
+    const questionBankId = item.questionBankId || item.QuestionBankId;
+    const difficultyLevel = item.difficultyLevel !== undefined && item.difficultyLevel !== null 
+      ? item.difficultyLevel 
+      : (item.DifficultyLevel !== undefined && item.DifficultyLevel !== null ? item.DifficultyLevel : null);
+    
     itemForm.setFieldsValue({
-      questionBankId: item.QuestionBankId || item.questionBankId,
-      domain: item.Domain || item.domain || '',
-      difficultyLevel: item.DifficultyLevel !== undefined && item.DifficultyLevel !== null 
-        ? item.DifficultyLevel 
-        : (item.difficultyLevel !== undefined && item.difficultyLevel !== null ? item.difficultyLevel : null),
-      questionCount: item.QuestionCount || item.questionCount || 0,
-      pointsPerQuestion: item.PointsPerQuestion !== undefined && item.PointsPerQuestion !== null
-        ? item.PointsPerQuestion
-        : (item.pointsPerQuestion !== undefined && item.pointsPerQuestion !== null ? item.pointsPerQuestion : null)
+      questionBankId: questionBankId,
+      domain: item.domain || item.Domain || '',
+      difficultyLevel: difficultyLevel,
+      questionCount: item.questionCount || item.QuestionCount || 0,
+      pointsPerQuestion: item.pointsPerQuestion !== undefined && item.pointsPerQuestion !== null
+        ? item.pointsPerQuestion
+        : (item.PointsPerQuestion !== undefined && item.PointsPerQuestion !== null ? item.PointsPerQuestion : null)
     });
+    
+    // Load available question count for editing
+    if (questionBankId) {
+      await loadAvailableQuestionCount(questionBankId, difficultyLevel);
+    }
+    
     setIsItemModalVisible(true);
   };
 
@@ -157,6 +235,13 @@ const ExamMatrixForm = ({
         pointsPerQuestion: values.pointsPerQuestion !== undefined && values.pointsPerQuestion !== null ? values.pointsPerQuestion : null
       };
 
+      // Debug logging
+      console.log('[ExamMatrixForm] Submitting item data:', {
+        rawValues: values,
+        processedItemData: itemData,
+        matrixId: matrixId
+      });
+
       let result;
       if (editingItem) {
         const itemId = editingItem.Id || editingItem.id;
@@ -166,12 +251,16 @@ const ExamMatrixForm = ({
       }
 
       if (result.success) {
+        console.log('[ExamMatrixForm] Item saved successfully:', result.data);
         message.success(editingItem ? 'Cập nhật item thành công' : 'Thêm item thành công');
         setIsItemModalVisible(false);
         setEditingItem(null);
         itemForm.resetFields();
-        loadItems(matrixId);
+        setAvailableQuestionCount(0);
+        // Reload items to show the updated data
+        await loadItems(matrixId);
       } else {
+        console.error('[ExamMatrixForm] Failed to save item:', result);
         message.error(result.message || 'Thao tác thất bại');
       }
     } catch (error) {
@@ -251,35 +340,82 @@ const ExamMatrixForm = ({
       title: 'Ngân hàng câu hỏi',
       key: 'questionBank',
       render: (record) => {
-        const bankId = record.QuestionBankId || record.questionBankId;
-        const bank = questionBanks.find(b => (b.Id || b.id) === bankId);
-        return bank ? (bank.Name || bank.name || `Bank #${bankId}`) : `Bank #${bankId}`;
+        // Handle both camelCase and PascalCase
+        const bankId = record.questionBankId || record.QuestionBankId;
+        const bank = questionBanks.find(b => (b.id || b.Id) === bankId);
+        return bank ? (bank.name || bank.Name || `Bank #${bankId}`) : `Bank #${bankId}`;
       }
     },
     {
       title: 'Domain',
-      dataIndex: 'Domain',
+      dataIndex: 'domain',
       key: 'domain',
-      render: (text) => text || '-'
+      render: (text, record) => {
+        // Handle both camelCase and PascalCase
+        const domain = record.domain || record.Domain || text || '-';
+        return domain;
+      }
     },
     {
       title: 'Độ khó',
       dataIndex: 'DifficultyLevel',
       key: 'difficultyLevel',
-      render: (level) => level !== null && level !== undefined ? level : '-'
+      render: (level, record) => {
+        // level is actually QuestionDifficultyId
+        if (level === null || level === undefined) return '-';
+        
+        // Find the difficulty from questionDifficulties
+        const difficulty = questionDifficulties.find(d => {
+          const id = d.id !== undefined ? d.id : d.Id;
+          return id === level;
+        });
+        
+        if (difficulty) {
+          const domain = difficulty.domain || difficulty.Domain || '';
+          const difficultyLevel = difficulty.difficultyLevel !== undefined 
+            ? difficulty.difficultyLevel 
+            : (difficulty.DifficultyLevel !== undefined ? difficulty.DifficultyLevel : '');
+          const description = difficulty.description || difficulty.Description || '';
+          
+          let color = 'default';
+          if (difficultyLevel === 1) color = 'green';
+          else if (difficultyLevel === 2) color = 'orange';
+          else if (difficultyLevel === 3) color = 'red';
+          else if (difficultyLevel >= 4) color = 'purple';
+          
+          const displayText = description 
+            ? `${domain} - Mức ${difficultyLevel} (${description})`
+            : `${domain} - Mức ${difficultyLevel}`;
+          
+          return <Tag color={color}>{displayText}</Tag>;
+        }
+        
+        // Fallback: just show the ID
+        return <Tag>ID: {level}</Tag>;
+      }
     },
     {
       title: 'Số câu',
-      dataIndex: 'QuestionCount',
+      dataIndex: 'questionCount',
       key: 'questionCount',
-      align: 'center'
+      align: 'center',
+      render: (count, record) => {
+        // Handle both camelCase and PascalCase
+        return record.questionCount || record.QuestionCount || count || 0;
+      }
     },
     {
       title: 'Điểm/câu',
-      dataIndex: 'PointsPerQuestion',
+      dataIndex: 'pointsPerQuestion',
       key: 'pointsPerQuestion',
-      render: (points) => points !== null && points !== undefined ? points : '-',
-      align: 'center'
+      align: 'center',
+      render: (points, record) => {
+        // Handle both camelCase and PascalCase
+        const pointsValue = record.pointsPerQuestion !== undefined && record.pointsPerQuestion !== null
+          ? record.pointsPerQuestion
+          : (record.PointsPerQuestion !== undefined && record.PointsPerQuestion !== null ? record.PointsPerQuestion : points);
+        return pointsValue !== null && pointsValue !== undefined ? pointsValue.toFixed(1) : '-';
+      }
     },
     {
       title: 'Thao tác',
@@ -446,12 +582,14 @@ const ExamMatrixForm = ({
           setIsItemModalVisible(false);
           setEditingItem(null);
           itemForm.resetFields();
+          setAvailableQuestionCount(0);
         }}
         footer={[
           <Button key="cancel" onClick={() => {
             setIsItemModalVisible(false);
             setEditingItem(null);
             itemForm.resetFields();
+            setAvailableQuestionCount(0);
           }}>
             Hủy
           </Button>,
@@ -481,6 +619,11 @@ const ExamMatrixForm = ({
               filterOption={(input, option) =>
                 (option?.children ?? '').toLowerCase().includes(input.toLowerCase())
               }
+              onChange={(value) => {
+                // Load available question count when question bank changes
+                const difficultyLevel = itemForm.getFieldValue('difficultyLevel');
+                loadAvailableQuestionCount(value, difficultyLevel);
+              }}
             >
               {questionBanks.map(bank => (
                 <Option key={bank.Id || bank.id} value={bank.Id || bank.id}>
@@ -499,26 +642,123 @@ const ExamMatrixForm = ({
           </Form.Item>
 
           <Form.Item
-            label="Độ khó (ID)"
+            label="Độ khó"
             name="difficultyLevel"
-            tooltip="ID độ khó từ database (tùy chọn)"
+            tooltip="Chọn độ khó từ danh sách đã tạo. Domain sẽ được tự động điền nếu chưa có."
           >
-            <InputNumber
-              style={{ width: '100%' }}
-              placeholder="Nhập ID độ khó"
-              min={1}
-            />
+            <Select
+              placeholder="Chọn độ khó (tùy chọn)"
+              allowClear
+              loading={loadingDifficulties}
+              showSearch
+              optionLabelProp="label"
+              onChange={(value) => {
+                // Auto-fill domain if not already set
+                if (value) {
+                  const selectedDifficulty = questionDifficulties.find(d => {
+                    const id = d.id !== undefined ? d.id : d.Id;
+                    return id === value;
+                  });
+                  
+                  if (selectedDifficulty) {
+                    const domain = selectedDifficulty.domain || selectedDifficulty.Domain || '';
+                    const currentDomain = itemForm.getFieldValue('domain');
+                    // Only auto-fill if domain is empty
+                    if (domain && !currentDomain) {
+                      itemForm.setFieldsValue({ domain: domain });
+                    }
+                  }
+                }
+                
+                // Load available question count when difficulty changes
+                const questionBankId = itemForm.getFieldValue('questionBankId');
+                if (questionBankId) {
+                  loadAvailableQuestionCount(questionBankId, value);
+                }
+              }}
+              filterOption={(input, option) => {
+                const label = option?.label || '';
+                return label.toLowerCase().includes(input.toLowerCase());
+              }}
+              notFoundContent={loadingDifficulties ? 'Đang tải...' : (questionDifficulties.length === 0 ? 'Không có dữ liệu độ khó' : 'Không tìm thấy')}
+            >
+              {questionDifficulties && questionDifficulties.length > 0 ? questionDifficulties
+                .filter((difficulty) => {
+                  const id = difficulty.id !== undefined ? difficulty.id : difficulty.Id;
+                  return id !== null && id !== undefined && !isNaN(parseInt(id));
+                })
+                .map((difficulty) => {
+                  const id = difficulty.id !== undefined ? difficulty.id : difficulty.Id;
+                  const domain = difficulty.domain || difficulty.Domain || '';
+                  const level = difficulty.difficultyLevel !== undefined 
+                    ? difficulty.difficultyLevel 
+                    : (difficulty.DifficultyLevel !== undefined ? difficulty.DifficultyLevel : '');
+                  const description = difficulty.description || difficulty.Description || '';
+                  
+                  const displayText = description 
+                    ? `${domain} - Mức ${level} (${description})`
+                    : `${domain} - Mức ${level}`;
+                  
+                  return (
+                    <Option key={id} value={id} label={displayText}>
+                      <div>
+                        <div>
+                          <Text strong>{domain}</Text>
+                          <Text type="secondary"> - Mức {level}</Text>
+                        </div>
+                        {description && (
+                          <div style={{ fontSize: '12px', color: '#8c8c8c', marginTop: '4px' }}>
+                            {description}
+                          </div>
+                        )}
+                      </div>
+                    </Option>
+                  );
+                })
+                .filter(Boolean)
+              : (
+                <Option disabled value="no-data">
+                  {loadingDifficulties ? 'Đang tải...' : 'Chưa có độ khó nào. Vui lòng tạo độ khó trước.'}
+                </Option>
+              )}
+            </Select>
           </Form.Item>
 
           <Form.Item
-            label="Số câu hỏi"
+            label={
+              <span>
+                Số câu hỏi
+                {loadingQuestionCount && <Text type="secondary" style={{ marginLeft: 8 }}>(Đang kiểm tra...)</Text>}
+                {!loadingQuestionCount && availableQuestionCount > 0 && (
+                  <Text type="secondary" style={{ marginLeft: 8 }}>
+                    (Có sẵn: {availableQuestionCount} câu)
+                  </Text>
+                )}
+                {!loadingQuestionCount && availableQuestionCount === 0 && (
+                  <Text type="warning" style={{ marginLeft: 8 }}>
+                    (Không có câu hỏi phù hợp)
+                  </Text>
+                )}
+              </span>
+            }
             name="questionCount"
-            rules={[{ required: true, message: 'Vui lòng nhập số câu hỏi' }]}
+            rules={[
+              { required: true, message: 'Vui lòng nhập số câu hỏi' },
+              {
+                validator: (_, value) => {
+                  if (value && availableQuestionCount > 0 && value > availableQuestionCount) {
+                    return Promise.reject(new Error(`Số câu hỏi không được vượt quá ${availableQuestionCount} câu có sẵn`));
+                  }
+                  return Promise.resolve();
+                }
+              }
+            ]}
           >
             <InputNumber
               style={{ width: '100%' }}
               placeholder="10"
               min={1}
+              max={availableQuestionCount > 0 ? availableQuestionCount : undefined}
             />
           </Form.Item>
 

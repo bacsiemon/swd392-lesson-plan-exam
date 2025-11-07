@@ -200,6 +200,11 @@ const TeacherHeader = ({ userName: propUserName }) => {
       label: 'Ma trận đề'
     },
     {
+      key: '/question-difficulties',
+      icon: <ExperimentOutlined />,
+      label: 'Độ khó câu hỏi'
+    },
+    {
       key: '/manage-tests',
       icon: <BulbOutlined />,
       label: 'Quản lý đề kiểm tra'

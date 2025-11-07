@@ -26,6 +26,7 @@ import {
   QUESTION_TYPES,
   VALIDATION_RULES
 } from '../constants/questionBankConstants';
+import questionDifficultyService from '../services/questionDifficultyService';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -35,6 +36,48 @@ const QuestionForm = ({ initialValues, onSubmit, onCancel, loading = false, ques
   const [form] = Form.useForm();
   const [questionType, setQuestionType] = useState(initialValues?.questionTypeEnum ?? 0);
   const [submitting, setSubmitting] = useState(false);
+  const [questionDifficulties, setQuestionDifficulties] = useState([]);
+  const [loadingDifficulties, setLoadingDifficulties] = useState(false);
+
+  // Load question difficulties on mount
+  useEffect(() => {
+    const loadQuestionDifficulties = async () => {
+      setLoadingDifficulties(true);
+      try {
+        // Get all question difficulties (no filters, large page size to get all)
+        const result = await questionDifficultyService.getAllQuestionDifficulties({
+          page: 1,
+          size: 1000 // Large size to get all difficulties
+        });
+        
+        console.log('QuestionForm - Load result:', result);
+        console.log('QuestionForm - result.success:', result.success);
+        console.log('QuestionForm - result.data:', result.data);
+        console.log('QuestionForm - result.data type:', typeof result.data);
+        console.log('QuestionForm - result.data isArray:', Array.isArray(result.data));
+        
+        if (result.success && result.data) {
+          const data = Array.isArray(result.data) ? result.data : [];
+          console.log('QuestionForm - Question difficulties loaded:', data);
+          console.log('QuestionForm - Data length:', data.length);
+          console.log('QuestionForm - First item:', data[0]);
+          
+          // Force update state
+          setQuestionDifficulties([...data]); // Use spread to force new array reference
+        } else {
+          console.error('QuestionForm - Failed to load question difficulties:', result);
+          console.error('QuestionForm - Error message:', result.message);
+          setQuestionDifficulties([]);
+        }
+      } catch (error) {
+        console.error('Error loading question difficulties:', error);
+      } finally {
+        setLoadingDifficulties(false);
+      }
+    };
+    
+    loadQuestionDifficulties();
+  }, []);
 
   useEffect(() => {
     if (initialValues) {
@@ -90,18 +133,19 @@ const QuestionForm = ({ initialValues, onSubmit, onCancel, loading = false, ques
       // Reset form when no initial values (creating new)
       // Always set questionBankId from prop when creating new question
       form.resetFields();
+      
+      // Prepare initial values for new question
+      const newFormData = {
+        questionTypeEnum: 0
+      };
+      
       // Always set questionBankId when creating new question - ensure it's set in form values
       if (questionBankId) {
-        form.setFieldsValue({ 
-          questionBankId: questionBankId,
-          questionTypeEnum: 0
-        });
-      } else {
-        // If no questionBankId prop, still set questionTypeEnum
-        form.setFieldsValue({ 
-          questionTypeEnum: 0
-        });
+        newFormData.questionBankId = questionBankId;
       }
+      
+      // Set all values at once to avoid conflicts
+      form.setFieldsValue(newFormData);
       setQuestionType(0);
       
       // Log to debug
@@ -302,10 +346,6 @@ const QuestionForm = ({ initialValues, onSubmit, onCancel, loading = false, ques
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
-          initialValues={{
-            questionBankId: questionBankId || null, // Set initial questionBankId from prop
-            questionTypeEnum: 0
-          }}
           requiredMark={false}
           size="large"
         >
@@ -404,19 +444,92 @@ const QuestionForm = ({ initialValues, onSubmit, onCancel, loading = false, ques
                 <Form.Item
                   label={
                     <span>
-                      <Text strong>Độ khó (ID)</Text>
+                      <Text strong>Độ khó</Text>
                       <Text type="secondary"> (Tùy chọn)</Text>
                     </span>
                   }
                   name="questionDifficultyId"
                   rules={[]}
-                  extra="Nhập ID độ khó từ database (để trống nếu không cần)"
+                  extra="Chọn độ khó theo quy định (Domain - DifficultyLevel)"
                 >
-                  <InputNumber
-                    placeholder="Nhập ID độ khó (để trống nếu không cần)"
-                    min={1}
+                  <Select
+                    placeholder={loadingDifficulties ? 'Đang tải...' : `Chọn độ khó (${questionDifficulties.length} mục có sẵn)`}
+                    allowClear
+                    loading={loadingDifficulties}
+                    showSearch
+                    optionLabelProp="label"
+                    filterOption={(input, option) => {
+                      const label = option?.label || '';
+                      const children = option?.children?.props?.children || '';
+                      const searchText = typeof children === 'string' ? children : '';
+                      return label.toLowerCase().includes(input.toLowerCase()) || 
+                             searchText.toLowerCase().includes(input.toLowerCase());
+                    }}
+                    notFoundContent={loadingDifficulties ? 'Đang tải...' : (questionDifficulties.length === 0 ? 'Không có dữ liệu độ khó' : 'Không tìm thấy')}
                     style={{ width: '100%' }}
-                  />
+                    dropdownRender={(menu) => (
+                      <>
+                        {menu}
+                        {process.env.NODE_ENV === 'development' && (
+                          <div style={{ padding: '8px', fontSize: '12px', color: '#999', borderTop: '1px solid #f0f0f0' }}>
+                            Debug: {questionDifficulties.length} items loaded
+                          </div>
+                        )}
+                      </>
+                    )}
+                  >
+                    {questionDifficulties && questionDifficulties.length > 0 ? questionDifficulties
+                      .filter((difficulty) => {
+                        // Filter out invalid difficulties (must have valid id) - handle both camelCase and PascalCase
+                        const id = difficulty.id !== undefined 
+                          ? difficulty.id 
+                          : (difficulty.Id !== undefined ? difficulty.Id : null);
+                        return id !== null && id !== undefined && !isNaN(parseInt(id));
+                      })
+                      .map((difficulty) => {
+                        // Format: Domain - DifficultyLevel (Description)
+                        // Handle both camelCase and PascalCase from API response
+                        const domain = difficulty.domain || difficulty.Domain || '';
+                        const level = difficulty.difficultyLevel !== undefined 
+                          ? difficulty.difficultyLevel 
+                          : (difficulty.DifficultyLevel !== undefined ? difficulty.DifficultyLevel : '');
+                        const description = difficulty.description || difficulty.Description || '';
+                        
+                        const displayText = description 
+                          ? `${domain} - Mức ${level} (${description})`
+                          : `${domain} - Mức ${level}`;
+                        
+                        const value = difficulty.id !== undefined 
+                          ? difficulty.id 
+                          : (difficulty.Id !== undefined ? difficulty.Id : null);
+                        
+                        // Ensure value is a valid number
+                        const numericValue = value !== null && value !== undefined ? parseInt(value) : null;
+                        if (numericValue === null || isNaN(numericValue)) {
+                          return null; // Skip invalid entries
+                        }
+                        
+                        return (
+                          <Option key={numericValue} value={numericValue} label={displayText}>
+                            <div>
+                              <Text strong>{domain}</Text>
+                              <Text type="secondary"> - Mức {level}</Text>
+                              {description && (
+                                <div style={{ fontSize: '12px', color: '#8c8c8c', marginTop: '2px' }}>
+                                  {description}
+                                </div>
+                              )}
+                            </div>
+                          </Option>
+                        );
+                      })
+                      .filter(Boolean) // Remove null entries
+                    : (
+                      <Option disabled value="no-data">
+                        {loadingDifficulties ? 'Đang tải...' : 'Chưa có độ khó nào. Vui lòng tạo độ khó trước.'}
+                      </Option>
+                    )}
+                  </Select>
                 </Form.Item>
               </Col>
             </Row>

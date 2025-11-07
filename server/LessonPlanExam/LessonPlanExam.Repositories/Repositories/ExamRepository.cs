@@ -62,7 +62,17 @@ namespace LessonPlanExam.Repositories.Repositories
         {
             // Load matrix and items
             var matrix = await _db.ExamMatrices.Include(m => m.ExamMatrixItems).FirstOrDefaultAsync(m => m.Id == request.ExamMatrixId, ct);
-            if (matrix == null) return null;
+            if (matrix == null)
+            {
+                System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] Matrix not found: ExamMatrixId={request.ExamMatrixId}");
+                return null;
+            }
+            
+            if (matrix.ExamMatrixItems == null || !matrix.ExamMatrixItems.Any())
+            {
+                System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] Matrix has no items: ExamMatrixId={request.ExamMatrixId}");
+                // Still create exam but without questions
+            }
 
             var entity = new Exam
             {
@@ -97,31 +107,109 @@ namespace LessonPlanExam.Repositories.Repositories
             // Collect selected questions per matrix item
             var selectedQuestions = new List<(Question q, decimal? points)>();
 
+            System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] MatrixId={request.ExamMatrixId}, MatrixItems count={matrix.ExamMatrixItems?.Count ?? 0}");
+
             foreach (var item in matrix.ExamMatrixItems)
             {
-                var qQuery = _db.Questions.AsNoTracking().Include(q => q.QuestionDifficulty)
-                    .Where(q => q.QuestionBankId == item.QuestionBankId && (q.IsActive ?? true));
+                System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ===== Processing item: ItemId={item.Id} =====");
+                System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}, QuestionBankId={item.QuestionBankId}, Domain='{item.Domain}', DifficultyLevel={item.DifficultyLevel}, QuestionCount={item.QuestionCount}");
 
+                // First, check if there are ANY questions in the bank (without filters)
+                var allQuestionsInBank = await _db.Questions.AsNoTracking()
+                    .Where(q => q.QuestionBankId == item.QuestionBankId && (q.IsActive ?? true))
+                    .CountAsync(ct);
+                System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Total active questions in bank {item.QuestionBankId}: {allQuestionsInBank}");
+
+                // Use same query structure as ValidateMatrixAsync for consistency
+                var qQuery = _db.Questions.AsNoTracking()
+                    .Include(q => q.QuestionDifficulty)
+                    .Where(q => q.QuestionBankId == item.QuestionBankId && 
+                                (q.IsActive ?? true));
+
+                // Filter by Domain if provided
+                // Note: EF Core may not translate Trim() to SQL, so we'll filter in memory if needed
                 if (!string.IsNullOrEmpty(item.Domain))
-                    qQuery = qQuery.Where(q => q.QuestionDifficulty != null && q.QuestionDifficulty.Domain == item.Domain);
+                {
+                    var domainValue = item.Domain.Trim();
+                    // Try exact match first (most efficient)
+                    qQuery = qQuery.Where(q => q.QuestionDifficulty != null && 
+                        q.QuestionDifficulty.Domain != null && 
+                        q.QuestionDifficulty.Domain == domainValue);
+                    System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Filtered by Domain (exact match): '{domainValue}'");
+                    
+                    // Debug: Check how many questions have this domain (before filtering)
+                    var questionsWithDomain = await _db.Questions.AsNoTracking()
+                        .Include(q => q.QuestionDifficulty)
+                        .Where(q => q.QuestionBankId == item.QuestionBankId && 
+                                    (q.IsActive ?? true) &&
+                                    q.QuestionDifficulty != null &&
+                                    q.QuestionDifficulty.Domain != null)
+                        .Select(q => new { q.Id, Domain = q.QuestionDifficulty.Domain })
+                        .ToListAsync(ct);
+                    System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Questions with domains in bank: {questionsWithDomain.Count}");
+                    if (questionsWithDomain.Any())
+                    {
+                        var distinctDomains = questionsWithDomain.Select(q => q.Domain).Distinct().ToList();
+                        System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Available domains: [{string.Join(", ", distinctDomains.Select(d => $"'{d}'"))}]");
+                        System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Looking for domain: '{domainValue}'");
+                        var matchingDomains = questionsWithDomain.Where(q => q.Domain?.Trim() == domainValue).ToList();
+                        System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Questions with matching domain (after Trim): {matchingDomains.Count}");
+                    }
+                }
 
+                // Filter by DifficultyLevel (which is QuestionDifficultyId in ExamMatrixItem)
                 if (item.DifficultyLevel.HasValue)
+                {
                     qQuery = qQuery.Where(q => q.QuestionDifficultyId == item.DifficultyLevel.Value);
+                    System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Filtered by DifficultyLevel (QuestionDifficultyId): {item.DifficultyLevel.Value}");
+                    
+                    // Debug: Check how many questions have this difficulty
+                    var questionsWithDifficulty = await _db.Questions.AsNoTracking()
+                        .Where(q => q.QuestionBankId == item.QuestionBankId && 
+                                    (q.IsActive ?? true) &&
+                                    q.QuestionDifficultyId == item.DifficultyLevel.Value)
+                        .CountAsync(ct);
+                    System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Questions with DifficultyLevel {item.DifficultyLevel.Value}: {questionsWithDifficulty}");
+                }
+                
+                // Debug: Log the query before execution
+                var queryString = qQuery.ToQueryString();
+                System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Query: {queryString}");
 
                 var list = await qQuery.ToListAsync(ct);
-                if (list == null || list.Count == 0) continue;
+                System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Found {list?.Count ?? 0} questions after filtering");
+                
+                // Debug: Log details of found questions
+                if (list != null && list.Count > 0)
+                {
+                    foreach (var q in list.Take(5)) // Log first 5
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Question {q.Id}: DifficultyId={q.QuestionDifficultyId}, Domain='{q.QuestionDifficulty?.Domain}'");
+                    }
+                }
+
+                if (list == null || list.Count == 0)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] WARNING: No questions found for item ItemId={item.Id}, QuestionBankId={item.QuestionBankId}, Domain='{item.Domain}', DifficultyLevel={item.DifficultyLevel}. Skipping this item.");
+                    continue;
+                }
 
                 // Shuffle in memory
                 var rnd = new Random();
                 var shuffled = list.OrderBy(x => rnd.Next()).ToList();
                 var take = Math.Min(item.QuestionCount, shuffled.Count);
+                System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Taking {take} questions from {shuffled.Count} available (requested {item.QuestionCount})");
+                
                 for (int i = 0; i < take; i++)
                 {
                     var q = shuffled[i];
                     decimal? points = item.PointsPerQuestion;
                     selectedQuestions.Add((q, points));
+                    System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Added question QuestionId={q.Id}, QuestionDifficultyId={q.QuestionDifficultyId}, Domain={q.QuestionDifficulty?.Domain}, Points={points}");
                 }
             }
+
+            System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] Total selected questions before deduplication: {selectedQuestions.Count}");
 
             // Remove duplicates by question id
             var distinct = selectedQuestions.GroupBy(x => x.q.Id).Select(g => g.First()).ToList();
@@ -149,6 +237,8 @@ namespace LessonPlanExam.Repositories.Repositories
 
             // Add exam questions with order index
             int order = 1;
+            System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] Adding {distinct.Count} distinct questions to exam");
+            
             foreach (var item in distinct)
             {
                 var q = item.q;
@@ -162,17 +252,46 @@ namespace LessonPlanExam.Repositories.Repositories
                     CreatedAt = DateTime.UtcNow
                 };
                 _db.ExamQuestions.Add(examQ);
+                System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] Added ExamQuestion: ExamId={entity.Id}, QuestionId={q.Id}, OrderIndex={examQ.OrderIndex}, Points={pts}");
             }
 
             // Compute totals
             entity.TotalQuestions = totalQuestions;
             entity.TotalPoints = await _db.ExamQuestions.Where(x => x.ExamId == entity.Id).SumAsync(x => x.Points ?? 0, ct);
+            
+            System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] Exam totals: TotalQuestions={totalQuestions}, TotalPoints={entity.TotalPoints}");
 
             await _db.SaveChangesAsync(ct);
 
-            // Load questions collection
-            await _db.Entry(entity).Collection(x => x.ExamQuestions).LoadAsync(ct);
-            return entity;
+            // Reload entity with ExamQuestions and Question navigation properties
+            // This ensures all navigation properties are loaded correctly
+            var reloadedEntity = await _db.Exams
+                .Include(e => e.ExamQuestions)
+                    .ThenInclude(eq => eq.Question)
+                        .ThenInclude(q => q.QuestionDifficulty)
+                .FirstOrDefaultAsync(e => e.Id == entity.Id, ct);
+            
+            if (reloadedEntity == null)
+            {
+                System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ERROR: Failed to reload exam after creation. ExamId={entity.Id}");
+                return entity; // Return original entity as fallback
+            }
+            
+            System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] Final ExamQuestions count: {reloadedEntity.ExamQuestions?.Count ?? 0}");
+            
+            if (reloadedEntity.ExamQuestions != null && reloadedEntity.ExamQuestions.Any())
+            {
+                foreach (var eq in reloadedEntity.ExamQuestions.Take(5))
+                {
+                    System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ExamQuestion: Id={eq.Id}, QuestionId={eq.QuestionId}, OrderIndex={eq.OrderIndex}, Points={eq.Points}");
+                }
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] WARNING: No ExamQuestions loaded after creation!");
+            }
+            
+            return reloadedEntity;
         }
 
         public async Task<IEnumerable<Exam>> GetExamsByTeacherAsync(int? teacherId, EExamStatus? status, string q, CancellationToken ct = default)

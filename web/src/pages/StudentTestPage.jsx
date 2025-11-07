@@ -26,6 +26,11 @@ function StudentTestPage() {
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   
+  // Timer state
+  const [timeRemaining, setTimeRemaining] = useState(null); // Time remaining in seconds
+  const [startedAt, setStartedAt] = useState(null); // When the attempt started (ISO string or Date)
+  const [durationMinutes, setDurationMinutes] = useState(null); // Exam duration in minutes
+  
   const examId = searchParams.get('id') || searchParams.get('examId');
 
   // Load exam and start attempt on mount
@@ -131,28 +136,80 @@ function StudentTestPage() {
         setExam(examData);
         
         // Check if there's a latest attempt that might be resumed
+        // GET /api/exams/{examId}/attempts/my-latest returns AttemptDetailResponse
         const latestAttemptResponse = await examAttemptService.getLatestAttempt(examId);
         if (latestAttemptResponse.success && latestAttemptResponse.data) {
           const latestAttempt = latestAttemptResponse.data;
           // If attempt is not submitted, resume it
-          if (latestAttempt.statusEnum !== 2 && latestAttempt.status !== 'Submitted') {
-            setAttemptId(latestAttempt.attemptId || latestAttempt.id);
+          // Status: 0 = InProgress, 1 = Submitted, 2 = Graded, 3 = Expired
+          // Only resume if status is InProgress (0)
+          const statusEnum = latestAttempt.statusEnum !== undefined ? latestAttempt.statusEnum : 
+                            (latestAttempt.status !== undefined ? latestAttempt.status : null);
+          
+          console.log('[StudentTestPage] Latest attempt found:', {
+            attemptId: latestAttempt.attemptId || latestAttempt.id || latestAttempt.AttemptId,
+            statusEnum: statusEnum,
+            status: latestAttempt.status,
+            statusEnumRaw: latestAttempt.statusEnum
+          });
+          
+          // Only resume if status is explicitly InProgress (0)
+          // If status is 1 (Submitted), 2 (Graded), 3 (Expired), or null/undefined, start new attempt
+          if (statusEnum === 0) {
+            // Resume attempt - only if status is explicitly InProgress
+            const attemptIdValue = latestAttempt.attemptId || latestAttempt.id || latestAttempt.AttemptId;
+            setAttemptId(attemptIdValue);
             
             // Load saved answers if any
+            // AttemptDetailResponse has Answers: List<AttemptAnswerItem>
             if (latestAttempt.answers && Array.isArray(latestAttempt.answers)) {
               const savedAnswers = {};
               latestAttempt.answers.forEach(ans => {
-                if (ans.selectedAnswerIds && ans.selectedAnswerIds.length > 0) {
-                  savedAnswers[ans.questionId] = ans.selectedAnswerIds[0];
+                const questionId = ans.questionId || ans.QuestionId;
+                // Ensure questionId is a number for consistency
+                const numericQuestionId = typeof questionId === 'number' ? questionId : parseInt(questionId);
+                
+                // Handle both camelCase and PascalCase
+                if (ans.selectedAnswerIds && Array.isArray(ans.selectedAnswerIds) && ans.selectedAnswerIds.length > 0) {
+                  // For MCQ, store the first answer ID (Radio.Group only supports single selection)
+                  savedAnswers[numericQuestionId] = ans.selectedAnswerIds[0];
+                } else if (ans.SelectedAnswerIds && Array.isArray(ans.SelectedAnswerIds) && ans.SelectedAnswerIds.length > 0) {
+                  savedAnswers[numericQuestionId] = ans.SelectedAnswerIds[0];
                 } else if (ans.textAnswer) {
-                  savedAnswers[ans.questionId] = ans.textAnswer;
+                  savedAnswers[numericQuestionId] = ans.textAnswer;
+                } else if (ans.TextAnswer) {
+                  savedAnswers[numericQuestionId] = ans.TextAnswer;
                 }
               });
+              console.log(`[Resume attempt] Loaded saved answers:`, savedAnswers);
               setAnswers(savedAnswers);
             }
-            message.success('Đã tiếp tục lần làm bài trước');
+            
+            // Set timer data from latest attempt
+            const attemptStartedAt = latestAttempt.startedAt || latestAttempt.StartedAt;
+            const attemptDurationMinutes = examData.durationMinutes || examData.DurationMinutes; // Use exam's duration for consistency
+            if (attemptStartedAt && attemptDurationMinutes) {
+              setStartedAt(attemptStartedAt);
+              setDurationMinutes(attemptDurationMinutes);
+              // Calculate initial time remaining
+              const startTime = new Date(attemptStartedAt);
+              const endTime = new Date(startTime.getTime() + attemptDurationMinutes * 60 * 1000);
+              const now = new Date();
+              const remainingSeconds = Math.max(0, Math.floor((endTime - now) / 1000));
+              setTimeRemaining(remainingSeconds);
+              console.log(`[Timer] Resumed: ${startTime.toISOString()}, Duration: ${attemptDurationMinutes} minutes, Remaining: ${remainingSeconds} seconds`);
+            }
+            
+            // Load questions from attempt if available
+            // Note: my-latest returns attempt result, not start response
+            // We still need to load questions from exam
+            message.info('Đã tiếp tục lần làm bài trước');
             setLoading(false);
             return;
+          } else {
+            // Status is Submitted (1), Graded (2), Expired (3), or null/undefined
+            // Start a new attempt instead
+            console.log('[StudentTestPage] Latest attempt is not InProgress (status=' + statusEnum + '), starting new attempt');
           }
         }
 
@@ -165,9 +222,26 @@ function StudentTestPage() {
           console.log('StartAttempt response data:', attemptData);
           setAttemptId(attemptData.attemptId || attemptData.id || attemptData.AttemptId);
           
+          // Set timer data from startAttempt response
+          const attemptStartedAt = attemptData.startedAt || attemptData.StartedAt;
+          const attemptDurationMinutes = attemptData.durationMinutes || attemptData.DurationMinutes || examData.durationMinutes || examData.DurationMinutes;
+          
+          if (attemptStartedAt && attemptDurationMinutes) {
+            setStartedAt(attemptStartedAt);
+            setDurationMinutes(attemptDurationMinutes);
+            // Calculate initial time remaining
+            const startTime = new Date(attemptStartedAt);
+            const endTime = new Date(startTime.getTime() + attemptDurationMinutes * 60 * 1000);
+            const now = new Date();
+            const remainingSeconds = Math.max(0, Math.floor((endTime - now) / 1000));
+            setTimeRemaining(remainingSeconds);
+            console.log(`[Timer] Started: ${startTime.toISOString()}, Duration: ${attemptDurationMinutes} minutes, Remaining: ${remainingSeconds} seconds`);
+          }
+          
           // Load questions from startAttempt response if available
-          // startAttempt returns AttemptStartResponse with Questions array containing QuestionId, OrderIndex, PointsPossible
-          // Backend uses PascalCase, but JSON serializer might convert to camelCase
+          // startAttempt returns AttemptStartResponse: { AttemptId, AttemptNumber, ExamId, DurationMinutes, StartedAt, Questions: List<AttemptQuestionItem> }
+          // AttemptQuestionItem: { QuestionId, OrderIndex, PointsPossible }
+          // Handle both camelCase and PascalCase
           const questionsArray = attemptData.questions || attemptData.Questions || [];
           console.log('Questions array from startAttempt:', questionsArray);
           
@@ -188,8 +262,8 @@ function StudentTestPage() {
                     return {
                       questionId: questionId,
                       id: questionId, // Use QuestionId as the id for rendering
-                      orderIndex: questionItem?.orderIndex || questionItem?.OrderIndex || index + 1,
-                      points: questionItem?.pointsPossible || questionItem?.PointsPossible,
+                      orderIndex: questionItem?.orderIndex !== undefined ? questionItem.orderIndex : (questionItem?.OrderIndex !== undefined ? questionItem.OrderIndex : index + 1),
+                      points: questionItem?.pointsPossible !== undefined && questionItem.pointsPossible !== null ? questionItem.pointsPossible : (questionItem?.PointsPossible !== undefined && questionItem.PointsPossible !== null ? questionItem.PointsPossible : null),
                       text: fullQuestion.title || fullQuestion.Title || fullQuestion.content || fullQuestion.Content,
                       title: fullQuestion.title || fullQuestion.Title,
                       content: fullQuestion.content || fullQuestion.Content,
@@ -286,6 +360,51 @@ function StudentTestPage() {
     loadExamAndStartAttempt();
   }, [examId]);
 
+  // Timer countdown effect
+  useEffect(() => {
+    // Only run timer if we have startedAt, durationMinutes, and not submitted
+    if (!startedAt || !durationMinutes || submitted || timeRemaining === null) {
+      return;
+    }
+
+    // Calculate time remaining based on server time
+    const calculateTimeRemaining = () => {
+      const startTime = new Date(startedAt);
+      const endTime = new Date(startTime.getTime() + durationMinutes * 60 * 1000);
+      const now = new Date();
+      const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
+      return remaining;
+    };
+
+    // Update immediately
+    const remaining = calculateTimeRemaining();
+    setTimeRemaining(remaining);
+
+    // If time is up, auto-submit
+    if (remaining <= 0 && !submitted && !submitting && attemptId) {
+      console.log('[Timer] Time is up! Auto-submitting...');
+      handleSubmit(new Event('submit'));
+      return;
+    }
+
+    // Set up interval to update every second
+    const interval = setInterval(() => {
+      const newRemaining = calculateTimeRemaining();
+      setTimeRemaining(newRemaining);
+
+      // If time is up, auto-submit
+      if (newRemaining <= 0 && !submitted && !submitting && attemptId) {
+        console.log('[Timer] Time is up! Auto-submitting...');
+        clearInterval(interval);
+        handleSubmit(new Event('submit'));
+      }
+    }, 1000);
+
+    // Cleanup interval on unmount or when dependencies change
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startedAt, durationMinutes, submitted, submitting, attemptId]);
+
   const startNewAttempt = async (examPassword) => {
     try {
       setLoading(true);
@@ -321,6 +440,22 @@ function StudentTestPage() {
       console.log('StartAttempt response data in startNewAttempt:', attemptData);
       setAttemptId(attemptData?.attemptId || attemptData?.id || attemptData?.AttemptId);
       
+      // Set timer data from startAttempt response
+      const attemptStartedAt = attemptData.startedAt || attemptData.StartedAt;
+      const attemptDurationMinutes = attemptData.durationMinutes || attemptData.DurationMinutes || exam?.durationMinutes || exam?.DurationMinutes;
+      
+      if (attemptStartedAt && attemptDurationMinutes) {
+        setStartedAt(attemptStartedAt);
+        setDurationMinutes(attemptDurationMinutes);
+        // Calculate initial time remaining
+        const startTime = new Date(attemptStartedAt);
+        const endTime = new Date(startTime.getTime() + attemptDurationMinutes * 60 * 1000);
+        const now = new Date();
+        const remainingSeconds = Math.max(0, Math.floor((endTime - now) / 1000));
+        setTimeRemaining(remainingSeconds);
+        console.log(`[Timer] Started: ${startTime.toISOString()}, Duration: ${attemptDurationMinutes} minutes, Remaining: ${remainingSeconds} seconds`);
+      }
+      
       // Load questions from startAttempt response if available
       // startAttempt returns AttemptStartResponse with Questions array containing QuestionId, OrderIndex, PointsPossible
       // Backend uses PascalCase, but JSON serializer might convert to camelCase
@@ -344,8 +479,8 @@ function StudentTestPage() {
                 return {
                   questionId: questionId,
                   id: questionId, // Use QuestionId as the id for rendering
-                  orderIndex: questionItem?.orderIndex || questionItem?.OrderIndex || index + 1,
-                  points: questionItem?.pointsPossible || questionItem?.PointsPossible,
+                  orderIndex: questionItem?.orderIndex !== undefined ? questionItem.orderIndex : (questionItem?.OrderIndex !== undefined ? questionItem.OrderIndex : index + 1),
+                  points: questionItem?.pointsPossible !== undefined && questionItem.pointsPossible !== null ? questionItem.pointsPossible : (questionItem?.PointsPossible !== undefined && questionItem.PointsPossible !== null ? questionItem.PointsPossible : null),
                   text: fullQuestion.title || fullQuestion.Title || fullQuestion.content || fullQuestion.Content,
                   title: fullQuestion.title || fullQuestion.Title,
                   content: fullQuestion.content || fullQuestion.Content,
@@ -470,28 +605,107 @@ function StudentTestPage() {
   };
 
   const handleOptionChange = async (questionId, answerId) => {
-    const newAnswers = { ...answers, [questionId]: answerId };
+    // Handle both single answer and array of answers
+    // For MCQ, answerId should be the database Id of the MultipleChoiceAnswer
+    // Convert to number to ensure it's the correct type
+    const numericQuestionId = typeof questionId === 'number' ? questionId : parseInt(questionId);
+    const numericAnswerId = typeof answerId === 'number' ? answerId : (typeof answerId === 'string' ? parseInt(answerId) : answerId);
+    
+    if (isNaN(numericQuestionId)) {
+      console.error(`[handleOptionChange] Invalid questionId:`, questionId);
+      return;
+    }
+    
+    if (isNaN(numericAnswerId)) {
+      console.error(`[handleOptionChange] Invalid answerId for question ${numericQuestionId}:`, answerId);
+      return;
+    }
+    
+    console.log(`[handleOptionChange] Question ${numericQuestionId}, Selected answerId: ${numericAnswerId} (type: ${typeof numericAnswerId})`);
+    console.log(`[handleOptionChange] Current answers state:`, answers);
+    console.log(`[handleOptionChange] Current answer for question ${numericQuestionId}:`, answers[numericQuestionId]);
+    
+    // Ensure questionId is consistent (always use numeric)
+    const newAnswers = { ...answers, [numericQuestionId]: numericAnswerId };
+    console.log(`[handleOptionChange] New answers state:`, newAnswers);
+    console.log(`[handleOptionChange] New answer for question ${numericQuestionId}:`, newAnswers[numericQuestionId]);
     setAnswers(newAnswers);
 
-    // Submit answer to API if attemptId exists
-    if (attemptId && examId) {
-      try {
-        // Backend expects: { questionId, selectedAnswerIds: "10,11", textAnswer }
-        // The service will format answerId to the correct format
-        const result = await examAttemptService.submitAnswer(examId, attemptId, {
-          questionId: questionId,
-          answerIds: answerId, // Can be number, array, or string - service will format it
-        });
-        
-        if (result.success) {
-          // Optionally show a subtle notification
-          console.log('Answer saved successfully for question', questionId);
+    // Submit answer to API if attemptId exists and not already submitted
+    if (!attemptId) {
+      console.error(`[handleOptionChange] Cannot save answer - attemptId is null or undefined`);
+      message.error('Không tìm thấy thông tin lần làm bài. Vui lòng tải lại trang.');
+      return;
+    }
+    
+    if (!examId) {
+      console.error(`[handleOptionChange] Cannot save answer - examId is null or undefined`);
+      message.error('Không tìm thấy thông tin bài thi. Vui lòng tải lại trang.');
+      return;
+    }
+    
+    if (submitted) {
+      console.warn(`[handleOptionChange] Cannot save answer - attempt already submitted`);
+      return;
+    }
+    
+    try {
+      // Backend expects: { questionId, selectedAnswerIds: List<int>, textAnswer, answerData }
+      // Convert answerId to array format (always array for consistency)
+      const selectedAnswerIds = [numericAnswerId];
+      
+      console.log(`[handleOptionChange] Preparing to save answer:`, {
+        examId: examId,
+        attemptId: attemptId,
+        questionId: numericQuestionId,
+        selectedAnswerIds: selectedAnswerIds,
+        selectedAnswerIdsType: Array.isArray(selectedAnswerIds) ? 'array' : typeof selectedAnswerIds,
+        selectedAnswerIdsLength: selectedAnswerIds.length
+      });
+      
+      const result = await examAttemptService.submitAnswer(examId, attemptId, {
+        questionId: numericQuestionId,
+        selectedAnswerIds: selectedAnswerIds, // Array of numbers (database Ids)
+      });
+      
+      if (result.success) {
+        console.log(`[handleOptionChange] Answer saved successfully for question ${numericQuestionId}, answerId: ${numericAnswerId}`);
+      } else {
+        console.error(`[handleOptionChange] Failed to save answer for question ${numericQuestionId}:`, result.message, result.error);
+        // If attempt is already submitted, don't try to save again
+        if (result.message && (result.message.includes('submitted') || result.message.includes('SUBMITTED'))) {
+          setSubmitted(true);
+          message.warning('Bài thi đã được nộp, không thể lưu câu trả lời');
         } else {
-          console.warn('Failed to save answer:', result.message);
+          message.error(`Không thể lưu câu trả lời: ${result.message || 'Lỗi không xác định'}`);
         }
-      } catch (err) {
-        console.error('Error saving answer:', err);
-        // Don't show error to user on every answer change, just log it
+      }
+    } catch (err) {
+      console.error(`[handleOptionChange] Error saving answer for question ${numericQuestionId}:`, err);
+      console.error(`[handleOptionChange] Error details:`, {
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        message: err.message,
+        stack: err.stack
+      });
+      // Check if error is due to attempt already submitted
+      if (err.response?.status === 400) {
+        const errorData = err.response?.data;
+        const errorMessage = errorData?.message || errorData?.Message || err.message || '';
+        if (errorMessage.includes('submitted') || errorMessage.includes('SUBMITTED') || errorMessage.includes('CANNOT_SAVE_ANSWER')) {
+          console.warn('Attempt may already be submitted, stopping answer saves');
+          setSubmitted(true);
+          message.warning('Bài thi đã được nộp, không thể lưu câu trả lời');
+        } else {
+          message.error(`Lỗi khi lưu câu trả lời: ${errorMessage}`);
+        }
+      } else if (err.response?.status === 401) {
+        message.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      } else if (err.response?.status === 404) {
+        message.error('Không tìm thấy attempt hoặc exam. Vui lòng tải lại trang.');
+      } else {
+        message.error('Có lỗi xảy ra khi lưu câu trả lời. Vui lòng thử lại.');
       }
     }
   };
@@ -518,24 +732,41 @@ function StudentTestPage() {
       setSubmitted(true);
       message.success('Đã nộp bài thi thành công');
 
-      // Navigate to result page
-      // Get the attempt details to show results
-      const attemptResponse = await examAttemptService.getAttemptById(examId, attemptId);
+      // SubmitResponse: { AttemptId, TotalScore, ScorePercentage, Passed, Details: List<SubmitQuestionDetail> }
+      // SubmitQuestionDetail: { QuestionId, PointsPossible, PointsEarned, Correct, Explanation? }
+      const submitData = submitResponse.data;
+      console.log('[StudentTestPage] Submit response data:', submitData);
       
+      // Clear attemptId, answers, and timer to prevent resuming this attempt
+      // This ensures that when user comes back, a new attempt will be started
+      setAttemptId(null);
+      setAnswers({});
+      setTimeRemaining(null);
+      setStartedAt(null);
+      setDurationMinutes(null);
+      
+      // Navigate to result page with submit response data
       const resultData = {
         examId,
-        attemptId,
-        examTitle: exam?.title || 'Kết quả bài thi',
-        score: attemptResponse.data?.score || 0,
+        attemptId: submitData?.attemptId || submitData?.AttemptId || attemptId,
+        examTitle: exam?.title || exam?.Title || 'Kết quả bài thi',
+        totalScore: submitData?.totalScore !== undefined ? submitData.totalScore : (submitData?.TotalScore !== undefined ? submitData.TotalScore : 0),
+        scorePercentage: submitData?.scorePercentage !== undefined ? submitData.scorePercentage : (submitData?.ScorePercentage !== undefined ? submitData.ScorePercentage : 0),
+        passed: submitData?.passed !== undefined ? submitData.passed : (submitData?.Passed !== undefined ? submitData.Passed : false),
+        details: submitData?.details || submitData?.Details || [],
         totalQuestions: exam?.totalQuestions || exam?.questions?.length || 0,
-        totalPoints: exam?.totalPoints || 10,
+        totalPoints: exam?.totalPoints || exam?.TotalPoints || 10,
         answers: answers,
         questions: exam?.questions || [],
-        attemptData: attemptResponse.data
+        submitData: submitData
       };
 
+      // Navigate to result page - this will clear the page state
+      // When user comes back to this page, useEffect will run again and check for latest attempt
+      // Since the attempt is now Submitted (status=1), it will start a new attempt
       navigate('/student-test/result', {
-        state: resultData
+        state: resultData,
+        replace: true // Use replace to prevent going back to the test page
       });
     } catch (err) {
       console.error('Error submitting exam:', err);
@@ -663,7 +894,7 @@ function StudentTestPage() {
             <Text className="chemistry-subtitle" style={{ fontSize: 16 }}>
               {exam.description || ''}
             </Text>
-            <div style={{ marginTop: 12, display: 'flex', gap: 24 }}>
+            <div style={{ marginTop: 12, display: 'flex', gap: 24, flexWrap: 'wrap' }}>
               <Space>
                 <ClockCircleOutlined />
                 <Text strong>{duration} phút</Text>
@@ -675,6 +906,23 @@ function StudentTestPage() {
               {exam.totalPoints && (
                 <Space>
                   <Text strong>Tổng điểm: {exam.totalPoints}</Text>
+                </Space>
+              )}
+              {/* Timer display */}
+              {timeRemaining !== null && timeRemaining >= 0 && !submitted && (
+                <Space>
+                  <ClockCircleOutlined style={{ 
+                    color: timeRemaining <= 60 ? '#ff4d4f' : (timeRemaining <= 300 ? '#faad14' : '#52c41a'),
+                    fontSize: 18
+                  }} />
+                  <Text strong style={{ 
+                    fontSize: 18,
+                    color: timeRemaining <= 60 ? '#ff4d4f' : (timeRemaining <= 300 ? '#faad14' : '#52c41a'),
+                    fontFamily: 'monospace'
+                  }}>
+                    {Math.floor(timeRemaining / 60).toString().padStart(2, '0')}:
+                    {(timeRemaining % 60).toString().padStart(2, '0')}
+                  </Text>
                 </Space>
               )}
             </div>
@@ -703,6 +951,17 @@ function StudentTestPage() {
               // Use options from loaded question data
               const options = q.options || q.multipleChoiceAnswers || q.MultipleChoiceAnswers || q.question?.multipleChoiceAnswers || q.question?.MultipleChoiceAnswers || [];
               
+              // Debug logging
+              if (idx === 0) {
+                console.log(`[StudentTestPage] First question debug:`, {
+                  questionId: questionId,
+                  questionText: questionText,
+                  optionsCount: options.length,
+                  options: options,
+                  fullQuestion: q
+                });
+              }
+              
               return (
                 <Card key={questionId} className="chemistry-card">
                   <Title level={5} style={{ marginBottom: 16, color: 'var(--chem-purple-dark)' }}>
@@ -710,8 +969,14 @@ function StudentTestPage() {
                   </Title>
                   {options.length > 0 ? (
                     <Radio.Group
-                      value={answers[questionId]}
-                      onChange={(e) => handleOptionChange(questionId, e.target.value)}
+                      value={answers[questionId] || answers[parseInt(questionId)] || answers[String(questionId)]}
+                      onChange={(e) => {
+                        const selectedValue = e.target.value;
+                        console.log(`[Radio.Group onChange] Question ${questionId} (type: ${typeof questionId}), Selected value:`, selectedValue, 'Type:', typeof selectedValue);
+                        console.log(`[Radio.Group onChange] Current answers state:`, answers);
+                        console.log(`[Radio.Group onChange] Current answer for question ${questionId}:`, answers[questionId]);
+                        handleOptionChange(questionId, selectedValue);
+                      }}
                       disabled={submitted || submitting}
                       style={{ width: '100%' }}
                     >
@@ -722,12 +987,28 @@ function StudentTestPage() {
                             ? opt 
                             : (opt.answerText || opt.AnswerText || opt.text || opt.option || opt.Text || '');
                           
-                          // Use answer ID from backend if available, otherwise use composite key
-                          const answerId = opt.id !== undefined && opt.id !== null ? opt.id : 
-                                         (opt.Id !== undefined && opt.Id !== null ? opt.Id :
-                                         (opt.answerId !== undefined && opt.answerId !== null ? opt.answerId :
-                                         (opt.AnswerId !== undefined && opt.AnswerId !== null ? opt.AnswerId :
-                                         `${questionId}_${oidx}`)));
+                          // Use answer ID from backend - MUST be the database Id, not a composite key
+                          // Backend maps: Id = a.Id (from QuestionMultipleChoiceAnswer.Id)
+                          // Handle both camelCase and PascalCase
+                          let answerId = null;
+                          if (opt.id !== undefined && opt.id !== null && !isNaN(parseInt(opt.id))) {
+                            answerId = typeof opt.id === 'number' ? opt.id : parseInt(opt.id);
+                          } else if (opt.Id !== undefined && opt.Id !== null && !isNaN(parseInt(opt.Id))) {
+                            answerId = typeof opt.Id === 'number' ? opt.Id : parseInt(opt.Id);
+                          } else if (opt.answerId !== undefined && opt.answerId !== null && !isNaN(parseInt(opt.answerId))) {
+                            answerId = typeof opt.answerId === 'number' ? opt.answerId : parseInt(opt.answerId);
+                          } else if (opt.AnswerId !== undefined && opt.AnswerId !== null && !isNaN(parseInt(opt.AnswerId))) {
+                            answerId = typeof opt.AnswerId === 'number' ? opt.AnswerId : parseInt(opt.AnswerId);
+                          }
+                          
+                          // If no valid Id found, log error and use a fallback (but this should not happen)
+                          if (answerId === null || isNaN(answerId)) {
+                            console.error(`[StudentTestPage] No valid answer Id found for question ${questionId}, option ${oidx}:`, opt);
+                            // Fallback: use index, but this will cause grading to fail
+                            answerId = oidx;
+                          }
+                          
+                          console.log(`[StudentTestPage] Question ${questionId}, Option ${oidx}: answerId=${answerId}, optionText="${optionText}"`, opt);
                           
                           return (
                             <Radio key={`${questionId}_opt_${oidx}`} value={answerId} style={{ fontSize: 16, padding: '8px 0' }}>

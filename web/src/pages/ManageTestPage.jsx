@@ -20,7 +20,9 @@ import {
   Tag,
   Progress,
   message,
-  Tooltip
+  Tooltip,
+  Alert,
+  Spin
 } from 'antd';
 import {
   SearchOutlined,
@@ -46,6 +48,7 @@ import examService from '../services/examService';
 import examMatrixService from '../services/examMatrixService';
 import { questionBankService } from '../services/questionBankService';
 import questionService from '../services/questionService';
+import examAttemptService from '../services/examAttemptService';
 import api from '../services/axios';
 
 // Helper function to get current user ID from JWT token
@@ -142,6 +145,8 @@ const ManageTestPage = () => {
   const [loadingExamMatrices, setLoadingExamMatrices] = useState(false);
   const [availableQuestions, setAvailableQuestions] = useState([]);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
+  const [matrixValidation, setMatrixValidation] = useState(null);
+  const [validatingMatrix, setValidatingMatrix] = useState(false);
 
   // Load current user ID and initial data on mount
   useEffect(() => {
@@ -195,6 +200,47 @@ const ManageTestPage = () => {
       setQuestionBanks([]);
     } finally {
       setLoadingQuestionBanks(false);
+    }
+  };
+
+  // Validate exam matrix to check if it has enough questions
+  const validateMatrix = async (matrixId) => {
+    setValidatingMatrix(true);
+    try {
+      const result = await examMatrixService.validateExamMatrix(matrixId);
+      
+      if (result.success && result.data) {
+        // Handle both camelCase and PascalCase
+        const validationData = result.data;
+        const ok = validationData.ok !== undefined ? validationData.ok : (validationData.Ok !== undefined ? validationData.Ok : true);
+        const shortages = validationData.shortages || validationData.Shortages || [];
+        
+        setMatrixValidation({
+          ok: ok,
+          shortages: shortages
+        });
+        
+        if (!ok && shortages.length > 0) {
+          const shortageMessages = shortages.map(s => {
+            const needed = s.needed || s.Needed || 0;
+            const available = s.available || s.Available || 0;
+            return `Cần ${needed} câu nhưng chỉ có ${available} câu`;
+          }).join(', ');
+          message.warning(`Ma trận đề không đủ câu hỏi: ${shortageMessages}`);
+        } else if (ok) {
+          message.success('Ma trận đề có đủ câu hỏi để tạo đề thi');
+        }
+      } else {
+        console.error('Failed to validate matrix:', result.message);
+        setMatrixValidation(null);
+        message.error('Không thể kiểm tra ma trận đề');
+      }
+    } catch (error) {
+      console.error('Error validating matrix:', error);
+      setMatrixValidation(null);
+      message.error('Có lỗi xảy ra khi kiểm tra ma trận đề');
+    } finally {
+      setValidatingMatrix(false);
     }
   };
 
@@ -323,7 +369,8 @@ const ManageTestPage = () => {
           }
         }
         
-        const mappedTests = examsArray.map(exam => {
+        // Load attempts for each exam to get statistics
+        const mappedTests = await Promise.all(examsArray.map(async (exam) => {
           // Handle both camelCase and PascalCase
           const examId = exam.id !== undefined ? exam.id : (exam.Id !== undefined ? exam.Id : null);
           const examTitle = exam.title !== undefined ? exam.title : (exam.Title !== undefined ? exam.Title : '');
@@ -338,6 +385,51 @@ const ManageTestPage = () => {
           // Map StatusEnum: 0=Draft, 1=Inactive, 2=Active to string
           const status = examStatusEnum === 0 ? 'draft' : (examStatusEnum === 2 ? 'active' : 'inactive');
           
+          // Load attempts for this exam to get statistics
+          let studentAttempts = 0;
+          let averageScore = 0;
+          let passRate = 0;
+          
+          if (examId) {
+            try {
+              const attemptsResult = await examAttemptService.getExamAttempts(examId);
+              if (attemptsResult.success && attemptsResult.data) {
+                const attempts = Array.isArray(attemptsResult.data) ? attemptsResult.data : [];
+                studentAttempts = attempts.length;
+                
+                // Calculate average score and pass rate from submitted attempts
+                // Status: 0 = InProgress, 1 = Submitted, 2 = Graded, 3 = Expired
+                // We count both Submitted (1) and Graded (2) as submitted
+                const submittedAttempts = attempts.filter(a => {
+                  const status = a.Status !== undefined ? a.Status : a.status;
+                  return status === 1 || status === 2; // Status 1 = Submitted, Status 2 = Graded
+                });
+                if (submittedAttempts.length > 0) {
+                  const totalScore = submittedAttempts.reduce((sum, a) => {
+                    const score = a.ScorePercentage !== undefined && a.ScorePercentage !== null 
+                      ? a.ScorePercentage 
+                      : (a.scorePercentage !== undefined && a.scorePercentage !== null ? a.scorePercentage : 0);
+                    return sum + score;
+                  }, 0);
+                  averageScore = totalScore / submittedAttempts.length;
+                  
+                  // Calculate pass rate (assuming pass threshold is 50%)
+                  const passThreshold = exam.passThreshold || exam.PassThreshold || 50;
+                  const passedCount = submittedAttempts.filter(a => {
+                    const score = a.ScorePercentage !== undefined && a.ScorePercentage !== null 
+                      ? a.ScorePercentage 
+                      : (a.scorePercentage !== undefined && a.scorePercentage !== null ? a.scorePercentage : 0);
+                    return score >= passThreshold;
+                  }).length;
+                  passRate = (passedCount / submittedAttempts.length) * 100;
+                }
+              }
+            } catch (error) {
+              console.error(`Error loading attempts for exam ${examId}:`, error);
+              // Use defaults if loading fails
+            }
+          }
+          
           return {
             id: examId,
             title: examTitle,
@@ -349,14 +441,13 @@ const ManageTestPage = () => {
             duration: examDurationMinutes,
             gradeLevel: examGradeLevel,
             createdAt: examCreatedAt,
-            // These might not be in ExamResponse, set defaults
-            studentAttempts: exam.studentAttempts || exam.StudentAttempts || 0,
-            averageScore: exam.averageScore || exam.AverageScore || 0,
-            passRate: exam.passRate || exam.PassRate || 0,
+            studentAttempts: studentAttempts,
+            averageScore: averageScore,
+            passRate: passRate,
             // Keep original data for details
             rawData: exam
           };
-        });
+        }));
         
         console.log('Loaded and mapped exams:', mappedTests);
         setTests(mappedTests);
@@ -391,6 +482,41 @@ const ManageTestPage = () => {
       
       const isFromMatrix = examMatrixId !== null && !isNaN(examMatrixId);
       
+      // If creating from matrix, validate first
+      if (isFromMatrix) {
+        // Re-validate matrix before creating exam
+        setValidatingMatrix(true);
+        try {
+          const validationResult = await examMatrixService.validateExamMatrix(examMatrixId);
+          
+          if (validationResult.success && validationResult.data) {
+            const validationData = validationResult.data;
+            const ok = validationData.ok !== undefined ? validationData.ok : (validationData.Ok !== undefined ? validationData.Ok : true);
+            const shortages = validationData.shortages || validationData.Shortages || [];
+            
+            if (!ok && shortages.length > 0) {
+              const shortageMessages = shortages.map(s => {
+                const needed = s.needed || s.Needed || 0;
+                const available = s.available || s.Available || 0;
+                return `Cần ${needed} câu nhưng chỉ có ${available} câu`;
+              }).join(', ');
+              
+              message.warning(`Ma trận đề không đủ câu hỏi: ${shortageMessages}. Vui lòng kiểm tra lại trước khi tạo đề thi.`);
+              setLoading(false);
+              setValidatingMatrix(false);
+              return;
+            }
+          } else {
+            console.warn('Failed to validate matrix, but continuing with exam creation');
+          }
+        } catch (error) {
+          console.error('Error validating matrix:', error);
+          message.warning('Không thể kiểm tra ma trận đề. Vẫn tiếp tục tạo đề thi...');
+        } finally {
+          setValidatingMatrix(false);
+        }
+      }
+      
       // Format dates for API
       const startTime = values.startTime ? dayjs(values.startTime).toISOString() : null;
       const endTime = values.endTime ? dayjs(values.endTime).toISOString() : null;
@@ -406,10 +532,21 @@ const ManageTestPage = () => {
         }
       }
       
+      // Ensure currentUserId is a number
+      const teacherId = currentUserId 
+        ? (typeof currentUserId === 'number' ? currentUserId : parseInt(currentUserId))
+        : 1;
+      
+      if (!teacherId || isNaN(teacherId)) {
+        message.error('Không tìm thấy thông tin giáo viên. Vui lòng đăng nhập lại.');
+        setLoading(false);
+        return;
+      }
+      
       const examData = {
         title: values.title || '',
         description: values.description || '',
-        createdByTeacher: currentUserId || 1, // Backend will override from JWT anyway
+        createdByTeacher: teacherId, // Must be a number, not string
         gradeLevel: values.learningLevel ? parseInt(values.learningLevel.replace('Lớp ', '')) : null,
         durationMinutes: values.duration || null,
         passThreshold: values.passThreshold !== undefined && values.passThreshold !== null ? values.passThreshold : null,
@@ -442,70 +579,91 @@ const ManageTestPage = () => {
 
       if (result.success) {
         const createdExamId = result.data?.id || result.data?.Id;
+        const createdExam = result.data;
         
-        // If questionBankId is selected, add questions from QuestionBank to the exam
-        const questionBankId = values.questionBankId;
-        if (questionBankId && createdExamId) {
-          try {
-            // Load questions from QuestionBank
-            const questionsResult = await questionService.getQuestions({
-              bankId: questionBankId,
-              active: true
-            });
-            
-            if (questionsResult.success && questionsResult.data && questionsResult.data.length > 0) {
-              // Add all questions from QuestionBank to the exam
-              const questionsToAdd = questionsResult.data;
-              const totalQuestions = questionsToAdd.length;
-              const totalPoints = values.totalPoints || 100;
-              const pointsPerQuestion = totalPoints / totalQuestions;
-              
-              let addedCount = 0;
-              for (let i = 0; i < questionsToAdd.length; i++) {
-                const question = questionsToAdd[i];
-                const questionId = question.id || question.Id;
-                
-                if (questionId) {
-                  try {
-                    const addResult = await examService.addQuestionToExam(createdExamId, {
-                      questionId: questionId,
-                      points: pointsPerQuestion,
-                      orderIndex: i + 1
-                    });
-                    
-                    if (addResult.success) {
-                      addedCount++;
-                    }
-                  } catch (error) {
-                    console.error(`Error adding question ${questionId}:`, error);
-                  }
-                }
-              }
-              
-              if (addedCount > 0) {
-                // Update exam with correct totalQuestions and totalPoints after adding questions
-                try {
-                  await examService.updateExam(createdExamId, {
-                    totalQuestions: addedCount,
-                    totalPoints: values.totalPoints || (addedCount * pointsPerQuestion)
-                  });
-                } catch (updateError) {
-                  console.error('Error updating exam totals:', updateError);
-                }
-                
-                message.success(`Tạo bài kiểm tra thành công! Đã thêm ${addedCount}/${totalQuestions} câu hỏi từ ngân hàng câu hỏi.`);
-              } else {
-                message.warning('Tạo bài kiểm tra thành công nhưng không thể thêm câu hỏi từ ngân hàng câu hỏi.');
-              }
-            } else {
-              message.warning('Tạo bài kiểm tra thành công nhưng ngân hàng câu hỏi không có câu hỏi nào.');
-            }
-          } catch (error) {
-            console.error('Error adding questions from QuestionBank:', error);
-            message.warning('Tạo bài kiểm tra thành công nhưng có lỗi khi thêm câu hỏi từ ngân hàng câu hỏi.');
+        // Check if exam was created from matrix
+        if (isFromMatrix) {
+          // When creating from matrix, backend already generates questions automatically
+          // Just check if questions were included in response
+          const questionsCount = createdExam?.questions?.length || createdExam?.Questions?.length || 0;
+          const totalQuestions = createdExam?.totalQuestions || createdExam?.TotalQuestions || 0;
+          
+          console.log('[ManageTestPage] Exam created from matrix:', {
+            examId: createdExamId,
+            questionsInResponse: questionsCount,
+            totalQuestions: totalQuestions
+          });
+          
+          if (questionsCount > 0 || totalQuestions > 0) {
+            message.success(`Tạo bài kiểm tra từ ma trận thành công! Đã tạo ${totalQuestions} câu hỏi.`);
+          } else {
+            message.warning('Tạo bài kiểm tra thành công nhưng không có câu hỏi nào được tạo. Vui lòng kiểm tra lại ma trận đề.');
           }
         } else {
-          message.success(result.message || 'Tạo bài kiểm tra thành công!');
+          // Manual creation: If questionBankId is selected, add questions from QuestionBank to the exam
+          const questionBankId = values.questionBankId;
+          if (questionBankId && createdExamId) {
+            try {
+              // Load questions from QuestionBank
+              const questionsResult = await questionService.getQuestions({
+                bankId: questionBankId,
+                active: true
+              });
+              
+              if (questionsResult.success && questionsResult.data && questionsResult.data.length > 0) {
+                // Add all questions from QuestionBank to the exam
+                const questionsToAdd = questionsResult.data;
+                const totalQuestions = questionsToAdd.length;
+                const totalPoints = values.totalPoints || 100;
+                const pointsPerQuestion = totalPoints / totalQuestions;
+                
+                let addedCount = 0;
+                for (let i = 0; i < questionsToAdd.length; i++) {
+                  const question = questionsToAdd[i];
+                  const questionId = question.id || question.Id;
+                  
+                  if (questionId) {
+                    try {
+                      const addResult = await examService.addQuestionToExam(createdExamId, {
+                        questionId: questionId,
+                        points: pointsPerQuestion,
+                        orderIndex: i + 1
+                      });
+                      
+                      if (addResult.success) {
+                        addedCount++;
+                      }
+                    } catch (error) {
+                      console.error(`Error adding question ${questionId}:`, error);
+                    }
+                  }
+                }
+                
+                if (addedCount > 0) {
+                  // Update exam with correct totalQuestions and totalPoints after adding questions
+                  try {
+                    await examService.updateExam(createdExamId, {
+                      totalQuestions: addedCount,
+                      totalPoints: values.totalPoints || (addedCount * pointsPerQuestion)
+                    });
+                  } catch (updateError) {
+                    console.error('Error updating exam totals:', updateError);
+                  }
+                  
+                  message.success(`Tạo bài kiểm tra thành công! Đã thêm ${addedCount}/${totalQuestions} câu hỏi từ ngân hàng câu hỏi.`);
+                } else {
+                  message.warning('Tạo bài kiểm tra thành công nhưng không thể thêm câu hỏi từ ngân hàng câu hỏi.');
+                }
+              } else {
+                message.warning('Tạo bài kiểm tra thành công nhưng ngân hàng câu hỏi không có câu hỏi nào.');
+              }
+            } catch (error) {
+              console.error('Error adding questions from QuestionBank:', error);
+              message.warning('Tạo bài kiểm tra thành công nhưng có lỗi khi thêm câu hỏi từ ngân hàng câu hỏi.');
+            }
+          } else {
+            message.success(result.message || 'Tạo bài kiểm tra thành công!');
+          }
         }
         
         setIsCreateModalVisible(false);
@@ -629,9 +787,60 @@ const ManageTestPage = () => {
           );
         }
         
+        // Load attempts for this exam
+        const attemptsResult = await examAttemptService.getExamAttempts(examId);
+        let attempts = [];
+        let attemptsStats = {
+          totalAttempts: 0,
+          submittedAttempts: 0,
+          inProgressAttempts: 0,
+          averageScore: 0,
+          passRate: 0
+        };
+        
+        if (attemptsResult.success && attemptsResult.data) {
+          attempts = Array.isArray(attemptsResult.data) ? attemptsResult.data : [];
+          
+          // Calculate statistics
+          attemptsStats.totalAttempts = attempts.length;
+          // Status: 0 = InProgress, 1 = Submitted, 2 = Graded, 3 = Expired
+          const submittedAttempts = attempts.filter(a => {
+            const status = a.Status !== undefined ? a.Status : a.status;
+            return status === 1 || status === 2; // Status 1 = Submitted, Status 2 = Graded
+          });
+          attemptsStats.submittedAttempts = submittedAttempts.length;
+          attemptsStats.inProgressAttempts = attempts.filter(a => {
+            const status = a.Status !== undefined ? a.Status : a.status;
+            return status === 0; // Status 0 = InProgress
+          }).length;
+          
+          // Calculate average score from submitted attempts
+          if (submittedAttempts.length > 0) {
+            const totalScore = submittedAttempts.reduce((sum, a) => {
+              const score = a.ScorePercentage !== undefined && a.ScorePercentage !== null 
+                ? a.ScorePercentage 
+                : (a.scorePercentage !== undefined && a.scorePercentage !== null ? a.scorePercentage : 0);
+              return sum + score;
+            }, 0);
+            attemptsStats.averageScore = totalScore / submittedAttempts.length;
+            
+            // Calculate pass rate (assuming pass threshold is 50%)
+            const passThreshold = result.data.passThreshold || result.data.PassThreshold || 50;
+            const passedCount = submittedAttempts.filter(a => {
+              const score = a.ScorePercentage !== undefined && a.ScorePercentage !== null 
+                ? a.ScorePercentage 
+                : (a.scorePercentage !== undefined && a.scorePercentage !== null ? a.scorePercentage : 0);
+              return score >= passThreshold;
+            }).length;
+            attemptsStats.passRate = (passedCount / submittedAttempts.length) * 100;
+          }
+        }
+        
         const examWithQuestions = {
           ...result.data,
-          questions: examQuestions
+          questions: examQuestions,
+          attempts: attempts,
+          attemptsStats: attemptsStats
         };
         
         setSelectedTest(examWithQuestions);
@@ -865,39 +1074,89 @@ const ManageTestPage = () => {
 
   const studentColumns = [
     {
-      title: 'Họ tên',
-      dataIndex: 'name',
-      key: 'name'
+      title: 'STT',
+      key: 'index',
+      width: 60,
+      render: (_, __, index) => index + 1
     },
     {
       title: 'Mã học sinh',
-      dataIndex: 'studentId',
-      key: 'studentId'
+      dataIndex: 'StudentId',
+      key: 'studentId',
+      render: (studentId, record) => studentId || record.studentId || '-'
+    },
+    {
+      title: 'Lần thử',
+      dataIndex: 'AttemptNumber',
+      key: 'attemptNumber',
+      render: (attemptNumber, record) => attemptNumber || record.attemptNumber || 1
     },
     {
       title: 'Điểm số',
-      dataIndex: 'score',
       key: 'score',
-      render: (score) => (
-        <Tag color={score >= 8 ? 'green' : score >= 6 ? 'orange' : 'red'}>
-          {score}/10
-        </Tag>
-      )
+      render: (_, record) => {
+        const scorePercentage = record.ScorePercentage !== undefined && record.ScorePercentage !== null
+          ? record.ScorePercentage
+          : (record.scorePercentage !== undefined && record.scorePercentage !== null ? record.scorePercentage : null);
+        const totalScore = record.TotalScore !== undefined && record.TotalScore !== null
+          ? record.TotalScore
+          : (record.totalScore !== undefined && record.totalScore !== null ? record.totalScore : null);
+        
+        if (scorePercentage !== null && scorePercentage !== undefined) {
+          return (
+            <Tag color={scorePercentage >= 80 ? 'green' : scorePercentage >= 60 ? 'orange' : 'red'}>
+              {scorePercentage.toFixed(2)}%
+            </Tag>
+          );
+        } else if (totalScore !== null && totalScore !== undefined) {
+          return (
+            <Tag color="blue">
+              {totalScore}
+            </Tag>
+          );
+        }
+        return <Tag>-</Tag>;
+      }
     },
     {
-      title: 'Thời gian làm bài',
-      dataIndex: 'attemptTime',
-      key: 'attemptTime'
+      title: 'Bắt đầu',
+      dataIndex: 'StartedAt',
+      key: 'startedAt',
+      render: (startedAt, record) => {
+        const date = startedAt || record.startedAt;
+        if (date) {
+          return dayjs(date).format('DD/MM/YYYY HH:mm');
+        }
+        return '-';
+      }
+    },
+    {
+      title: 'Nộp bài',
+      dataIndex: 'SubmittedAt',
+      key: 'submittedAt',
+      render: (submittedAt, record) => {
+        const date = submittedAt || record.submittedAt;
+        if (date) {
+          return dayjs(date).format('DD/MM/YYYY HH:mm');
+        }
+        return '-';
+      }
     },
     {
       title: 'Trạng thái',
-      dataIndex: 'status',
+      dataIndex: 'Status',
       key: 'status',
-      render: (status) => (
-        <Tag color={status === 'completed' ? 'green' : 'orange'}>
-          {status === 'completed' ? 'Hoàn thành' : 'Đang làm'}
-        </Tag>
-      )
+      render: (status, record) => {
+        const statusValue = status !== undefined ? status : (record.status !== undefined ? record.status : null);
+        // Status: 0 = InProgress, 1 = Submitted, 2 = Graded, 3 = Expired
+        if (statusValue === 1 || statusValue === 2 || statusValue === 'Submitted' || statusValue === 'Graded') {
+          return <Tag color="green">Đã nộp</Tag>;
+        } else if (statusValue === 0 || statusValue === 'InProgress') {
+          return <Tag color="orange">Đang làm</Tag>;
+        } else {
+          return <Tag color="default">Chưa bắt đầu</Tag>;
+        }
+      }
     }
   ];
 
@@ -1147,6 +1406,12 @@ const ManageTestPage = () => {
                   placeholder="Chọn ma trận đề (tùy chọn)"
                   loading={loadingExamMatrices}
                   allowClear
+                  onChange={async (value) => {
+                    setMatrixValidation(null);
+                    if (value) {
+                      await validateMatrix(value);
+                    }
+                  }}
                 >
                   {examMatrices.map(matrix => (
                     <Option key={matrix.id} value={matrix.id}>
@@ -1164,11 +1429,56 @@ const ManageTestPage = () => {
               
               if (examMatrixId) {
                 return (
-                  <Row>
+                  <Row gutter={16}>
                     <Col span={24}>
                       <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginBottom: 16 }}>
                         <ExperimentOutlined /> Bài thi sẽ được tạo tự động từ ma trận đề đã chọn. Các câu hỏi sẽ được chọn ngẫu nhiên theo cấu hình ma trận.
                       </Text>
+                      
+                      {/* Matrix Validation Status */}
+                      {validatingMatrix && (
+                        <Alert
+                          message="Đang kiểm tra ma trận đề..."
+                          description="Đang kiểm tra xem ma trận đề có đủ câu hỏi để tạo đề thi không."
+                          type="info"
+                          icon={<Spin size="small" />}
+                          showIcon
+                          style={{ marginBottom: 16 }}
+                        />
+                      )}
+                      
+                      {!validatingMatrix && matrixValidation && (
+                        <Alert
+                          message={matrixValidation.ok ? "Ma trận đề hợp lệ" : "Ma trận đề không đủ câu hỏi"}
+                          description={
+                            matrixValidation.ok ? (
+                              <Text type="success">Ma trận đề có đủ câu hỏi để tạo đề thi.</Text>
+                            ) : (
+                              <div>
+                                <Text type="danger">Một số items trong ma trận không có đủ câu hỏi:</Text>
+                                <ul style={{ marginTop: 8, marginBottom: 0 }}>
+                                  {matrixValidation.shortages.map((shortage, index) => {
+                                    const needed = shortage.needed || shortage.Needed || 0;
+                                    const available = shortage.available || shortage.Available || 0;
+                                    const itemId = shortage.itemId || shortage.ItemId;
+                                    return (
+                                      <li key={index}>
+                                        Item #{itemId}: Cần {needed} câu nhưng chỉ có {available} câu
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                                <Text type="warning" style={{ fontSize: '12px', display: 'block', marginTop: 8 }}>
+                                  Vui lòng kiểm tra lại các items trong ma trận hoặc thêm câu hỏi vào ngân hàng câu hỏi.
+                                </Text>
+                              </div>
+                            )
+                          }
+                          type={matrixValidation.ok ? "success" : "warning"}
+                          showIcon
+                          style={{ marginBottom: 16 }}
+                        />
+                      )}
                     </Col>
                   </Row>
                 );
@@ -1457,32 +1767,42 @@ const ManageTestPage = () => {
         {selectedTest && (
           <div>
             <Row gutter={16} style={{ marginBottom: 24 }}>
-              <Col span={8}>
+              <Col span={6}>
                 <Card className="chemistry-stat-card">
                   <Statistic
                     title="Tổng lần thử"
-                    value={selectedTest.studentAttempts}
+                    value={selectedTest.attemptsStats?.totalAttempts || selectedTest.studentAttempts || 0}
                     prefix={<UserOutlined />}
                     valueStyle={{ color: '#1890ff' }}
                   />
                 </Card>
               </Col>
-              <Col span={8}>
+              <Col span={6}>
+                <Card className="chemistry-stat-card">
+                  <Statistic
+                    title="Đã nộp bài"
+                    value={selectedTest.attemptsStats?.submittedAttempts || 0}
+                    prefix={<CheckCircleOutlined />}
+                    valueStyle={{ color: '#52c41a' }}
+                  />
+                </Card>
+              </Col>
+              <Col span={6}>
                 <Card className="chemistry-stat-card">
                   <Statistic
                     title="Điểm trung bình"
-                    value={selectedTest.averageScore}
-                    suffix="/10"
+                    value={selectedTest.attemptsStats?.averageScore ? selectedTest.attemptsStats.averageScore.toFixed(2) : (selectedTest.averageScore || 0)}
+                    suffix="%"
                     prefix={<TrophyOutlined />}
                     valueStyle={{ color: '#52c41a' }}
                   />
                 </Card>
               </Col>
-              <Col span={8}>
+              <Col span={6}>
                 <Card className="chemistry-stat-card">
                   <Statistic
                     title="Tỷ lệ đạt"
-                    value={selectedTest.passRate}
+                    value={selectedTest.attemptsStats?.passRate ? selectedTest.attemptsStats.passRate.toFixed(1) : (selectedTest.passRate || 0)}
                     suffix="%"
                     prefix={<CheckCircleOutlined />}
                     valueStyle={{ color: '#faad14' }}
@@ -1567,14 +1887,18 @@ const ManageTestPage = () => {
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <Title level={5}>Danh sách học sinh đã làm bài</Title>
-              <Table
-                columns={studentColumns}
-                dataSource={mockStudents}
-                rowKey="id"
-                pagination={{ pageSize: 5 }}
-                size="small"
-              />
+              <Title level={5}>Danh sách học sinh đã làm bài ({selectedTest.attempts?.length || 0})</Title>
+              {selectedTest.attempts && selectedTest.attempts.length > 0 ? (
+                <Table
+                  columns={studentColumns}
+                  dataSource={selectedTest.attempts}
+                  rowKey={(record) => record.Id || record.id || Math.random()}
+                  pagination={{ pageSize: 10 }}
+                  size="small"
+                />
+              ) : (
+                <Text type="secondary">Chưa có học sinh nào làm bài</Text>
+              )}
             </div>
 
             <div>

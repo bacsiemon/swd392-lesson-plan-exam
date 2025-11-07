@@ -8,6 +8,7 @@ import StudentDashboard from './pages/StudentDashboard';
 import ManageTestPage from './pages/ManageTestPage';
 import QuestionBankManagement from './pages/QuestionBankManagement';
 import ExamMatrixManagement from './pages/ExamMatrixManagement';
+import QuestionDifficultyManagement from './pages/QuestionDifficultyManagement';
 import Layout from './components/Layout';
 import CreateLessonPlanPage from './pages/CreateLessonPlanPage';
 import AdminUserManagement from './pages/AdminUserManagement';
@@ -56,6 +57,7 @@ function App() {
               <Route path="/manage-tests" element={<ManageTestPage />} />
               <Route path="/question-banks" element={<QuestionBankManagement />} />
               <Route path="/exam-matrix" element={<ExamMatrixManagement />} />
+              <Route path="/question-difficulties" element={<QuestionDifficultyManagement />} />
               <Route path="/admin/users" element={<AdminUserManagement />} />
               <Route path="/" element={<Home />} />
               <Route path="/create-lesson-plan" element={<CreateLessonPlanPage />} />

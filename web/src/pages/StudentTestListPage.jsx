@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Card, 
   Row, 
@@ -31,6 +31,7 @@ import {
   QuestionCircleOutlined
 } from '@ant-design/icons';
 import studentTestService from '../services/studentTestService';
+import examAttemptService from '../services/examAttemptService';
 import ChemistryLoader from '../components/ChemistryLoader';
 import '../styles/chemistryTheme.css';
 
@@ -50,27 +51,95 @@ const BRAND_COLORS = {
 
 const StudentTestListPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [tests, setTests] = useState([]);
   const [filteredTests, setFilteredTests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [difficultyFilter, setDifficultyFilter] = useState('all');
+  const prevLocationRef = useRef(location.pathname);
 
   useEffect(() => {
     loadTests();
+  }, []);
+
+  // Reload tests when navigating back to this page (e.g., from result page)
+  useEffect(() => {
+    // If we're coming from a different page, reload tests to get updated attempt counts
+    // Check if we're on the exam list page (could be /exams or /student-test or other routes)
+    const isExamListPage = location.pathname === '/exams' || 
+                           location.pathname === '/student-test' ||
+                           location.pathname.startsWith('/exams') ||
+                           location.pathname.startsWith('/student-test');
+    
+    if (prevLocationRef.current !== location.pathname && isExamListPage) {
+      console.log('Navigated back to exam list, reloading attempt counts...');
+      loadTests(true);
+    }
+    prevLocationRef.current = location.pathname;
+  }, [location.pathname]);
+
+  // Reload attempt counts when window gains focus (user returns to tab)
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('Window focused, reloading attempt counts...');
+      loadTests(false); // Don't show loading spinner on focus
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
 
   useEffect(() => {
     filterTests();
   }, [tests, searchText, statusFilter, difficultyFilter]);
 
-  const loadTests = async () => {
-    setLoading(true);
+  const loadTests = async (showLoading = true) => {
+    if (showLoading) {
+      setLoading(true);
+    }
     try {
       const response = await studentTestService.getAvailableTests();
       if (response.success) {
-        setTests(response.data || []);
+        const testsData = response.data || [];
+        
+        // Load attempt count for each test
+        const testsWithAttempts = await Promise.all(testsData.map(async (test) => {
+          const examId = test.id;
+          if (examId) {
+            try {
+              // Force fresh fetch by calling API directly
+              const attemptResult = await examAttemptService.getMyAttemptCount(examId);
+              if (attemptResult.success) {
+                console.log(`Exam ${examId} (${test.title}): Loaded ${attemptResult.count} total attempts, ${attemptResult.submittedCount || 0} submitted attempts`);
+                return {
+                  ...test,
+                  attempts: attemptResult.count || 0, // Total attempts (all statuses)
+                  submittedAttempts: attemptResult.submittedCount || 0, // Only submitted attempts
+                  myAttempts: attemptResult.attempts || [],
+                  submittedAttemptsList: attemptResult.submittedAttempts || []
+                };
+              } else {
+                console.warn(`Failed to load attempt count for exam ${examId}:`, attemptResult.message);
+              }
+            } catch (error) {
+              console.error(`Error loading attempt count for exam ${examId}:`, error);
+            }
+          }
+          return {
+            ...test,
+            attempts: test.attempts || 0,
+            submittedAttempts: test.submittedAttempts || 0,
+            myAttempts: [],
+            submittedAttemptsList: []
+          };
+        }));
+        
+        console.log('Loaded tests with attempt counts:', testsWithAttempts.map(t => ({ id: t.id, title: t.title, attempts: t.attempts })));
+        setTests(testsWithAttempts);
       } else {
         // Handle error response
         console.error('Failed to load tests:', response.message, response.error);
@@ -82,7 +151,9 @@ const StudentTestListPage = () => {
       // Set empty array on error to prevent UI crash
       setTests([]);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
@@ -272,7 +343,21 @@ const StudentTestListPage = () => {
               borderRadius: '8px'
             }}>
               <Text style={{ fontSize: '13px' }}>
-                Lượt làm: {test.attempts}/{test.maxAttempts} • Còn {remainingAttempts} lần
+                Đã làm: {test.attempts || 0} lần • Đã nộp: {test.submittedAttempts || 0} lần{test.maxAttempts ? ` / ${test.maxAttempts} lần tối đa` : ''} • Còn {remainingAttempts >= 0 ? remainingAttempts : '∞'} lần
+              </Text>
+            </div>
+          )}
+          
+          {/* Show attempt count for completed tests */}
+          {test.status === 'completed' && test.attempts > 0 && (
+            <div style={{
+              background: 'rgba(24, 144, 255, 0.1)',
+              padding: '8px 12px',
+              borderRadius: '8px',
+              marginTop: 8
+            }}>
+              <Text style={{ fontSize: '13px' }}>
+                Đã làm: {test.attempts} lần • Đã nộp: {test.submittedAttempts || 0} lần
               </Text>
             </div>
           )}

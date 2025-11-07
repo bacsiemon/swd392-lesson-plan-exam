@@ -126,16 +126,27 @@ namespace LessonPlanExam.Services.Services
                 if (string.IsNullOrWhiteSpace(request.TextAnswer)) return SaveAnswerResult.Fail("FILLBLANK_TEXT_REQUIRED", "Text answer is required for fill-blank questions.");
             }
 
+            // Only set AnswerData if it's provided and not empty or just "{}"
+            string finalAnswerData = null;
+            if (!string.IsNullOrWhiteSpace(request.AnswerData) && request.AnswerData != "{}")
+            {
+                finalAnswerData = request.AnswerData;
+            }
+            
             var answer = new ExamAttemptAnswer
             {
                 ExamAttemptId = attemptId,
                 QuestionId = request.QuestionId,
                 SelectedAnswerIds = request.SelectedAnswerIds ?? new List<int>(),
                 TextAnswer = request.TextAnswer,
-                AnswerData = request.AnswerData,
+                AnswerData = finalAnswerData,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
+            
+            // Debug logging
+            System.Diagnostics.Debug.WriteLine($"[SaveAnswer] QuestionId={request.QuestionId}, SelectedAnswerIds=[{string.Join(",", answer.SelectedAnswerIds ?? new List<int>())}], Count={answer.SelectedAnswerIds?.Count ?? 0}, TextAnswer={(answer.TextAnswer != null ? "has value" : "null")}, AnswerData={(answer.AnswerData != null ? answer.AnswerData : "null")}");
+            
             await _answerRepo.SaveAnswerAsync(answer, ct);
             return SaveAnswerResult.Ok();
         }
@@ -171,7 +182,16 @@ namespace LessonPlanExam.Services.Services
                     // compare selected ids with correct answers
                     var correctAnswers = question.QuestionMultipleChoiceAnswers.Where(a => a.IsCorrect == true).Select(a => a.Id).OrderBy(x => x).ToList();
                     var selected = item.SelectedAnswerIds ?? new List<int>();
-                    if (correctAnswers.SequenceEqual(selected.OrderBy(x => x)))
+                    var selectedOrdered = selected.OrderBy(x => x).ToList();
+                    
+                    // Debug logging
+                    System.Diagnostics.Debug.WriteLine($"[SubmitAttempt] QuestionId={item.QuestionId}, CorrectAnswers=[{string.Join(",", correctAnswers)}], Selected=[{string.Join(",", selected)}], SelectedOrdered=[{string.Join(",", selectedOrdered)}]");
+                    
+                    // Compare: both lists must have same count and same elements in same order
+                    bool isEqual = correctAnswers.Count == selectedOrdered.Count && correctAnswers.SequenceEqual(selectedOrdered);
+                    System.Diagnostics.Debug.WriteLine($"[SubmitAttempt] QuestionId={item.QuestionId}, IsEqual={isEqual}, CorrectCount={correctAnswers.Count}, SelectedCount={selectedOrdered.Count}");
+                    
+                    if (isEqual)
                     {
                         earned = ptsPossible;
                         correct = true;

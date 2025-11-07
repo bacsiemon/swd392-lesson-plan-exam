@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Card, Table, Typography, Row, Col, Space, Tag, Progress, Statistic, Select, Badge } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, Table, Typography, Row, Col, Space, Tag, Progress, Statistic, Select, Badge, Button, Spin, Empty, message } from 'antd';
 import {
   TrophyOutlined,
   RiseOutlined,
@@ -7,7 +7,12 @@ import {
   ClockCircleOutlined,
   FileTextOutlined,
   BarChartOutlined,
+  EyeOutlined,
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
+import examService from '../services/examService';
+import examAttemptService from '../services/examAttemptService';
+import '../styles/chemistryTheme.css';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -30,62 +35,155 @@ if (typeof document !== 'undefined') {
 }
 
 const TestScoresPage = () => {
+  const navigate = useNavigate();
   const [selectedSubject, setSelectedSubject] = useState('all');
   const [selectedSemester, setSelectedSemester] = useState('1');
+  const [testScores, setTestScores] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const testScores = [
-    {
-      key: '1',
-      testName: 'Kiểm tra giữa kỳ - Hóa học vô cơ',
-      subject: 'Hóa học',
-      date: '2025-10-15',
-      score: 8.5,
-      maxScore: 10,
-      status: 'completed',
-      type: 'Giữa kỳ',
-      semester: '1',
-    },
-    {
-      key: '2',
-      testName: 'Kiểm tra 15 phút - Phản ứng Oxi hóa',
-      subject: 'Hóa học',
-      date: '2025-10-10',
-      score: 9.0,
-      maxScore: 10,
-      status: 'completed',
-      type: '15 phút',
-      semester: '1',
-    },
-    {
-      key: '3',
-      testName: 'Kiểm tra 45 phút - Liên kết hóa học',
-      subject: 'Hóa học',
-      date: '2025-09-28',
-      score: 7.5,
-      maxScore: 10,
-      status: 'completed',
-      type: '45 phút',
-      semester: '1',
-    },
-    {
-      key: '4',
-      testName: 'Kiểm tra cuối kỳ - Hóa hữu cơ',
-      subject: 'Hóa học',
-      date: '2025-09-20',
-      score: 8.0,
-      maxScore: 10,
-      status: 'completed',
-      type: 'Cuối kỳ',
-      semester: '1',
-    },
-  ];
+  // Load test history from API
+  useEffect(() => {
+    loadTestHistory();
+  }, []);
+
+  const loadTestHistory = async () => {
+    setLoading(true);
+    try {
+      // Get current student ID from token
+      let currentStudentId = null;
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+          const base64Url = token.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          }).join(''));
+          const decoded = JSON.parse(jsonPayload);
+          currentStudentId = decoded.userId || decoded.sub || 
+                           decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || 
+                           decoded.id;
+          if (currentStudentId) {
+            currentStudentId = parseInt(currentStudentId);
+          }
+        }
+      } catch (error) {
+        console.error('Error decoding token:', error);
+      }
+
+      if (!currentStudentId) {
+        console.warn('Cannot load test history: Student ID not found');
+        setLoading(false);
+        return;
+      }
+
+      // Get all active exams
+      const examsResponse = await examService.getExams({ status: 2 }); // 2 = Active
+      if (!examsResponse.success || !examsResponse.data) {
+        console.warn('Failed to load exams:', examsResponse.message);
+        setLoading(false);
+        return;
+      }
+
+      const exams = examsResponse.data;
+
+      // For each exam, get attempts and filter by current student
+      // Limit to first 50 exams to avoid too many API calls
+      const examsToCheck = exams.slice(0, 50);
+      const attemptPromises = examsToCheck.map(async (exam) => {
+        try {
+          const attemptsResponse = await examAttemptService.getExamAttempts(exam.id || exam.Id);
+          if (attemptsResponse.success && attemptsResponse.data) {
+            // Filter attempts by current student and only get submitted/graded ones
+            const studentAttempts = attemptsResponse.data
+              .filter(attempt => {
+                const studentId = attempt.StudentId !== undefined ? attempt.StudentId : attempt.studentId;
+                const studentIdNum = typeof studentId === 'string' ? parseInt(studentId) : studentId;
+                const currentIdNum = typeof currentStudentId === 'string' ? parseInt(currentStudentId) : currentStudentId;
+                
+                if (studentIdNum !== currentIdNum) return false;
+
+                // Only include submitted (1) or graded (2) attempts
+                const status = attempt.Status !== undefined ? attempt.Status : attempt.status;
+                const statusEnum = attempt.StatusEnum !== undefined ? attempt.StatusEnum : status;
+                return statusEnum === 1 || statusEnum === 2 || status === 1 || status === 2;
+              })
+              .map(attempt => ({
+                ...attempt,
+                examTitle: exam.title || exam.Title || 'Không có tiêu đề',
+                examId: exam.id || exam.Id,
+                examDescription: exam.description || exam.Description || '',
+                examDuration: exam.durationMinutes || exam.DurationMinutes || 0,
+              }));
+            
+            return studentAttempts;
+          }
+          return [];
+        } catch (error) {
+          console.error(`Error loading attempts for exam ${exam.id || exam.Id}:`, error);
+          return [];
+        }
+      });
+
+      const results = await Promise.all(attemptPromises);
+      const flattenedAttempts = results.flat();
+      
+      // Sort by submitted date (most recent first)
+      flattenedAttempts.sort((a, b) => {
+        const dateA = new Date(a.SubmittedAt || a.submittedAt || a.StartedAt || a.startedAt || 0);
+        const dateB = new Date(b.SubmittedAt || b.submittedAt || b.StartedAt || b.startedAt || 0);
+        return dateB - dateA;
+      });
+
+      // Map to table format
+      const mappedTestScores = flattenedAttempts.map((attempt, index) => {
+        const submittedAt = attempt.SubmittedAt || attempt.submittedAt || attempt.StartedAt || attempt.startedAt;
+        const totalScore = attempt.TotalScore !== undefined ? attempt.TotalScore : (attempt.totalScore !== undefined ? attempt.totalScore : 0);
+        const maxScore = attempt.MaxScore !== undefined ? attempt.MaxScore : (attempt.maxScore !== undefined ? attempt.maxScore : 10);
+        const scoreOnTen = maxScore > 0 ? (totalScore / maxScore) * 10 : 0;
+        const statusEnum = attempt.StatusEnum !== undefined ? attempt.StatusEnum : (attempt.Status !== undefined ? attempt.Status : null);
+        
+        // Extract date for semester calculation (simple: based on month)
+        const date = submittedAt ? new Date(submittedAt) : new Date();
+        const semester = date.getMonth() < 6 ? '1' : '2'; // Jan-Jun = semester 1, Jul-Dec = semester 2
+
+        return {
+          key: attempt.AttemptId || attempt.attemptId || attempt.Id || attempt.id || index.toString(),
+          testName: attempt.examTitle || 'Không có tiêu đề',
+          subject: 'Hóa học', // Default subject
+          date: submittedAt || new Date().toISOString(),
+          score: scoreOnTen.toFixed(2),
+          maxScore: 10,
+          status: statusEnum === 2 ? 'completed' : (statusEnum === 1 ? 'completed' : 'pending'),
+          type: 'Kiểm tra',
+          semester: semester,
+          attemptId: attempt.AttemptId || attempt.attemptId || attempt.Id || attempt.id,
+          examId: attempt.examId,
+          totalScore: totalScore,
+          maxScoreOriginal: maxScore,
+          statusEnum: statusEnum,
+        };
+      });
+
+      setTestScores(mappedTestScores);
+    } catch (error) {
+      console.error('Error loading test history:', error);
+      message.error('Không thể tải lịch sử làm bài');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const completedTests = testScores.filter((test) => test.status === 'completed');
-  const averageScore = (
-    completedTests.reduce((sum, test) => sum + test.score, 0) / completedTests.length
-  ).toFixed(2);
-  const highestScore = Math.max(...completedTests.map((test) => test.score));
-  const lowestScore = Math.min(...completedTests.map((test) => test.score));
+  const averageScore = completedTests.length > 0
+    ? (completedTests.reduce((sum, test) => sum + parseFloat(test.score), 0) / completedTests.length).toFixed(2)
+    : '0.00';
+  const highestScore = completedTests.length > 0
+    ? Math.max(...completedTests.map((test) => parseFloat(test.score))).toFixed(1)
+    : '0';
+  const lowestScore = completedTests.length > 0
+    ? Math.min(...completedTests.map((test) => parseFloat(test.score))).toFixed(1)
+    : '0';
 
   const filteredData = testScores.filter((test) => {
     const subjectMatch = selectedSubject === 'all' || test.subject === selectedSubject;
@@ -107,12 +205,67 @@ const TestScoresPage = () => {
     return { text: 'Yếu', color: 'error' };
   };
 
+  // Handle viewing test result
+  const handleViewResult = async (record) => {
+    const examId = record.examId;
+    const attemptId = record.attemptId;
+    
+    if (!examId || !attemptId) {
+      message.error('Không tìm thấy thông tin bài thi');
+      return;
+    }
+
+    try {
+      // Get attempt details
+      const attemptResponse = await examAttemptService.getAttemptById(examId, attemptId);
+      if (!attemptResponse.success || !attemptResponse.data) {
+        message.error('Không thể tải kết quả bài thi');
+        return;
+      }
+
+      // Get exam details
+      const examResponse = await examService.getExamById(examId);
+      if (!examResponse.success || !examResponse.data) {
+        message.error('Không thể tải thông tin bài thi');
+        return;
+      }
+
+      const attemptData = attemptResponse.data;
+      const examData = examResponse.data;
+
+      // Calculate score
+      const totalScore = attemptData.TotalScore !== undefined ? attemptData.TotalScore : (attemptData.totalScore !== undefined ? attemptData.totalScore : 0);
+      const maxScore = attemptData.MaxScore !== undefined ? attemptData.MaxScore : (attemptData.maxScore !== undefined ? attemptData.maxScore : examData.totalPoints || examData.TotalPoints || 10);
+      const scorePercentage = attemptData.ScorePercentage !== undefined ? attemptData.ScorePercentage : (attemptData.scorePercentage !== undefined ? attemptData.scorePercentage : (maxScore > 0 ? (totalScore / maxScore) * 100 : 0));
+
+      // Navigate to result page
+      navigate('/student-test/result', {
+        state: {
+          examId: examId,
+          attemptId: attemptId,
+          examTitle: examData.title || examData.Title || 'Kết quả bài thi',
+          totalScore: totalScore,
+          scorePercentage: scorePercentage,
+          maxScore: maxScore,
+          totalQuestions: examData.totalQuestions || examData.TotalQuestions || 0,
+          score: Math.round((totalScore / maxScore) * (examData.totalQuestions || examData.TotalQuestions || 1)),
+          answers: {},
+          questions: [],
+          submitData: attemptData
+        }
+      });
+    } catch (error) {
+      console.error('Error viewing result:', error);
+      message.error('Không thể xem kết quả bài thi');
+    }
+  };
+
   const columns = [
     {
       title: 'Tên bài kiểm tra',
       dataIndex: 'testName',
       key: 'testName',
-      width: '35%',
+      width: '30%',
       render: (text, record) => (
         <Space direction="vertical" size="small">
           <Text strong>{text}</Text>
@@ -126,7 +279,7 @@ const TestScoresPage = () => {
       title: 'Ngày kiểm tra',
       dataIndex: 'date',
       key: 'date',
-      width: '20%',
+      width: '18%',
       render: (date) => (
         <Space>
           <ClockCircleOutlined />
@@ -138,30 +291,30 @@ const TestScoresPage = () => {
       title: 'Điểm số',
       dataIndex: 'score',
       key: 'score',
-      width: '20%',
+      width: '18%',
       align: 'center',
       render: (score, record) => (
         <Space direction="vertical" size="small" style={{ width: '100%' }}>
-          <Text strong style={{ fontSize: '20px', color: getScoreColor(score) }}>
+          <Text strong style={{ fontSize: '20px', color: getScoreColor(parseFloat(score)) }}>
             {score}/{record.maxScore}
           </Text>
           <Progress
-            percent={(score / record.maxScore) * 100}
-            strokeColor={getScoreColor(score)}
+            percent={(parseFloat(score) / record.maxScore) * 100}
+            strokeColor={getScoreColor(parseFloat(score))}
             showInfo={false}
             size="small"
           />
         </Space>
       ),
-      sorter: (a, b) => a.score - b.score,
+      sorter: (a, b) => parseFloat(a.score) - parseFloat(b.score),
     },
     {
       title: 'Xếp loại',
       key: 'rating',
-      width: '15%',
+      width: '12%',
       align: 'center',
       render: (_, record) => {
-        const tag = getScoreTag(record.score);
+        const tag = getScoreTag(parseFloat(record.score));
         return <Tag color={tag.color}>{tag.text}</Tag>;
       },
     },
@@ -169,13 +322,29 @@ const TestScoresPage = () => {
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      width: '10%',
+      width: '12%',
       align: 'center',
       render: (status) => (
         <Badge
           status={status === 'completed' ? 'success' : 'processing'}
           text={status === 'completed' ? 'Đã chấm' : 'Đang chấm'}
         />
+      ),
+    },
+    {
+      title: 'Thao tác',
+      key: 'action',
+      width: '10%',
+      align: 'center',
+      render: (_, record) => (
+        <Button
+          type="primary"
+          icon={<EyeOutlined />}
+          size="small"
+          onClick={() => handleViewResult(record)}
+        >
+          Xem
+        </Button>
       ),
     },
   ];
@@ -337,16 +506,28 @@ const TestScoresPage = () => {
             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1)',
           }}
         >
-          <Table
-            columns={columns}
-            dataSource={filteredData}
-            pagination={{
-              pageSize: 10,
-              showSizeChanger: true,
-              showTotal: (total) => `Tổng số ${total} bài kiểm tra`,
-            }}
-            scroll={{ x: 800 }}
-          />
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <Spin size="large" tip="Đang tải lịch sử làm bài..." />
+            </div>
+          ) : filteredData.length === 0 ? (
+            <Empty 
+              description="Chưa có bài kiểm tra nào"
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            />
+          ) : (
+            <Table
+              columns={columns}
+              dataSource={filteredData}
+              loading={loading}
+              pagination={{
+                pageSize: 10,
+                showSizeChanger: true,
+                showTotal: (total) => `Tổng số ${total} bài kiểm tra`,
+              }}
+              scroll={{ x: 1000 }}
+            />
+          )}
         </Card>
       </div>
     </div>

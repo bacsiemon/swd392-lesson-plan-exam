@@ -10,7 +10,8 @@ export const createExamMatrixColumns = ({
   currentTeacherId,
   currentUserName,
   onEdit,
-  onDelete
+  onDelete,
+  onView
 }) => {
   const getStatusTag = (status) => {
     const statusMap = {
@@ -148,18 +149,13 @@ export const createExamMatrixColumns = ({
             <Button 
               type="text" 
               icon={<EyeOutlined />} 
-              onClick={async () => {
-                try {
-                  const result = await examMatrixService.getExamMatrixById(record.id);
-                  if (result.success) {
-                    message.info('Xem chi tiết ma trận đề');
-                    console.log('Exam matrix details:', result.data);
-                  } else {
-                    message.error(result.message || 'Không thể lấy thông tin chi tiết');
-                  }
-                } catch (error) {
-                  console.error('Error getting exam matrix details:', error);
-                  message.error('Có lỗi xảy ra khi lấy thông tin chi tiết');
+              onClick={() => {
+                if (onView) {
+                  onView(record);
+                } else {
+                  // Fallback: log to console
+                  console.log('View exam matrix:', record);
+                  message.info('Xem chi tiết ma trận đề');
                 }
               }}
             />

@@ -22,11 +22,34 @@ namespace LessonPlanExam.Repositories.Repositories
             {
                 existing.SelectedAnswerIds = answer.SelectedAnswerIds;
                 existing.TextAnswer = answer.TextAnswer;
-                existing.AnswerData = answer.AnswerData;
+                // Only update AnswerData if it's provided (not null or empty)
+                // If answer.AnswerData is null, explicitly set to null
+                if (answer.AnswerData != null && answer.AnswerData != "{}")
+                {
+                    existing.AnswerData = answer.AnswerData;
+                }
+                else if (answer.AnswerData == null)
+                {
+                    existing.AnswerData = null;
+                }
                 existing.UpdatedAt = DateTime.UtcNow;
+                
+                // Debug logging
+                System.Diagnostics.Debug.WriteLine($"[SaveAnswerAsync] Updated existing answer: QuestionId={answer.QuestionId}, SelectedAnswerIds=[{string.Join(",", existing.SelectedAnswerIds ?? new List<int>())}], Count={existing.SelectedAnswerIds?.Count ?? 0}, TextAnswer={(existing.TextAnswer != null ? "has value" : "null")}, AnswerData={(existing.AnswerData != null ? existing.AnswerData : "null")}");
+                
                 await _db.SaveChangesAsync(ct);
                 return existing;
             }
+            
+            // For new answer, ensure AnswerData is null if empty
+            if (answer.AnswerData != null && answer.AnswerData == "{}")
+            {
+                answer.AnswerData = null;
+            }
+            
+            // Debug logging for new answer
+            System.Diagnostics.Debug.WriteLine($"[SaveAnswerAsync] Creating new answer: QuestionId={answer.QuestionId}, SelectedAnswerIds=[{string.Join(",", answer.SelectedAnswerIds ?? new List<int>())}], Count={answer.SelectedAnswerIds?.Count ?? 0}, TextAnswer={(answer.TextAnswer != null ? "has value" : "null")}, AnswerData={(answer.AnswerData != null ? answer.AnswerData : "null")}");
+            
             await _db.ExamAttemptAnswers.AddAsync(answer, ct);
             await _db.SaveChangesAsync(ct);
             return answer;

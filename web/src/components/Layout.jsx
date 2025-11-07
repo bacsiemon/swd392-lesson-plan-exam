@@ -99,7 +99,7 @@ const AppLayout = ({ children }) => {
   // Define routes for each user role
   // Note: Some routes are shared (like /profile, /calendar) and should use role-based header selection
   const studentRoutes = ['/student-dashboard', '/student-test', '/lesson-plans', '/lesson', '/test-scores', '/calendar', '/exams', '/periodic-table'];
-  const teacherRoutes = ['/dashboard', '/question-banks', '/manage-tests', '/create-lesson-plan', '/exam-matrix', '/calendar'];
+  const teacherRoutes = ['/dashboard', '/question-banks', '/manage-tests', '/create-lesson-plan', '/exam-matrix', '/question-difficulties', '/calendar'];
   const adminRoutes = ['/admin/users', '/admin/activity-status', '/admin/dashboard', '/admin/settings', '/admin'];
   
   // Shared routes that need role-based header selection (not path-based)

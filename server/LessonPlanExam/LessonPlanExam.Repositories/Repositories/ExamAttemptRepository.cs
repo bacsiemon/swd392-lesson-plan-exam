@@ -30,6 +30,13 @@ namespace LessonPlanExam.Repositories.Repositories
             var attempt = await _db.ExamAttempts.FirstOrDefaultAsync(a => a.Id == attemptId, ct);
             if (attempt == null) return null;
             await _db.Entry(attempt).Collection(x => x.ExamAttemptAnswers).Query().Include(a => a.Question).LoadAsync(ct);
+            
+            // Debug logging
+            foreach (var answer in attempt.ExamAttemptAnswers)
+            {
+                System.Diagnostics.Debug.WriteLine($"[GetAttemptWithAnswers] QuestionId={answer.QuestionId}, SelectedAnswerIds=[{string.Join(",", answer.SelectedAnswerIds ?? new List<int>())}], Count={answer.SelectedAnswerIds?.Count ?? 0}, IsNull={answer.SelectedAnswerIds == null}");
+            }
+            
             return attempt;
         }
 

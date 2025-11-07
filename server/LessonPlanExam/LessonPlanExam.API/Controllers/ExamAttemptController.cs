@@ -83,12 +83,19 @@ namespace LessonPlanExam.API.Controllers
         public async Task<IActionResult> SaveAnswer([FromRoute] int examId, [FromRoute] int attemptId, [FromBody] SaveAnswerRequest request, CancellationToken ct = default)
         {
             if (request == null) return BadRequest(new { Error = "INVALID_REQUEST", Message = "Request body is required." });
+            
+            // Debug logging
+            System.Diagnostics.Debug.WriteLine($"[SaveAnswer Controller] ExamId={examId}, AttemptId={attemptId}, QuestionId={request.QuestionId}, SelectedAnswerIds=[{string.Join(",", request.SelectedAnswerIds ?? new List<int>())}], Count={request.SelectedAnswerIds?.Count ?? 0}, TextAnswer={(request.TextAnswer != null ? "has value" : "null")}, AnswerData={(request.AnswerData != null ? request.AnswerData : "null")}");
+            
             var result = await _attemptService.SaveAnswerAsync(examId, attemptId, request, ct);
             if (result == null) return BadRequest(new { Error = "UNKNOWN_ERROR", Message = "Save operation failed." });
             if (!result.Success)
             {
+                System.Diagnostics.Debug.WriteLine($"[SaveAnswer Controller] Failed: ErrorCode={result.ErrorCode}, Message={result.Message}");
                 return BadRequest(new { Error = result.ErrorCode ?? "SAVE_FAILED", Message = result.Message });
             }
+            
+            System.Diagnostics.Debug.WriteLine($"[SaveAnswer Controller] Success: QuestionId={request.QuestionId}");
             return Ok(result);
         }
 

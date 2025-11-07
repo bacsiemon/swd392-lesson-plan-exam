@@ -126,13 +126,43 @@ const examService = {
    */
   async createExamFromMatrix(examData) {
     try {
-      // Map to backend expected format (camelCase)
-      // Backend expects: examMatrixId (Required), title, description, createdByTeacher, etc.
+      // Map to backend expected format
+      // Backend expects: ExamMatrixId (Required), Title, Description, CreatedByTeacher (Required), etc.
+      // Convert examMatrixId to number
+      const examMatrixId = examData.examMatrixId !== undefined && examData.examMatrixId !== null
+        ? (typeof examData.examMatrixId === 'number' ? examData.examMatrixId : parseInt(examData.examMatrixId))
+        : (examData.ExamMatrixId !== undefined && examData.ExamMatrixId !== null
+            ? (typeof examData.ExamMatrixId === 'number' ? examData.ExamMatrixId : parseInt(examData.ExamMatrixId))
+            : null);
+      
+      // Convert createdByTeacher to number (required field)
+      const createdByTeacher = examData.createdByTeacher !== undefined && examData.createdByTeacher !== null
+        ? (typeof examData.createdByTeacher === 'number' ? examData.createdByTeacher : parseInt(examData.createdByTeacher))
+        : (examData.CreatedByTeacher !== undefined && examData.CreatedByTeacher !== null
+            ? (typeof examData.CreatedByTeacher === 'number' ? examData.CreatedByTeacher : parseInt(examData.CreatedByTeacher))
+            : null);
+      
+      if (!examMatrixId || isNaN(examMatrixId)) {
+        return {
+          success: false,
+          error: 'ExamMatrixId is required',
+          message: 'Vui lòng chọn ma trận đề'
+        };
+      }
+      
+      if (!createdByTeacher || isNaN(createdByTeacher)) {
+        return {
+          success: false,
+          error: 'CreatedByTeacher is required',
+          message: 'Không tìm thấy thông tin giáo viên'
+        };
+      }
+      
       const requestData = {
-        examMatrixId: examData.examMatrixId !== undefined ? examData.examMatrixId : (examData.ExamMatrixId !== undefined ? examData.ExamMatrixId : null),
+        examMatrixId: examMatrixId,
         title: examData.title !== undefined ? (examData.title || null) : (examData.Title !== undefined ? (examData.Title || null) : null),
         description: examData.description !== undefined ? (examData.description || null) : (examData.Description !== undefined ? (examData.Description || null) : null),
-        createdByTeacher: examData.createdByTeacher !== undefined ? examData.createdByTeacher : (examData.CreatedByTeacher !== undefined ? examData.CreatedByTeacher : null),
+        createdByTeacher: createdByTeacher,
         gradeLevel: examData.gradeLevel !== undefined && examData.gradeLevel !== null
           ? examData.gradeLevel
           : (examData.GradeLevel !== undefined && examData.GradeLevel !== null ? examData.GradeLevel : null),

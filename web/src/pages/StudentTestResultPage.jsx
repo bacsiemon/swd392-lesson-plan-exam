@@ -10,7 +10,14 @@ function StudentTestResultPage() {
   const navigate = useNavigate();
   const [showAnswers, setShowAnswers] = useState(false);
 
-  const { score = 0, totalQuestions = 0, answers = {}, questions = [], testTitle = 'Kết quả bài kiểm tra' } = location.state || {};
+  const { 
+    score = 0, 
+    totalQuestions = 0, 
+    answers = {}, 
+    questions = [], 
+    testTitle = 'Kết quả bài kiểm tra',
+    examId = null
+  } = location.state || {};
 
   const scoreOnTen = useMemo(() => {
     if (!totalQuestions || totalQuestions === 0) return 0;
@@ -18,7 +25,15 @@ function StudentTestResultPage() {
   }, [score, totalQuestions]);
 
   const handleRetry = () => {
-    navigate('/student-test', { replace: true });
+    // Navigate to test page with examId to start a new attempt
+    // The StudentTestPage will check for latest attempt and since it's already submitted,
+    // it will start a new attempt (requiring password if needed)
+    if (examId) {
+      navigate(`/student-test?id=${examId}`, { replace: false });
+    } else {
+      // Fallback: navigate to test list if examId is not available
+      navigate('/exams', { replace: false });
+    }
   };
 
   const renderAnswerLine = (q, idx) => {
@@ -64,7 +79,9 @@ function StudentTestResultPage() {
           <Title level={3} style={{ color: 'var(--chem-purple-dark)', margin: 0 }}>
             Điểm: {scoreOnTen}/10
           </Title>
-          <Text strong>Đúng {score}/{totalQuestions} câu</Text>
+          {totalQuestions > 0 && (
+            <Text strong>Đúng {score}/{totalQuestions} câu</Text>
+          )}
           <Space size="middle" style={{ marginTop: 8 }}>
             <Button type="primary" icon={<ReloadOutlined />} onClick={handleRetry}>
               Làm lại
@@ -80,7 +97,11 @@ function StudentTestResultPage() {
         <Card className="chemistry-card" style={{ maxWidth: 900, margin: '0 auto' }}>
           <Title level={4} style={{ marginTop: 0 }}>Chi tiết đáp án</Title>
           <Divider style={{ margin: '12px 0' }} />
-          {questions.map((q, idx) => renderAnswerLine(q, idx))}
+          {questions && questions.length > 0 ? (
+            questions.map((q, idx) => renderAnswerLine(q, idx))
+          ) : (
+            <Text type="secondary">Chi tiết đáp án không có sẵn. Vui lòng xem từ trang kết quả bài thi.</Text>
+          )}
         </Card>
       )}
     </div>
