@@ -17,12 +17,14 @@ namespace LessonPlanExam.Services.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IAccountService _accountService;
         private readonly IFileUploadService _fileUploadService;
+        private readonly ILessonPlanFileGenerationService _documentGenerationService;
 
-        public LessonPlanService(IUnitOfWork unitOfWork, IAccountService accountService, IFileUploadService fileUploadService)
+        public LessonPlanService(IUnitOfWork unitOfWork, IAccountService accountService, IFileUploadService fileUploadService, ILessonPlanFileGenerationService documentGenerationService)
         {
             _unitOfWork = unitOfWork;
             _accountService = accountService;
             _fileUploadService = fileUploadService;
+            _documentGenerationService = documentGenerationService;
         }
 
         public async Task<BaseResponse> CreateLessonPlanAsync(CreateLessonPlanRequest request)
@@ -252,6 +254,71 @@ namespace LessonPlanExam.Services.Services
                 StatusCode = 200,
                 Message = "SUCCESS"
             };
+        }
+
+        public async Task<BaseResponse<byte[]>> GenerateWordDocumentAsync(int lessonPlanId)
+        {
+            // Check if user is a teacher
+            var currentRole = _accountService.GetCurrentUserRole();
+            if (currentRole != Repositories.Enums.EUserRole.Teacher)
+            {
+                return new BaseResponse<byte[]>
+                {
+                    StatusCode = 403,
+                    Errors = "TEACHER_ONLY"
+                };
+            }
+
+            var currentUserId = _accountService.GetCurrentUserId();
+
+            // Get the lesson plan with all necessary navigation properties including slot plans
+            var lessonPlan = await _unitOfWork.LessonPlanRepository.GetByIdAsync(
+                lessonPlanId,
+                lp => lp.SlotPlans,
+                lp => lp.CreatedByTeacherNavigation,
+                lp => lp.CreatedByTeacherNavigation.Account
+            );
+
+            if (lessonPlan == null || lessonPlan.DeletedAt != null)
+            {
+                return new BaseResponse<byte[]>
+                {
+                    StatusCode = 404,
+                    Errors = "LESSON_PLAN_NOT_FOUND"
+                };
+            }
+
+            // Check if the lesson plan belongs to the current teacher
+            if (lessonPlan.CreatedByTeacher != currentUserId)
+            {
+                return new BaseResponse<byte[]>
+                {
+                    StatusCode = 403,
+                    Errors = "LESSON_PLAN_NOT_OWNED_BY_TEACHER"
+                };
+            }
+
+            try
+            {
+                // Generate the Word document
+                var documentBytes = await _documentGenerationService.GenerateWordDocumentAsync(lessonPlan);
+
+                return new BaseResponse<byte[]>
+                {
+                    StatusCode = 200,
+                    Message = "SUCCESS",
+                    Data = documentBytes
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<byte[]>
+                {
+                    StatusCode = 500,
+                    Errors = "DOCUMENT_GENERATION_FAILED",
+                    Message = ex.Message
+                };
+            }
         }
     }
 }

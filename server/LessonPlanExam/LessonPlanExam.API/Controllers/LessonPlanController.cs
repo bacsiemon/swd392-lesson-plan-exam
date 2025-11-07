@@ -308,5 +308,56 @@ namespace LessonPlanExam.API.Controllers
             var response = await _lessonPlanService.DeleteLessonPlanFileAsync(id);
             return StatusCode(response.StatusCode, response);
         }
+
+        /// <summary>Teacher</summary>
+        /// <remarks>
+        /// 
+        /// Generate and download a Word document (.docx) for a specific lesson plan with its slot plans.
+        /// 
+        /// Creates a professionally formatted Word document containing:
+        /// - Lesson plan title and details
+        /// - Teacher information and school
+        /// - Learning objectives and description
+        /// - All slot plans (activities) with their content and duration
+        /// - Document metadata and generation timestamp
+        /// 
+        /// Only the lesson plan creator (teacher) can generate documents for their lesson plans.
+        /// 
+        /// Sample request:
+        /// ```
+        /// GET /api/lessonplan/123/generate-word-document
+        /// ```
+        /// </remarks>
+        /// <param name="id">The ID of the lesson plan to generate a Word document for</param>
+        /// <response code="200">Word document generated successfully. Returns the .docx file as binary data with appropriate headers for download.</response>
+        /// <response code="400">Invalid lesson plan ID provided.</response>
+        /// <response code="401">Unauthorized. User authentication required.</response>
+        /// <response code="403">Forbidden. Possible messages:
+        /// - TEACHER_ONLY (Only teachers can generate Word documents)
+        /// - LESSON_PLAN_NOT_OWNED_BY_TEACHER (User can only generate documents for their own lesson plans)
+        /// </response>
+        /// <response code="404">Lesson plan not found with the specified ID.</response>
+        /// <response code="500">Internal server error occurred during document generation. Possible messages:
+        /// - DOCUMENT_GENERATION_FAILED (Error occurred while creating the Word document)
+        /// </response>
+        [HttpGet("{id}/generate-word-document")]
+        [AuthorizeRoles(EUserRole.Teacher)]
+        public async Task<IActionResult> GenerateWordDocumentAsync(int id)
+        {
+            var response = await _lessonPlanService.GenerateWordDocumentAsync(id);
+            
+            if (response.StatusCode != 200)
+            {
+                return StatusCode(response.StatusCode, response);
+            }
+
+            // Return the Word document as a file download
+            var fileName = $"LessonPlan_{id}_{DateTime.Now:yyyyMMdd_HHmmss}.docx";
+            return File(
+                response.Data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                fileName
+            );
+        }
     }
 }
