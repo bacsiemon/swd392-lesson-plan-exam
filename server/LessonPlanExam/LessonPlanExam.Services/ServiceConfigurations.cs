@@ -36,6 +36,7 @@ namespace LessonPlanExam.Services
             services.AddScoped<IExamMatrixService, ExamMatrixService>();
             services.AddScoped<IExamService, ExamService>();
             services.AddScoped<IAttemptService, AttemptService>();
+            services.AddScoped<IQuestionDifficultyService, QuestionDifficultyService>();
             // Removed IUserService registration as functionality moved to AccountService
         }
     }
