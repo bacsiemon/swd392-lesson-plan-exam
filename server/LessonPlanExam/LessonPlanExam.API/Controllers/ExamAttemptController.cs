@@ -54,27 +54,42 @@ namespace LessonPlanExam.API.Controllers
 
         /// <summary>User</summary>
         /// <remarks>
-        /// Save or update a single answer for an in-progress attempt. This endpoint accepts MCQ selections
-        /// (`selectedAnswerIds` as comma-separated ids) or text answers for fill-in-the-blank questions.
+        /// Save or update a single answer for an in-progress attempt.
+        /// For MCQ send `selectedAnswerIds` as an array of integers. For fill-blank send `textAnswer`.
+        /// `answerData` is optional JSON/string for rich answers or metadata.
         /// 
-        /// Sample request body:
+        /// Sample MCQ request body:
         /// ```
-        /// { "questionId": 123, "selectedAnswerIds": "10,11" }
+        /// { "questionId": 123, "selectedAnswerIds": [10, 11] }
+        /// ```
+        /// 
+        /// Sample Fill-Blank request body:
+        /// ```
+        /// { "questionId": 124, "textAnswer": "water" }
+        /// ```
+        /// 
+        /// Sample with answerData:
+        /// ```
+        /// { "questionId": 125, "textAnswer": "answer", "answerData": "{\"steps\": [\"1\", \"2\"]}" }
         /// ```
         /// </remarks>
         /// <param name="examId">The exam ID.</param>
         /// <param name="attemptId">The attempt ID.</param>
         /// <param name="request">Answer payload.</param>
         /// <param name="ct">Cancellation token.</param>
-        /// <response code="200">If the answer was saved successfully.</response>
-        /// <response code="400">If the request is invalid or cannot be saved.</response>
+        /// <response code="200">If the answer was saved successfully. Returns SaveAnswerResult.</response>
+        /// <response code="400">If the request is invalid or cannot be saved. Returns error code and message.</response>
         [HttpPost("{attemptId}/answer")]
         public async Task<IActionResult> SaveAnswer([FromRoute] int examId, [FromRoute] int attemptId, [FromBody] SaveAnswerRequest request, CancellationToken ct = default)
         {
-            if (request == null) return BadRequest();
-            var ok = await _attemptService.SaveAnswerAsync(examId, attemptId, request, ct);
-            if (!ok) return BadRequest(new { Message = "CANNOT_SAVE_ANSWER" });
-            return Ok(new { Status = ok });
+            if (request == null) return BadRequest(new { Error = "INVALID_REQUEST", Message = "Request body is required." });
+            var result = await _attemptService.SaveAnswerAsync(examId, attemptId, request, ct);
+            if (result == null) return BadRequest(new { Error = "UNKNOWN_ERROR", Message = "Save operation failed." });
+            if (!result.Success)
+            {
+                return BadRequest(new { Error = result.ErrorCode ?? "SAVE_FAILED", Message = result.Message });
+            }
+            return Ok(result);
         }
 
         /// <summary>User</summary>
