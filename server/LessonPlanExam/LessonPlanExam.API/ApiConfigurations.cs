@@ -1,6 +1,7 @@
 ﻿using App.Infrastructure.Validation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 using System.Text;
 
 namespace LessonPlanExam.API
@@ -36,7 +37,9 @@ namespace LessonPlanExam.API
                     ValidIssuer = jwtSettings["Issuer"],
                     ValidAudience = jwtSettings["Audience"],
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-                    ClockSkew = TimeSpan.Zero
+                    ClockSkew = TimeSpan.Zero,
+                    // Map role claim type để ASP.NET Core nhận diện đúng role
+                    RoleClaimType = ClaimTypes.Role
                 };
                 
                 options.Events = new JwtBearerEvents

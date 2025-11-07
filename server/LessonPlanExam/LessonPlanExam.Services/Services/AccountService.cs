@@ -517,84 +517,6 @@ namespace LessonPlanExam.Services.Services
             }
         }
 
-        public async Task<BaseResponse> ForgotPasswordAsync(ForgotPasswordRequest request)
-        {
-            try
-            {
-                // Find user by email
-                var accounts = await _unitOfWork.AccountRepository.GetAllAsync();
-                var account = accounts.FirstOrDefault(x => x.NormalizedEmail == request.Email.ToUpperInvariant());
-
-                if (account == null)
-                {
-                    // Return success even if email doesn't exist (security best practice)
-                    return new BaseResponse
-                    {
-                        StatusCode = 200,
-                        Message = "PASSWORD_RESET_EMAIL_SENT"
-                    };
-                }
-
-                // Check if account is active
-                if (account.IsActive != true || account.DeletedAt.HasValue)
-                {
-                    return new BaseResponse
-                    {
-                        StatusCode = 400,
-                        Message = "ACCOUNT_DISABLED"
-                    };
-                }
-
-                // Generate reset token
-                var resetToken = PasswordHelper.GenerateRandomToken(6);
-                
-                // Store reset token and expiry (you need to add these fields to Account model)
-                // account.PasswordResetToken = PasswordHelper.HashPassword(resetToken);
-                // account.PasswordResetExpiry = DateTime.UtcNow.AddMinutes(15); // 15 minutes expiry
-                account.UpdatedAt = DateTime.UtcNow;
-
-                await _unitOfWork.SaveChangesAsync();
-
-                // Send reset email
-                try
-                {
-                    await _emailService.SendPasswordResetEmailAsync(account.Email, resetToken, account.FullName ?? account.Email);
-                }
-                catch (Exception emailEx)
-                {
-                    return new BaseResponse
-                    {
-                        StatusCode = 500,
-                        Message = $"FAILED_TO_SEND_EMAIL: {emailEx.Message}"
-                    };
-                }
-
-                return new BaseResponse
-                {
-                    StatusCode = 200,
-                    Message = "PASSWORD_RESET_EMAIL_SENT"
-                };
-            }
-            catch (Exception ex)
-            {
-                return new BaseResponse
-                {
-                    StatusCode = 500,
-                    Message = $"FORGOT_PASSWORD_ERROR: {ex.Message}"
-                };
-            }
-        }
-
-        public async Task<BaseResponse> ResetPasswordAsync(ResetPasswordRequest request)
-        {
-            // Note: This feature requires PasswordResetToken and PasswordResetExpiry fields in Account model
-            return new BaseResponse
-            {
-                StatusCode = 501,
-                Message = "RESET_PASSWORD_FEATURE_NOT_IMPLEMENTED_YET - Need to add PasswordResetToken and PasswordResetExpiry fields to Account model"
-            };
-        }
-
         public async Task<BaseResponse> ChangePasswordAsync(ChangePasswordRequest request)
         {
             try
@@ -915,6 +837,274 @@ namespace LessonPlanExam.Services.Services
                 {
                     StatusCode = 500,
                     Message = $"GET_ALL_ACCOUNTS_ERROR: {ex.Message}"
+                };
+            }
+        }
+
+        #endregion
+
+        #region OTP Password Reset Methods
+
+        /// <summary>
+        /// Gửi OTP qua email để reset password
+        /// </summary>
+        public async Task<BaseResponse> ForgotPasswordWithOtpAsync(ForgotPasswordWithOtpRequest request)
+        {
+            try
+            {
+                // Find user by email
+                var accounts = await _unitOfWork.AccountRepository.GetAllAsync();
+                var account = accounts.FirstOrDefault(x => x.NormalizedEmail == request.Email.ToUpperInvariant());
+
+                if (account == null)
+                {
+                    // Return success even if email doesn't exist (security best practice)
+                    return new BaseResponse
+                    {
+                        StatusCode = 200,
+                        Message = "OTP_SENT_SUCCESS"
+                    };
+                }
+
+                // Check if account is active
+                if (account.IsActive != true || account.DeletedAt.HasValue)
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 400,
+                        Message = "ACCOUNT_DISABLED"
+                    };
+                }
+
+                // Generate OTP using OtpHelper (6 digits, expires in 5 minutes)
+                var otp = OtpHelper.GenerateOtp(account.Email, length: 6, expirationMinutes: 5);
+
+                // Send OTP email
+                try
+                {
+                    await _emailService.SendOtpResetPasswordEmailAsync(
+                        account.Email, 
+                        otp, 
+                        account.FullName ?? account.Email
+                    );
+                }
+                catch (Exception emailEx)
+                {
+                    // Remove OTP if email sending fails
+                    OtpHelper.RemoveOtp(account.Email);
+                    
+                    return new BaseResponse
+                    {
+                        StatusCode = 500,
+                        Message = $"FAILED_TO_SEND_EMAIL: {emailEx.Message}"
+                    };
+                }
+
+                return new BaseResponse
+                {
+                    StatusCode = 200,
+                    Message = "OTP_SENT_SUCCESS",
+                    Data = new
+                    {
+                        Message = "OTP đã được gửi đến email của bạn. Mã có hiệu lực trong 5 phút.",
+                        Email = account.Email
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 500,
+                    Message = $"FORGOT_PASSWORD_OTP_ERROR: {ex.Message}"
+                };
+            }
+        }
+
+        /// <summary>
+        /// Verify OTP và reset password
+        /// </summary>
+        public async Task<BaseResponse> VerifyOtpResetPasswordAsync(VerifyOtpResetPasswordRequest request)
+        {
+            try
+            {
+                // Find user by email
+                var accounts = await _unitOfWork.AccountRepository.GetAllAsync();
+                var account = accounts.FirstOrDefault(x => x.NormalizedEmail == request.Email.ToUpperInvariant());
+
+                if (account == null)
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 404,
+                        Message = "ACCOUNT_NOT_FOUND"
+                    };
+                }
+
+                // Check if account is active
+                if (account.IsActive != true || account.DeletedAt.HasValue)
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 400,
+                        Message = "ACCOUNT_DISABLED"
+                    };
+                }
+
+                // Verify OTP
+                if (!OtpHelper.VerifyOtp(account.Email, request.Otp, removeOnSuccess: true))
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 400,
+                        Message = "INVALID_OR_EXPIRED_OTP",
+                        Data = new
+                        {
+                            Message = "Mã OTP không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu mã mới."
+                        }
+                    };
+                }
+
+                // Validate new password strength
+                if (!PasswordHelper.IsStrongPassword(request.NewPassword))
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 400,
+                        Message = "PASSWORD_NOT_STRONG_ENOUGH",
+                        Data = new
+                        {
+                            Message = "Mật khẩu phải có ít nhất 6 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt."
+                        }
+                    };
+                }
+
+                // Update password
+                account.PasswordHash = PasswordHelper.HashPassword(request.NewPassword);
+                account.UpdatedAt = DateTime.UtcNow;
+
+                await _unitOfWork.SaveChangesAsync();
+
+                // Revoke all refresh tokens for security
+                await _jwtService.RevokeAllRefreshTokensAsync(account.Id);
+
+                return new BaseResponse
+                {
+                    StatusCode = 200,
+                    Message = "PASSWORD_RESET_SUCCESS",
+                    Data = new
+                    {
+                        Message = "Mật khẩu đã được đặt lại thành công. Bạn có thể đăng nhập bằng mật khẩu mới.",
+                        Email = account.Email
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 500,
+                    Message = $"VERIFY_OTP_RESET_PASSWORD_ERROR: {ex.Message}"
+                };
+            }
+        }
+
+        /// <summary>
+        /// Cập nhật thông tin profile của user hiện tại (được gọi từ AccountController.UpdateProfileAsync)
+        /// Cho phép user thay đổi: FullName, Phone, AvatarUrl, Bio
+        /// Không cho phép thay đổi Email (cần API riêng với verify OTP)
+        /// </summary>
+        public async Task<BaseResponse> UpdateProfileAsync(UpdateProfileRequest request)
+        {
+            try
+            {
+                // Get current user ID from HttpContext
+                var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 401,
+                        Message = "UNAUTHORIZED"
+                    };
+                }
+
+                // Get account from database
+                var account = await _unitOfWork.AccountRepository.GetByIdAsync(userId);
+                if (account == null)
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 404,
+                        Message = "ACCOUNT_NOT_FOUND"
+                    };
+                }
+
+                // Check if account is active
+                if (account.IsActive != true || account.DeletedAt.HasValue)
+                {
+                    return new BaseResponse
+                    {
+                        StatusCode = 400,
+                        Message = "ACCOUNT_DISABLED"
+                    };
+                }
+
+                // Update fields (chỉ update nếu có giá trị mới)
+                if (!string.IsNullOrWhiteSpace(request.FullName))
+                {
+                    account.FullName = request.FullName.Trim();
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.Phone))
+                {
+                    account.Phone = request.Phone.Trim();
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.AvatarUrl))
+                {
+                    account.AvatarUrl = request.AvatarUrl.Trim();
+                }
+
+                if (request.DateOfBirth.HasValue)
+                {
+                    account.DateOfBirth = request.DateOfBirth.Value;
+                }
+
+                // Update timestamps
+                account.UpdatedAt = DateTime.UtcNow;
+
+                // Save to database
+                _unitOfWork.AccountRepository.Update(account);
+                await _unitOfWork.SaveChangesAsync();
+
+                // Create response DTO manually
+                var response = new AccountResponse
+                {
+                    Id = account.Id,
+                    Email = account.Email,
+                    FullName = account.FullName,
+                    Phone = account.Phone,
+                    DateOfBirth = account.DateOfBirth,
+                    AvatarUrl = account.AvatarUrl,
+                    Role = account.RoleEnum,
+                    IsActive = account.IsActive,
+                    EmailVerified = account.EmailVerified
+                };
+
+                return new BaseResponse
+                {
+                    StatusCode = 200,
+                    Message = "UPDATE_PROFILE_SUCCESS",
+                    Data = response
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 500,
+                    Message = $"UPDATE_PROFILE_ERROR: {ex.Message}"
                 };
             }
         }

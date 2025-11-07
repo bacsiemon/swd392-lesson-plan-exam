@@ -1,0 +1,53 @@
+### 1. Login to get token
+POST http://localhost:5166/api/Account/login
+Content-Type: application/json
+
+{
+  "email": "haomase182227@fpt.edu.vn",
+  "password": "AnhHao04##"
+}
+
+### 2. Get current profile
+GET http://localhost:5166/api/Account/profile
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### 3. Update profile - Full update
+PUT http://localhost:5166/api/Account/profile
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "fullName": "Nguyen Van A Updated",
+  "phone": "0901234567",
+  "avatarUrl": "https://example.com/avatar-new.jpg",
+  "dateOfBirth": "2000-01-15"
+}
+
+### 4. Update profile - Partial update (only name and phone)
+PUT http://localhost:5166/api/Account/profile
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "fullName": "Le Thi B",
+  "phone": "0987654321"
+}
+
+### 5. Update profile - Only avatar
+PUT http://localhost:5166/api/Account/profile
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "avatarUrl": "https://ui-avatars.com/api/?name=John+Doe&size=200"
+}
+
+### 6. Update profile - Clear phone (set to empty)
+PUT http://localhost:5166/api/Account/profile
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "fullName": "Test User",
+  "phone": ""
+}

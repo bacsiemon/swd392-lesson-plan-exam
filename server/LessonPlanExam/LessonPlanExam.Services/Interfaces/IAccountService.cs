@@ -55,12 +55,30 @@ namespace LessonPlanExam.Services.Interfaces
         /// <param name="request">Teacher registration details including school name</param>
         /// <returns>Teacher registration response</returns>
         Task<BaseResponse> RegisterTeacherAsync(TeacherRegisterRequest request);
-        
-        Task<BaseResponse> ForgotPasswordAsync(ForgotPasswordRequest request);
-        Task<BaseResponse> ResetPasswordAsync(ResetPasswordRequest request);
         Task<BaseResponse> ChangePasswordAsync(ChangePasswordRequest request);
+        
+        /// <summary>
+        /// Gửi OTP qua email để reset password (sử dụng OtpHelper)
+        /// </summary>
+        /// <param name="request">Email của người dùng</param>
+        /// <returns>Kết quả gửi OTP</returns>
+        Task<BaseResponse> ForgotPasswordWithOtpAsync(ForgotPasswordWithOtpRequest request);
+        
+        /// <summary>
+        /// Verify OTP và reset password
+        /// </summary>
+        /// <param name="request">Email, OTP và mật khẩu mới</param>
+        /// <returns>Kết quả reset password</returns>
+        Task<BaseResponse> VerifyOtpResetPasswordAsync(VerifyOtpResetPasswordRequest request);
         Task<BaseResponse> RefreshTokenAsync(RefreshTokenRequest request);
         Task<BaseResponse> LogoutAsync();
         Task<BaseResponse> GetCurrentUserProfileAsync();
+        
+        /// <summary>
+        /// Cập nhật thông tin profile của user hiện tại
+        /// </summary>
+        /// <param name="request">Thông tin cần cập nhật (FullName, Phone, AvatarUrl, Bio)</param>
+        /// <returns>Thông tin profile sau khi cập nhật</returns>
+        Task<BaseResponse> UpdateProfileAsync(UpdateProfileRequest request);
     }
 }
