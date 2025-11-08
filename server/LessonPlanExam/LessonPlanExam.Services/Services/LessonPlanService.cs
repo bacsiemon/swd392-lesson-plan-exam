@@ -17,12 +17,16 @@ namespace LessonPlanExam.Services.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IAccountService _accountService;
         private readonly IFileUploadService _fileUploadService;
+        private readonly ILessonPlanFileGenerationService _documentGenerationService;
+        private readonly ILessonPlanAiGenerationService _lessonPlanAiGenerationService;
 
-        public LessonPlanService(IUnitOfWork unitOfWork, IAccountService accountService, IFileUploadService fileUploadService)
+        public LessonPlanService(IUnitOfWork unitOfWork, IAccountService accountService, IFileUploadService fileUploadService, ILessonPlanFileGenerationService documentGenerationService, ILessonPlanAiGenerationService lessonPlanAiGenerationService)
         {
             _unitOfWork = unitOfWork;
             _accountService = accountService;
             _fileUploadService = fileUploadService;
+            _documentGenerationService = documentGenerationService;
+            _lessonPlanAiGenerationService = lessonPlanAiGenerationService;
         }
 
         public async Task<BaseResponse> CreateLessonPlanAsync(CreateLessonPlanRequest request)
@@ -38,13 +42,13 @@ namespace LessonPlanExam.Services.Services
                 };
             }
             var currentUserId = _accountService.GetCurrentUserId();
-            
+
             var lessonPlan = request.ToEntity();
-            
+
             // Override the CreatedByTeacher with the current user ID from JWT
             // This ensures that the lesson plan is created by the authenticated user
             lessonPlan.CreatedByTeacher = currentUserId;
-            
+
             _unitOfWork.LessonPlanRepository.Create(lessonPlan);
             await _unitOfWork.SaveChangesAsync();
 
@@ -107,17 +111,17 @@ namespace LessonPlanExam.Services.Services
         public async Task<BaseResponse> SearchAsync(string? title, string? teacherName, int? gradeLevel, int page = 1, int size = 10)
         {
             var predicate = PredicateBuilder.New<LessonPlan>(e => e.DeletedAt == null);
-            
+
             if (!string.IsNullOrEmpty(title))
             {
                 predicate = predicate.And(e => EF.Functions.ILike(e.Title, $"%{title}%"));
             }
-            
+
             if (!string.IsNullOrEmpty(teacherName))
             {
                 predicate = predicate.And(e => EF.Functions.ILike(e.CreatedByTeacherNavigation.Account.FullName, $"%{teacherName}%"));
             }
-            
+
             if (gradeLevel.HasValue)
             {
                 predicate = predicate.And(e => e.GradeLevel == gradeLevel.Value);
@@ -138,7 +142,7 @@ namespace LessonPlanExam.Services.Services
         public async Task<BaseResponse> UpdateLessonPlanAsync(int id, UpdateLessonPlanRequest request)
         {
             var lessonPlan = await _unitOfWork.LessonPlanRepository.GetByIdAsync(id);
-            
+
             if (lessonPlan == null || lessonPlan.DeletedAt != null)
             {
                 return new BaseResponse
@@ -154,7 +158,7 @@ namespace LessonPlanExam.Services.Services
 
             // Reload with navigation properties for response using strongly typed include
             var updatedLessonPlan = await _unitOfWork.LessonPlanRepository.GetByIdAsync(
-                id, 
+                id,
                 new Expression<Func<LessonPlan, object>>[] { lp => lp.CreatedByTeacherNavigation }
             );
 
@@ -169,7 +173,7 @@ namespace LessonPlanExam.Services.Services
         public async Task<BaseResponse> DeleteLessonPlanAsync(int id)
         {
             var lessonPlan = await _unitOfWork.LessonPlanRepository.GetByIdAsync(id);
-            
+
             if (lessonPlan == null || lessonPlan.DeletedAt != null)
             {
                 return new BaseResponse
@@ -233,7 +237,7 @@ namespace LessonPlanExam.Services.Services
         public async Task<BaseResponse> DeleteLessonPlanFileAsync(int fileId)
         {
             var lessonPlanFile = await _unitOfWork.LessonPlanFileRepository.GetByIdAsync(fileId);
-            
+
             if (lessonPlanFile == null)
             {
                 return new BaseResponse
@@ -252,6 +256,98 @@ namespace LessonPlanExam.Services.Services
                 StatusCode = 200,
                 Message = "SUCCESS"
             };
+        }
+
+        public async Task<BaseResponse<byte[]>> GenerateWordDocumentAsync(int lessonPlanId)
+        {
+            // Check if user is a teacher
+            var currentRole = _accountService.GetCurrentUserRole();
+            if (currentRole != Repositories.Enums.EUserRole.Teacher)
+            {
+                return new BaseResponse<byte[]>
+                {
+                    StatusCode = 403,
+                    Errors = "TEACHER_ONLY"
+                };
+            }
+
+            var currentUserId = _accountService.GetCurrentUserId();
+
+            // Get the lesson plan with all necessary navigation properties including slot plans
+            var lessonPlan = await _unitOfWork.LessonPlanRepository.GetByIdAsync(
+                lessonPlanId,
+                lp => lp.SlotPlans,
+                lp => lp.CreatedByTeacherNavigation,
+                lp => lp.CreatedByTeacherNavigation.Account
+            );
+
+            if (lessonPlan == null || lessonPlan.DeletedAt != null)
+            {
+                return new BaseResponse<byte[]>
+                {
+                    StatusCode = 404,
+                    Errors = "LESSON_PLAN_NOT_FOUND"
+                };
+            }
+
+            // Check if the lesson plan belongs to the current teacher
+            if (lessonPlan.CreatedByTeacher != currentUserId)
+            {
+                return new BaseResponse<byte[]>
+                {
+                    StatusCode = 403,
+                    Errors = "LESSON_PLAN_NOT_OWNED_BY_TEACHER"
+                };
+            }
+
+            try
+            {
+                // Generate the Word document
+                var documentBytes = await _documentGenerationService.GenerateWordDocumentAsync(lessonPlan);
+
+                return new BaseResponse<byte[]>
+                {
+                    StatusCode = 200,
+                    Message = "SUCCESS",
+                    Data = documentBytes
+                };
+            }
+            catch (Exception ex)
+            {
+                return new BaseResponse<byte[]>
+                {
+                    StatusCode = 500,
+                    Errors = "DOCUMENT_GENERATION_FAILED",
+                    Message = ex.Message
+                };
+            }
+        }
+
+        public async Task<BaseResponse<byte[]>> GenerateLessonPlanWithAiAsync(GenerateLessonPlanAiRequest request)
+        {
+            // Generate the lesson plan using AI service
+            var aiResponse = await _lessonPlanAiGenerationService.GenerateLessonPlanAsync(request);
+            
+            // Check if AI generation was successful
+            if (aiResponse.StatusCode != 201 || aiResponse.Data == null)
+            {
+                return new BaseResponse<byte[]>
+                {
+                    StatusCode = aiResponse.StatusCode,
+                    Message = aiResponse.Message,
+                    Errors = aiResponse.Errors
+                };
+            }
+            // Generate Word document from the AI-generated lesson plan
+            var documentBytes = await _documentGenerationService.GenerateWordDocumentAsync(aiResponse.Data);
+
+            return new BaseResponse<byte[]>
+            {
+                StatusCode = 200,
+                Message = "SUCCESS",
+                Data = documentBytes
+            };
+
         }
     }
 }

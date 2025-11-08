@@ -652,16 +652,18 @@ public partial class LessonPlanExamDbContext : DbContext
             entity.HasIndex(e => new { e.LessonPlanId, e.SlotNumber }, "slot_plans_lesson_plan_id_slot_number_key").IsUnique();
 
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Content)
-                .IsRequired()
-                .HasColumnName("content");
+            entity.Property(e => e.Activities).HasColumnName("activities");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("created_at");
             entity.Property(e => e.DurationMinutes)
                 .HasDefaultValue(45)
                 .HasColumnName("duration_minutes");
+            entity.Property(e => e.EquipmentNeeded).HasColumnName("equipment_needed");
             entity.Property(e => e.LessonPlanId).HasColumnName("lesson_plan_id");
+            entity.Property(e => e.Objectives).HasColumnName("objectives");
+            entity.Property(e => e.Preparations).HasColumnName("preparations");
+            entity.Property(e => e.ReviseQuestions).HasColumnName("revise_questions");
             entity.Property(e => e.SlotNumber).HasColumnName("slot_number");
             entity.Property(e => e.Title)
                 .IsRequired()

@@ -17,11 +17,19 @@ public partial class SlotPlan
 
     public int? DurationMinutes { get; set; }
 
-    public string Content { get; set; }
-
     public DateTime? CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
+
+    public string Objectives { get; set; }
+
+    public string EquipmentNeeded { get; set; }
+
+    public string Preparations { get; set; }
+
+    public string Activities { get; set; }
+
+    public string ReviseQuestions { get; set; }
 
     public virtual LessonPlan LessonPlan { get; set; }
 

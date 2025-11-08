@@ -1,3 +1,4 @@
+﻿using DocumentFormat.OpenXml.Office2010.Excel;
 using LessonPlanExam.API.Attributes;
 using LessonPlanExam.Repositories.DTOs.LessonPlanDTOs;
 using LessonPlanExam.Repositories.Enums;
@@ -12,10 +13,12 @@ namespace LessonPlanExam.API.Controllers
     public class LessonPlanController : ControllerBase
     {
         private readonly ILessonPlanService _lessonPlanService;
+        private readonly ILessonPlanAiGenerationService _lessonPlanAiGenerationService;
 
-        public LessonPlanController(ILessonPlanService lessonPlanService)
+        public LessonPlanController(ILessonPlanService lessonPlanService, ILessonPlanAiGenerationService lessonPlanAiGenerationService)
         {
             _lessonPlanService = lessonPlanService;
+            _lessonPlanAiGenerationService = lessonPlanAiGenerationService;
         }
 
         /// <summary>Teacher</summary>
@@ -307,6 +310,113 @@ namespace LessonPlanExam.API.Controllers
         {
             var response = await _lessonPlanService.DeleteLessonPlanFileAsync(id);
             return StatusCode(response.StatusCode, response);
+        }
+
+        /// <summary>Teacher</summary>
+        /// <remarks>
+        /// 
+        /// Generate and download a Word document (.docx) for a specific lesson plan with its slot plans.
+        /// 
+        /// Creates a professionally formatted Word document containing:
+        /// - Lesson plan title and details
+        /// - Teacher information and school
+        /// - Learning objectives and description
+        /// - All slot plans (activities) with their content and duration
+        /// - Document metadata and generation timestamp
+        /// 
+        /// Only the lesson plan creator (teacher) can generate documents for their lesson plans.
+        /// 
+        /// Sample request:
+        /// ```
+        /// GET /api/lessonplan/123/generate-word-document
+        /// ```
+        /// </remarks>
+        /// <param name="id">The ID of the lesson plan to generate a Word document for</param>
+        /// <response code="200">Word document generated successfully. Returns the .docx file as binary data with appropriate headers for download.</response>
+        /// <response code="400">Invalid lesson plan ID provided.</response>
+        /// <response code="401">Unauthorized. User authentication required.</response>
+        /// <response code="403">Forbidden. Possible messages:
+        /// - TEACHER_ONLY (Only teachers can generate Word documents)
+        /// - LESSON_PLAN_NOT_OWNED_BY_TEACHER (User can only generate documents for their own lesson plans)
+        /// </response>
+        /// <response code="404">Lesson plan not found with the specified ID.</response>
+        /// <response code="500">Internal server error occurred during document generation. Possible messages:
+        /// - DOCUMENT_GENERATION_FAILED (Error occurred while creating the Word document)
+        /// </response>
+        [HttpGet("{id}/generate-doc")]
+        [AuthorizeRoles(EUserRole.Teacher)]
+        public async Task<IActionResult> GenerateWordDocumentAsync(int id)
+        {
+            var response = await _lessonPlanService.GenerateWordDocumentAsync(id);
+            
+            if (response.StatusCode != 200)
+            {
+                return StatusCode(response.StatusCode, response);
+            }
+
+            // Return the Word document as a file download
+            var fileName = $"LessonPlan_{id}_{DateTime.Now:yyyyMMdd_HHmmss}.docx";
+            return File(
+                response.Data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                fileName
+            );
+        }
+
+        /// <summary>Teacher</summary>
+        /// <remarks>
+        /// 
+        /// Generate a lesson plan with multiple slot plans using AI (Gemini 2.5 Pro).
+        /// 
+        /// Parameters:
+        /// prompt: Required, Vietnamese prompt describing the lesson content, minimum 10 characters, maximum 2000 characters.
+        /// gradeLevel: Required, grade level from 1 to 12.
+        /// numberOfSlots: Optional, number of slots to generate (default: 3, max: 10).
+        /// durationMinutesPerSlot: Optional, duration in minutes for each slot (default: 45, max: 240).
+        /// 
+        /// Sample request:
+        /// ```
+        /// POST /api/lessonplan/generate-ai
+        /// {
+        ///   "prompt": "Giáo trình Hoá Học 8 chuẩn Bộ Giáo Dục và Đào Tạo",
+        ///   "gradeLevel": 8,
+        ///   "numberOfSlots": 30,
+        ///   "durationMinutesPerSlot": 45
+        /// }
+        /// ```
+        /// </remarks>
+        /// <param name="request">AI generation request containing prompt and lesson parameters</param>
+        /// <response code="201">Lesson plan generated successfully</response>
+        /// <response code="400">Validation error. Possible messages:
+        /// - PROMPT_REQUIRED
+        /// - PROMPT_MIN_10_CHARACTERS
+        /// - PROMPT_MAX_2000_CHARACTERS
+        /// - GRADE_LEVEL_MUST_BE_GREATER_THAN_ZERO
+        /// - GRADE_LEVEL_MAX_12
+        /// - NUMBER_OF_SLOTS_MUST_BE_GREATER_THAN_ZERO
+        /// - NUMBER_OF_SLOTS_MAX_60
+        /// - DURATION_MINUTES_PER_SLOT_MUST_BE_GREATER_THAN_ZERO
+        /// - DURATION_MINUTES_PER_SLOT_MAX_240
+        /// </response>
+        /// <response code="401">Unauthorized access</response>
+        /// <response code="500">AI_GENERATION_FAILED</response>
+        [HttpPost("generate-ai")]
+        [AuthorizeRoles(EUserRole.Teacher)]
+        public async Task<IActionResult> GenerateLessonPlanWithAiAsync([FromBody] GenerateLessonPlanAiRequest request)
+        {
+            var response = await _lessonPlanService.GenerateLessonPlanWithAiAsync(request);
+            if (response.StatusCode != 200)
+            {
+                return StatusCode(response.StatusCode, response);
+            }
+
+            // Return the Word document as a file download
+            var fileName = $"giaoan_{DateTime.Now:yyyyMMdd_HHmmss}.docx";
+            return File(
+                response.Data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                fileName
+            );
         }
     }
 }
