@@ -224,16 +224,32 @@ namespace LessonPlanExam.Services.Services
             attempt.MaxScore = totalPossible;
             attempt.ScorePercentage = totalPossible > 0 ? (decimal)Math.Round((double)(totalEarned / totalPossible * 100), 2) : 0;
             attempt.StatusEnum = LessonPlanExam.Repositories.Enums.EAttemptStatus.Submitted;
+            attempt.SubmittedAt = DateTime.UtcNow; // Set SubmittedAt when submitting
+            attempt.AutoGradedAt = DateTime.UtcNow; // Set AutoGradedAt since we're auto-grading
             attempt.UpdatedAt = DateTime.UtcNow;
 
-            // Persist changes: not implemented via repo update method; assume ChangeTracker
-            // For production, add method in repo to update attempt and save.
+            System.Diagnostics.Debug.WriteLine($"[SubmitAttempt] Before UpdateAttemptAsync - Attempt {attempt.Id}: TotalScore={attempt.TotalScore}, MaxScore={attempt.MaxScore}, ScorePercentage={attempt.ScorePercentage}, StatusEnum={attempt.StatusEnum}, SubmittedAt={attempt.SubmittedAt}");
+
+            // Persist changes to database
+            try
+            {
+                var updatedAttempt = await _attemptRepo.UpdateAttemptAsync(attempt, ct);
+                System.Diagnostics.Debug.WriteLine($"[SubmitAttempt] After UpdateAttemptAsync - Attempt {updatedAttempt.Id}: TotalScore={updatedAttempt.TotalScore}, MaxScore={updatedAttempt.MaxScore}, ScorePercentage={updatedAttempt.ScorePercentage}, StatusEnum={updatedAttempt.StatusEnum}, SubmittedAt={updatedAttempt.SubmittedAt}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SubmitAttempt] ERROR updating attempt {attempt.Id}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[SubmitAttempt] StackTrace: {ex.StackTrace}");
+                throw; // Re-throw to let controller handle it
+            }
 
             var passed = false;
             if (attempt.ScorePercentage.HasValue && exam.PassThreshold.HasValue)
             {
                 passed = attempt.ScorePercentage.Value >= exam.PassThreshold.Value;
             }
+
+            System.Diagnostics.Debug.WriteLine($"[SubmitAttempt] Attempt {attempt.Id} submitted successfully: TotalScore={totalEarned}, MaxScore={totalPossible}, ScorePercentage={attempt.ScorePercentage}, SubmittedAt={attempt.SubmittedAt}, Passed={passed}");
 
             return new SubmitResponse
             {

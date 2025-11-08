@@ -398,30 +398,73 @@ const ManageTestPage = () => {
                 studentAttempts = attempts.length;
                 
                 // Calculate average score and pass rate from submitted attempts
+                // Use SubmittedAt to determine if attempt is submitted (more reliable than Status enum)
                 // Status: 0 = InProgress, 1 = Submitted, 2 = Graded, 3 = Expired
-                // We count both Submitted (1) and Graded (2) as submitted
                 const submittedAttempts = attempts.filter(a => {
+                  const submittedAt = a.SubmittedAt || a.submittedAt;
                   const status = a.Status !== undefined ? a.Status : a.status;
-                  return status === 1 || status === 2; // Status 1 = Submitted, Status 2 = Graded
+                  // Consider submitted if: has SubmittedAt OR status is Submitted(1) or Graded(2)
+                  return (submittedAt !== null && submittedAt !== undefined) || status === 1 || status === 2;
                 });
+                
                 if (submittedAttempts.length > 0) {
-                  const totalScore = submittedAttempts.reduce((sum, a) => {
-                    const score = a.ScorePercentage !== undefined && a.ScorePercentage !== null 
+                  // Only count attempts that have scores
+                  const scoredAttempts = submittedAttempts.filter(a => {
+                    const scorePercentage = a.ScorePercentage !== undefined && a.ScorePercentage !== null 
                       ? a.ScorePercentage 
-                      : (a.scorePercentage !== undefined && a.scorePercentage !== null ? a.scorePercentage : 0);
-                    return sum + score;
-                  }, 0);
-                  averageScore = totalScore / submittedAttempts.length;
+                      : (a.scorePercentage !== undefined && a.scorePercentage !== null ? a.scorePercentage : null);
+                    const totalScore = a.TotalScore !== undefined && a.TotalScore !== null 
+                      ? a.TotalScore 
+                      : (a.totalScore !== undefined && a.totalScore !== null ? a.totalScore : null);
+                    return scorePercentage !== null || totalScore !== null;
+                  });
                   
-                  // Calculate pass rate (assuming pass threshold is 50%)
-                  const passThreshold = exam.passThreshold || exam.PassThreshold || 50;
-                  const passedCount = submittedAttempts.filter(a => {
-                    const score = a.ScorePercentage !== undefined && a.ScorePercentage !== null 
-                      ? a.ScorePercentage 
-                      : (a.scorePercentage !== undefined && a.scorePercentage !== null ? a.scorePercentage : 0);
-                    return score >= passThreshold;
-                  }).length;
-                  passRate = (passedCount / submittedAttempts.length) * 100;
+                  if (scoredAttempts.length > 0) {
+                    const totalScore = scoredAttempts.reduce((sum, a) => {
+                      const scorePercentage = a.ScorePercentage !== undefined && a.ScorePercentage !== null 
+                        ? a.ScorePercentage 
+                        : (a.scorePercentage !== undefined && a.scorePercentage !== null ? a.scorePercentage : null);
+                      const totalScore = a.TotalScore !== undefined && a.TotalScore !== null 
+                        ? a.TotalScore 
+                        : (a.totalScore !== undefined && a.totalScore !== null ? a.totalScore : null);
+                      const maxScore = a.MaxScore !== undefined && a.MaxScore !== null 
+                        ? a.MaxScore 
+                        : (a.maxScore !== undefined && a.maxScore !== null ? a.maxScore : null);
+                      
+                      // Prefer ScorePercentage, fallback to calculated from TotalScore/MaxScore
+                      if (scorePercentage !== null) {
+                        return sum + scorePercentage;
+                      } else if (totalScore !== null && maxScore !== null && maxScore > 0) {
+                        return sum + ((totalScore / maxScore) * 100);
+                      } else {
+                        return sum + 0;
+                      }
+                    }, 0);
+                    averageScore = totalScore / scoredAttempts.length;
+                    
+                    // Calculate pass rate (assuming pass threshold is 50%)
+                    const passThreshold = exam.passThreshold || exam.PassThreshold || 50;
+                    const passedCount = scoredAttempts.filter(a => {
+                      const scorePercentage = a.ScorePercentage !== undefined && a.ScorePercentage !== null 
+                        ? a.ScorePercentage 
+                        : (a.scorePercentage !== undefined && a.scorePercentage !== null ? a.scorePercentage : null);
+                      const totalScore = a.TotalScore !== undefined && a.TotalScore !== null 
+                        ? a.TotalScore 
+                        : (a.totalScore !== undefined && a.totalScore !== null ? a.totalScore : null);
+                      const maxScore = a.MaxScore !== undefined && a.MaxScore !== null 
+                        ? a.MaxScore 
+                        : (a.maxScore !== undefined && a.maxScore !== null ? a.maxScore : null);
+                      
+                      let score = 0;
+                      if (scorePercentage !== null) {
+                        score = scorePercentage;
+                      } else if (totalScore !== null && maxScore !== null && maxScore > 0) {
+                        score = (totalScore / maxScore) * 100;
+                      }
+                      return score >= passThreshold;
+                    }).length;
+                    passRate = (passedCount / scoredAttempts.length) * 100;
+                  }
                 }
               }
             } catch (error) {
@@ -748,14 +791,28 @@ const ManageTestPage = () => {
 
       const result = await examService.getExamById(examId);
       if (result.success && result.data) {
-        // Also load questions if available
-        const questionsResult = await examService.getExamQuestions(examId);
+        // Try to get questions from getExamById response first
+        let questionsFromExam = result.data.questions || result.data.Questions || [];
         let examQuestions = [];
         
+        // If no questions in getExamById response, try to load from getExamQuestions
+        if (!questionsFromExam || questionsFromExam.length === 0) {
+          console.log('[handleViewDetails] No questions in getExamById response, trying getExamQuestions...');
+          const questionsResult = await examService.getExamQuestions(examId);
+          if (questionsResult.success && questionsResult.data) {
+            questionsFromExam = questionsResult.data;
+            console.log('[handleViewDetails] Loaded questions from getExamQuestions:', questionsFromExam.length);
+          } else {
+            console.warn('[handleViewDetails] Failed to load questions from getExamQuestions:', questionsResult.message);
+          }
+        } else {
+          console.log('[handleViewDetails] Found questions in getExamById response:', questionsFromExam.length);
+        }
+        
         // Load full question details with answers for display
-        if (questionsResult.success && questionsResult.data && questionsResult.data.length > 0) {
+        if (questionsFromExam && questionsFromExam.length > 0) {
           examQuestions = await Promise.all(
-            questionsResult.data.map(async (examQuestion) => {
+            questionsFromExam.map(async (examQuestion) => {
               const questionId = examQuestion.questionId || examQuestion.QuestionId;
               if (questionId) {
                 try {
@@ -785,6 +842,8 @@ const ManageTestPage = () => {
               };
             })
           );
+        } else {
+          console.warn('[handleViewDetails] No questions found for exam:', examId);
         }
         
         // Load attempts for this exam
@@ -801,39 +860,101 @@ const ManageTestPage = () => {
         if (attemptsResult.success && attemptsResult.data) {
           attempts = Array.isArray(attemptsResult.data) ? attemptsResult.data : [];
           
+          console.log('[handleViewDetails] Loaded attempts:', attempts.length, attempts);
+          
           // Calculate statistics
           attemptsStats.totalAttempts = attempts.length;
+          
+          // Use SubmittedAt to determine if attempt is submitted (more reliable than Status enum)
           // Status: 0 = InProgress, 1 = Submitted, 2 = Graded, 3 = Expired
           const submittedAttempts = attempts.filter(a => {
+            const submittedAt = a.SubmittedAt || a.submittedAt;
             const status = a.Status !== undefined ? a.Status : a.status;
-            return status === 1 || status === 2; // Status 1 = Submitted, Status 2 = Graded
+            // Consider submitted if: has SubmittedAt OR status is Submitted(1) or Graded(2)
+            return (submittedAt !== null && submittedAt !== undefined) || status === 1 || status === 2;
           });
           attemptsStats.submittedAttempts = submittedAttempts.length;
+          
           attemptsStats.inProgressAttempts = attempts.filter(a => {
+            const submittedAt = a.SubmittedAt || a.submittedAt;
             const status = a.Status !== undefined ? a.Status : a.status;
-            return status === 0; // Status 0 = InProgress
+            const startedAt = a.StartedAt || a.startedAt;
+            // Consider in progress if: started but not submitted
+            return (startedAt !== null && startedAt !== undefined) && 
+                   (submittedAt === null || submittedAt === undefined) && 
+                   (status === 0 || status === null || status === undefined);
           }).length;
+          
+          console.log('[handleViewDetails] Submitted attempts:', submittedAttempts.length);
+          console.log('[handleViewDetails] Submitted attempts data:', submittedAttempts.map(a => ({
+            id: a.Id || a.id,
+            submittedAt: a.SubmittedAt || a.submittedAt,
+            status: a.Status || a.status,
+            scorePercentage: a.ScorePercentage || a.scorePercentage,
+            totalScore: a.TotalScore || a.totalScore
+          })));
           
           // Calculate average score from submitted attempts
           if (submittedAttempts.length > 0) {
-            const totalScore = submittedAttempts.reduce((sum, a) => {
-              const score = a.ScorePercentage !== undefined && a.ScorePercentage !== null 
+            const scoredAttempts = submittedAttempts.filter(a => {
+              const scorePercentage = a.ScorePercentage !== undefined && a.ScorePercentage !== null 
                 ? a.ScorePercentage 
-                : (a.scorePercentage !== undefined && a.scorePercentage !== null ? a.scorePercentage : 0);
-              return sum + score;
-            }, 0);
-            attemptsStats.averageScore = totalScore / submittedAttempts.length;
+                : (a.scorePercentage !== undefined && a.scorePercentage !== null ? a.scorePercentage : null);
+              const totalScore = a.TotalScore !== undefined && a.TotalScore !== null 
+                ? a.TotalScore 
+                : (a.totalScore !== undefined && a.totalScore !== null ? a.totalScore : null);
+              return scorePercentage !== null || totalScore !== null;
+            });
             
-            // Calculate pass rate (assuming pass threshold is 50%)
-            const passThreshold = result.data.passThreshold || result.data.PassThreshold || 50;
-            const passedCount = submittedAttempts.filter(a => {
-              const score = a.ScorePercentage !== undefined && a.ScorePercentage !== null 
-                ? a.ScorePercentage 
-                : (a.scorePercentage !== undefined && a.scorePercentage !== null ? a.scorePercentage : 0);
-              return score >= passThreshold;
-            }).length;
-            attemptsStats.passRate = (passedCount / submittedAttempts.length) * 100;
+            if (scoredAttempts.length > 0) {
+              const totalScore = scoredAttempts.reduce((sum, a) => {
+                const scorePercentage = a.ScorePercentage !== undefined && a.ScorePercentage !== null 
+                  ? a.ScorePercentage 
+                  : (a.scorePercentage !== undefined && a.scorePercentage !== null ? a.scorePercentage : null);
+                const totalScore = a.TotalScore !== undefined && a.TotalScore !== null 
+                  ? a.TotalScore 
+                  : (a.totalScore !== undefined && a.totalScore !== null ? a.totalScore : null);
+                const maxScore = a.MaxScore !== undefined && a.MaxScore !== null 
+                  ? a.MaxScore 
+                  : (a.maxScore !== undefined && a.maxScore !== null ? a.maxScore : null);
+                
+                // Prefer ScorePercentage, fallback to calculated from TotalScore/MaxScore
+                if (scorePercentage !== null) {
+                  return sum + scorePercentage;
+                } else if (totalScore !== null && maxScore !== null && maxScore > 0) {
+                  return sum + ((totalScore / maxScore) * 100);
+                } else {
+                  return sum + 0;
+                }
+              }, 0);
+              attemptsStats.averageScore = totalScore / scoredAttempts.length;
+              
+              // Calculate pass rate (assuming pass threshold is 50%)
+              const passThreshold = result.data.passThreshold || result.data.PassThreshold || 50;
+              const passedCount = scoredAttempts.filter(a => {
+                const scorePercentage = a.ScorePercentage !== undefined && a.ScorePercentage !== null 
+                  ? a.ScorePercentage 
+                  : (a.scorePercentage !== undefined && a.scorePercentage !== null ? a.scorePercentage : null);
+                const totalScore = a.TotalScore !== undefined && a.TotalScore !== null 
+                  ? a.TotalScore 
+                  : (a.totalScore !== undefined && a.totalScore !== null ? a.totalScore : null);
+                const maxScore = a.MaxScore !== undefined && a.MaxScore !== null 
+                  ? a.MaxScore 
+                  : (a.maxScore !== undefined && a.maxScore !== null ? a.maxScore : null);
+                
+                let score = 0;
+                if (scorePercentage !== null) {
+                  score = scorePercentage;
+                } else if (totalScore !== null && maxScore !== null && maxScore > 0) {
+                  score = (totalScore / maxScore) * 100;
+                }
+                return score >= passThreshold;
+              }).length;
+              attemptsStats.passRate = (passedCount / scoredAttempts.length) * 100;
+            }
           }
+          
+          console.log('[handleViewDetails] Attempts stats:', attemptsStats);
         }
         
         const examWithQuestions = {
@@ -1095,26 +1216,60 @@ const ManageTestPage = () => {
       title: 'Điểm số',
       key: 'score',
       render: (_, record) => {
+        // Check if attempt is submitted (has SubmittedAt or status is Submitted/Graded)
+        const submittedAt = record.SubmittedAt || record.submittedAt;
+        const statusValue = record.Status !== undefined ? record.Status : (record.status !== undefined ? record.status : null);
+        const isSubmitted = submittedAt !== null && submittedAt !== undefined;
+        
+        // Get score data - handle both camelCase and PascalCase
         const scorePercentage = record.ScorePercentage !== undefined && record.ScorePercentage !== null
           ? record.ScorePercentage
           : (record.scorePercentage !== undefined && record.scorePercentage !== null ? record.scorePercentage : null);
         const totalScore = record.TotalScore !== undefined && record.TotalScore !== null
           ? record.TotalScore
           : (record.totalScore !== undefined && record.totalScore !== null ? record.totalScore : null);
+        const maxScore = record.MaxScore !== undefined && record.MaxScore !== null
+          ? record.MaxScore
+          : (record.maxScore !== undefined && record.maxScore !== null ? record.maxScore : null);
         
+        // If submitted but no score yet, show "Chưa chấm"
+        if (isSubmitted && scorePercentage === null && totalScore === null) {
+          return <Tag color="orange">Chưa chấm</Tag>;
+        }
+        
+        // Display score on scale of 10 (ScorePercentage is 0-100, convert to 0-10)
         if (scorePercentage !== null && scorePercentage !== undefined) {
+          const scoreOn10 = scorePercentage / 10;
+          const color = scoreOn10 >= 8 ? 'green' : scoreOn10 >= 5 ? 'orange' : 'red';
           return (
-            <Tag color={scorePercentage >= 80 ? 'green' : scorePercentage >= 60 ? 'orange' : 'red'}>
-              {scorePercentage.toFixed(2)}%
+            <Tag color={color}>
+              {scoreOn10.toFixed(1)}/10 ({scorePercentage.toFixed(1)}%)
             </Tag>
           );
-        } else if (totalScore !== null && totalScore !== undefined) {
+        } 
+        
+        // If TotalScore and MaxScore are available, calculate percentage
+        if (totalScore !== null && totalScore !== undefined && maxScore !== null && maxScore !== undefined && maxScore > 0) {
+          const calculatedPercentage = (totalScore / maxScore) * 100;
+          const scoreOn10 = calculatedPercentage / 10;
+          const color = scoreOn10 >= 8 ? 'green' : scoreOn10 >= 5 ? 'orange' : 'red';
           return (
-            <Tag color="blue">
-              {totalScore}
+            <Tag color={color}>
+              {scoreOn10.toFixed(1)}/10 ({totalScore.toFixed(1)}/{maxScore.toFixed(1)})
             </Tag>
           );
         }
+        
+        // If only TotalScore is available
+        if (totalScore !== null && totalScore !== undefined) {
+          return (
+            <Tag color="blue">
+              {totalScore.toFixed(1)} điểm
+            </Tag>
+          );
+        }
+        
+        // Not submitted yet
         return <Tag>-</Tag>;
       }
     },
@@ -1147,15 +1302,52 @@ const ManageTestPage = () => {
       dataIndex: 'Status',
       key: 'status',
       render: (status, record) => {
+        // Get status and submittedAt - handle both camelCase and PascalCase
         const statusValue = status !== undefined ? status : (record.status !== undefined ? record.status : null);
-        // Status: 0 = InProgress, 1 = Submitted, 2 = Graded, 3 = Expired
-        if (statusValue === 1 || statusValue === 2 || statusValue === 'Submitted' || statusValue === 'Graded') {
-          return <Tag color="green">Đã nộp</Tag>;
-        } else if (statusValue === 0 || statusValue === 'InProgress') {
-          return <Tag color="orange">Đang làm</Tag>;
-        } else {
-          return <Tag color="default">Chưa bắt đầu</Tag>;
+        const submittedAt = record.SubmittedAt || record.submittedAt;
+        const startedAt = record.StartedAt || record.startedAt;
+        
+        // Priority 1: If SubmittedAt exists, it means the attempt is submitted
+        // This is more reliable than Status enum which might not be updated correctly
+        if (submittedAt !== null && submittedAt !== undefined) {
+          // Check if it's graded (has score)
+          const scorePercentage = record.ScorePercentage !== undefined && record.ScorePercentage !== null
+            ? record.ScorePercentage
+            : (record.scorePercentage !== undefined && record.scorePercentage !== null ? record.scorePercentage : null);
+          const totalScore = record.TotalScore !== undefined && record.TotalScore !== null
+            ? record.TotalScore
+            : (record.totalScore !== undefined && record.totalScore !== null ? record.totalScore : null);
+          
+          if (scorePercentage !== null || totalScore !== null) {
+            return <Tag color="green">Đã chấm</Tag>;
+          } else {
+            return <Tag color="blue">Đã nộp</Tag>;
+          }
         }
+        
+        // Priority 2: Check Status enum
+        // Status: 0 = InProgress, 1 = Submitted, 2 = Graded, 3 = Expired
+        if (statusValue === 2 || statusValue === 'Graded') {
+          return <Tag color="green">Đã chấm</Tag>;
+        } else if (statusValue === 1 || statusValue === 'Submitted') {
+          return <Tag color="blue">Đã nộp</Tag>;
+        } else if (statusValue === 0 || statusValue === 'InProgress') {
+          // If startedAt exists, it's in progress
+          if (startedAt !== null && startedAt !== undefined) {
+            return <Tag color="orange">Đang làm</Tag>;
+          } else {
+            return <Tag color="default">Chưa bắt đầu</Tag>;
+          }
+        } else if (statusValue === 3 || statusValue === 'Expired') {
+          return <Tag color="red">Hết hạn</Tag>;
+        }
+        
+        // Fallback: Check if startedAt exists
+        if (startedAt !== null && startedAt !== undefined) {
+          return <Tag color="orange">Đang làm</Tag>;
+        }
+        
+        return <Tag color="default">Chưa bắt đầu</Tag>;
       }
     }
   ];
@@ -1791,8 +1983,8 @@ const ManageTestPage = () => {
                 <Card className="chemistry-stat-card">
                   <Statistic
                     title="Điểm trung bình"
-                    value={selectedTest.attemptsStats?.averageScore ? selectedTest.attemptsStats.averageScore.toFixed(2) : (selectedTest.averageScore || 0)}
-                    suffix="%"
+                    value={selectedTest.attemptsStats?.averageScore ? (selectedTest.attemptsStats.averageScore / 10).toFixed(1) : (selectedTest.averageScore ? (selectedTest.averageScore / 10).toFixed(1) : '0.0')}
+                    suffix="/10"
                     prefix={<TrophyOutlined />}
                     valueStyle={{ color: '#52c41a' }}
                   />

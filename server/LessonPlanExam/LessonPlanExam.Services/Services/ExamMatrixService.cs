@@ -84,7 +84,9 @@ namespace LessonPlanExam.Services.Services
                 TeacherId = matrix.TeacherId,
                 TotalQuestions = matrix.TotalQuestions,
                 TotalPoints = matrix.TotalPoints,
-                Configuration = matrix.Configuration
+                Configuration = matrix.Configuration,
+                CreatedAt = matrix.CreatedAt,
+                UpdatedAt = matrix.UpdatedAt
             };
         }
 

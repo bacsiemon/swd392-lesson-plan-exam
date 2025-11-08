@@ -139,9 +139,15 @@ namespace LessonPlanExam.Repositories.Repositories
             var matrix = await GetMatrixWithItemsAsync(matrixId, ct);
             if (matrix == null) return response;
 
+            System.Diagnostics.Debug.WriteLine($"[ValidateMatrixAsync] MatrixId={matrixId}, Items count={matrix.ExamMatrixItems?.Count ?? 0}");
+
             foreach (var item in matrix.ExamMatrixItems)
             {
+                System.Diagnostics.Debug.WriteLine($"[ValidateMatrixAsync] ===== Processing item: ItemId={item.Id} =====");
+                System.Diagnostics.Debug.WriteLine($"[ValidateMatrixAsync] ItemId={item.Id}, QuestionBankId={item.QuestionBankId}, Domain='{item.Domain}', DifficultyLevel={item.DifficultyLevel}, QuestionCount={item.QuestionCount}");
+
                 // Query available questions in the bank
+                // Use same query structure as CreateExamFromMatrixAsync for consistency
                 var query = _db.Questions.AsNoTracking()
                     .Include(q => q.QuestionDifficulty)
                     .Where(q => q.QuestionBankId == item.QuestionBankId && 
@@ -153,6 +159,7 @@ namespace LessonPlanExam.Repositories.Repositories
                 
                 if (bank?.StatusEnum != null && bank.StatusEnum != EQuestionBankStatus.Active)
                 {
+                    System.Diagnostics.Debug.WriteLine($"[ValidateMatrixAsync] ItemId={item.Id}: QuestionBank {item.QuestionBankId} is not Active (Status={bank.StatusEnum})");
                     response.Shortages.Add(new ShortageInfo
                     {
                         ItemId = item.Id,
@@ -163,22 +170,105 @@ namespace LessonPlanExam.Repositories.Repositories
                     continue;
                 }
 
-                // Filter by domain through QuestionDifficulty if specified
-                if (!string.IsNullOrEmpty(item.Domain))
-                {
-                    query = query.Where(q => q.QuestionDifficulty != null && q.QuestionDifficulty.Domain == item.Domain);
-                }
+                // First, check if there are ANY questions in the bank (without filters)
+                var allQuestionsInBank = await _db.Questions.AsNoTracking()
+                    .Where(q => q.QuestionBankId == item.QuestionBankId && (q.IsActive ?? true))
+                    .CountAsync(ct);
+                System.Diagnostics.Debug.WriteLine($"[ValidateMatrixAsync] ItemId={item.Id}: Total active questions in bank {item.QuestionBankId}: {allQuestionsInBank}");
 
-                // Filter by difficulty level if specified
+                // IMPORTANT: Filter logic priority (same as CreateExamFromMatrixAsync):
+                // 1. If DifficultyLevel (QuestionDifficultyId) is specified, use it (Domain is already determined by QuestionDifficulty)
+                // 2. If only Domain is specified (no DifficultyLevel), filter by Domain
+                // 3. Domain in matrix item is mainly for reference/display, not for filtering when DifficultyLevel is present
+                
+                // Filter by DifficultyLevel (which is QuestionDifficultyId in ExamMatrixItem)
+                // This is the primary filter - if present, it determines both difficulty and domain
                 if (item.DifficultyLevel.HasValue)
                 {
                     query = query.Where(q => q.QuestionDifficultyId == item.DifficultyLevel.Value);
+                    System.Diagnostics.Debug.WriteLine($"[ValidateMatrixAsync] ItemId={item.Id}: Filtered by DifficultyLevel (QuestionDifficultyId): {item.DifficultyLevel.Value}");
+                    
+                    // Debug: Check how many questions have this difficulty
+                    var questionsWithDifficulty = await _db.Questions.AsNoTracking()
+                        .Where(q => q.QuestionBankId == item.QuestionBankId && 
+                                    (q.IsActive ?? true) &&
+                                    q.QuestionDifficultyId == item.DifficultyLevel.Value)
+                        .CountAsync(ct);
+                    System.Diagnostics.Debug.WriteLine($"[ValidateMatrixAsync] ItemId={item.Id}: Questions with DifficultyLevel {item.DifficultyLevel.Value}: {questionsWithDifficulty}");
+                    
+                    // Debug: Show what domain this difficulty has
+                    var difficultyInfo = await _db.QuestionDifficulties.AsNoTracking()
+                        .FirstOrDefaultAsync(d => d.Id == item.DifficultyLevel.Value, ct);
+                    if (difficultyInfo != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[ValidateMatrixAsync] ItemId={item.Id}: QuestionDifficulty {item.DifficultyLevel.Value} has Domain: '{difficultyInfo.Domain}', Matrix item Domain: '{item.Domain}'");
+                    }
+                }
+                // Only filter by Domain if DifficultyLevel is NOT specified
+                // When DifficultyLevel is present, Domain is already determined by the QuestionDifficulty
+                else if (!string.IsNullOrEmpty(item.Domain))
+                {
+                    var domainValue = item.Domain.Trim();
+                    // Check null for both QuestionDifficulty and Domain (same as CreateExamFromMatrixAsync)
+                    query = query.Where(q => q.QuestionDifficulty != null && 
+                        q.QuestionDifficulty.Domain != null && 
+                        q.QuestionDifficulty.Domain == domainValue);
+                    System.Diagnostics.Debug.WriteLine($"[ValidateMatrixAsync] ItemId={item.Id}: Filtered by Domain only (no DifficultyLevel): '{domainValue}'");
+                    
+                    // Debug: Check how many questions have this domain
+                    var questionsWithDomain = await _db.Questions.AsNoTracking()
+                        .Include(q => q.QuestionDifficulty)
+                        .Where(q => q.QuestionBankId == item.QuestionBankId && 
+                                    (q.IsActive ?? true) &&
+                                    q.QuestionDifficulty != null &&
+                                    q.QuestionDifficulty.Domain != null)
+                        .Select(q => new { q.Id, Domain = q.QuestionDifficulty.Domain })
+                        .ToListAsync(ct);
+                    System.Diagnostics.Debug.WriteLine($"[ValidateMatrixAsync] ItemId={item.Id}: Questions with domains in bank: {questionsWithDomain.Count}");
+                    if (questionsWithDomain.Any())
+                    {
+                        var distinctDomains = questionsWithDomain.Select(q => q.Domain).Distinct().ToList();
+                        System.Diagnostics.Debug.WriteLine($"[ValidateMatrixAsync] ItemId={item.Id}: Available domains: [{string.Join(", ", distinctDomains.Select(d => $"'{d}'"))}]");
+                        System.Diagnostics.Debug.WriteLine($"[ValidateMatrixAsync] ItemId={item.Id}: Looking for domain: '{domainValue}'");
+                        var matchingDomains = questionsWithDomain.Where(q => q.Domain?.Trim() == domainValue).ToList();
+                        System.Diagnostics.Debug.WriteLine($"[ValidateMatrixAsync] ItemId={item.Id}: Questions with matching domain (after Trim): {matchingDomains.Count}");
+                    }
                 }
 
                 var available = await query.CountAsync(ct);
+                System.Diagnostics.Debug.WriteLine($"[ValidateMatrixAsync] ItemId={item.Id}: Available questions after SQL filtering: {available}");
+
+                // If no questions found and domain filter was applied (but no DifficultyLevel), try filtering in memory
+                // This handles cases where domain has whitespace that SQL comparison might miss
+                // Note: Only do this if DifficultyLevel is NOT specified, because if it is, Domain is already determined
+                if (available == 0 && !string.IsNullOrEmpty(item.Domain) && !item.DifficultyLevel.HasValue)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[ValidateMatrixAsync] ItemId={item.Id}: No questions found with SQL filter, trying in-memory filter with Trim()...");
+                    var domainValue = item.Domain.Trim();
+                    
+                    // Build query without domain filter for in-memory filtering
+                    var inMemoryQuery = _db.Questions.AsNoTracking()
+                        .Include(q => q.QuestionDifficulty)
+                        .Where(q => q.QuestionBankId == item.QuestionBankId && 
+                                    (q.IsActive ?? true) &&
+                                    q.QuestionDifficulty != null &&
+                                    q.QuestionDifficulty.Domain != null);
+                    
+                    var questionsList = await inMemoryQuery.ToListAsync(ct);
+                    var filteredQuestions = questionsList.Where(q => 
+                        q.QuestionDifficulty != null && 
+                        q.QuestionDifficulty.Domain != null &&
+                        q.QuestionDifficulty.Domain.Trim() == domainValue).ToList();
+                    
+                    available = filteredQuestions.Count;
+                    System.Diagnostics.Debug.WriteLine($"[ValidateMatrixAsync] ItemId={item.Id}: Available questions after in-memory filtering: {available}");
+                }
+
+                System.Diagnostics.Debug.WriteLine($"[ValidateMatrixAsync] ItemId={item.Id}: Final available questions: {available}, Needed: {item.QuestionCount}");
 
                 if (available < item.QuestionCount)
                 {
+                    System.Diagnostics.Debug.WriteLine($"[ValidateMatrixAsync] ItemId={item.Id}: SHORTAGE - Available={available}, Needed={item.QuestionCount}");
                     response.Shortages.Add(new ShortageInfo
                     {
                         ItemId = item.Id,
@@ -186,9 +276,12 @@ namespace LessonPlanExam.Repositories.Repositories
                         Available = available
                     });
                     response.Ok = false;
+                } else {
+                    System.Diagnostics.Debug.WriteLine($"[ValidateMatrixAsync] ItemId={item.Id}: OK - Available={available} >= Needed={item.QuestionCount}");
                 }
             }
 
+            System.Diagnostics.Debug.WriteLine($"[ValidateMatrixAsync] Final result: Ok={response.Ok}, Shortages count={response.Shortages.Count}");
             return response;
         }
     }

@@ -54,6 +54,22 @@ const ExamMatrixForm = ({
   const [availableQuestionCount, setAvailableQuestionCount] = useState(0);
   const [loadingQuestionCount, setLoadingQuestionCount] = useState(false);
 
+  // Reset matrixId when modal closes and we're creating new (not editing existing)
+  useEffect(() => {
+    if (!visible) {
+      // Only reset if we were creating new (no editingRecord)
+      // If editingRecord exists, we want to keep state for next time
+      if (!editingRecord) {
+        // Small delay to allow state to persist during modal close animation
+        const timer = setTimeout(() => {
+          setMatrixId(null);
+          setItems([]);
+        }, 100);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [visible, editingRecord]);
+
   // Load question banks and difficulties
   useEffect(() => {
     if (visible) {
@@ -63,9 +79,25 @@ const ExamMatrixForm = ({
         const id = editingRecord.Id || editingRecord.id;
         setMatrixId(id);
         loadItems(id);
-      } else {
-        setMatrixId(null);
+        // Load form values from editingRecord
+        form.setFieldsValue({
+          name: editingRecord.Name || editingRecord.name || '',
+          description: editingRecord.Description || editingRecord.description || '',
+          teacherId: editingRecord.TeacherId || editingRecord.teacherId || form.getFieldValue('teacherId'),
+          totalQuestions: editingRecord.TotalQuestions !== undefined && editingRecord.TotalQuestions !== null 
+            ? editingRecord.TotalQuestions 
+            : (editingRecord.totalQuestions !== undefined && editingRecord.totalQuestions !== null ? editingRecord.totalQuestions : null),
+          totalPoints: editingRecord.TotalPoints !== undefined && editingRecord.TotalPoints !== null 
+            ? editingRecord.TotalPoints 
+            : (editingRecord.totalPoints !== undefined && editingRecord.totalPoints !== null ? editingRecord.totalPoints : null)
+        });
+      } else if (!matrixId) {
+        // Only reset items if we're creating new and don't have matrixId yet
         setItems([]);
+      }
+      // If matrixId exists (from previous creation), keep it and load items
+      if (matrixId && !editingRecord) {
+        loadItems(matrixId);
       }
     }
   }, [visible, editingRecord]);
@@ -275,7 +307,11 @@ const ExamMatrixForm = ({
 
   const handleFormSubmit = async () => {
     try {
-      await form.validateFields();
+      // Only validate basic info fields if matrixId is not set (creating new matrix)
+      if (!matrixId) {
+        await form.validateFields(['name', 'teacherId']);
+      }
+      
       const formValues = form.getFieldsValue();
       
       const formData = {
@@ -303,19 +339,16 @@ const ExamMatrixForm = ({
           // Load items for the newly created matrix
           loadItems(createdId);
           message.success('Tạo ma trận đề thành công! Bạn có thể thêm items bây giờ.');
-          if (onSuccess) {
-            onSuccess(result.data);
-          }
-        } else {
+          // Don't call onSuccess yet - let user manage items first
+          // Modal stays open so user can add items
+        } else if (editingRecord) {
           message.success('Cập nhật ma trận đề thành công');
-          if (onSuccess) {
-            onSuccess(result.data);
+          // Reload items if editing
+          if (createdId) {
+            loadItems(createdId);
           }
+          // Don't close modal when editing - let user continue managing items
         }
-        // Don't call onSubmit here - let the user manage items first
-        // if (onSubmit) {
-        //   onSubmit();
-        // }
       } else {
         message.error(result.message || 'Thao tác thất bại');
       }
@@ -325,6 +358,49 @@ const ExamMatrixForm = ({
         message.error('Vui lòng điền đầy đủ thông tin bắt buộc');
       } else {
         message.error('Có lỗi xảy ra khi lưu ma trận đề');
+      }
+    }
+  };
+
+  // Handle update basic info separately (when user clicks "Cập nhật thông tin")
+  const handleUpdateBasicInfo = async () => {
+    try {
+      await form.validateFields(['name', 'teacherId']);
+      const formValues = form.getFieldsValue();
+      
+      if (!matrixId && !editingRecord) {
+        message.error('Vui lòng tạo ma trận đề trước');
+        return;
+      }
+      
+      const formData = {
+        name: formValues.name || '',
+        description: formValues.description !== undefined ? (formValues.description || null) : null,
+        teacherId: formValues.teacherId,
+        totalQuestions: formValues.totalQuestions !== undefined && formValues.totalQuestions !== null ? formValues.totalQuestions : null,
+        totalPoints: formValues.totalPoints !== undefined && formValues.totalPoints !== null ? formValues.totalPoints : null,
+        configuration: null
+      };
+
+      const id = matrixId || (editingRecord?.Id || editingRecord?.id);
+      if (!id) {
+        message.error('Không tìm thấy ID ma trận đề');
+        return;
+      }
+      
+      const result = await examMatrixService.updateExamMatrix(id, formData);
+      
+      if (result.success) {
+        message.success('Cập nhật thông tin ma trận đề thành công');
+      } else {
+        message.error(result.message || 'Cập nhật thất bại');
+      }
+    } catch (error) {
+      console.error('Error updating basic info:', error);
+      if (error.errorFields) {
+        message.error('Vui lòng điền đầy đủ thông tin bắt buộc');
+      } else {
+        message.error('Có lỗi xảy ra khi cập nhật');
       }
     }
   };
@@ -455,44 +531,74 @@ const ExamMatrixForm = ({
     }
   ];
 
+  // Determine if basic info fields should be disabled
+  const isBasicInfoDisabled = matrixId !== null; // Disable if matrix already exists
+
   return (
     <>
       <Modal
         className="chemistry-modal"
-        title={editingRecord ? 'Chỉnh sửa ma trận đề' : 'Tạo ma trận đề mới'}
+        title={editingRecord || matrixId ? 'Quản lý ma trận đề' : 'Tạo ma trận đề mới'}
         open={visible}
         onCancel={onCancel}
-        footer={[
-          <Button key="cancel" onClick={onCancel}>
-            Hủy
-          </Button>,
-          <Button
-            key="submit"
-            type="primary"
-            className="chemistry-btn-primary"
-            loading={submitting}
-            onClick={handleFormSubmit}
-          >
-            {editingRecord ? 'Cập nhật' : 'Tạo mới'}
-          </Button>
-        ]}
+        footer={
+          (() => {
+            const footerButtons = [
+              <Button key="cancel" onClick={onCancel}>
+                {matrixId ? 'Đóng' : 'Hủy'}
+              </Button>
+            ];
+            
+            if (!matrixId) {
+              footerButtons.push(
+                <Button
+                  key="submit"
+                  type="primary"
+                  className="chemistry-btn-primary"
+                  loading={submitting}
+                  onClick={handleFormSubmit}
+                >
+                  Tạo mới
+                </Button>
+              );
+            } else {
+              footerButtons.push(
+                <Button
+                  key="update"
+                  type="default"
+                  onClick={handleUpdateBasicInfo}
+                >
+                  Cập nhật thông tin
+                </Button>
+              );
+            }
+            
+            return footerButtons;
+          })()
+        }
         width={900}
-        destroyOnClose
+        destroyOnClose={false} // Don't destroy on close to preserve form state
       >
         <Form
           form={form}
           layout="vertical"
           style={{ marginTop: '20px' }}
         >
+          {/* Basic Info Section */}
+          <Divider orientation="left">Thông tin cơ bản</Divider>
+          
           <Form.Item
             label="Tên ma trận đề"
             name="name"
             rules={[
-              { required: true, message: 'Vui lòng nhập tên ma trận đề' },
+              { required: !matrixId, message: 'Vui lòng nhập tên ma trận đề' },
               { max: 255, message: 'Tên ma trận đề không được vượt quá 255 ký tự' }
             ]}
           >
-            <Input placeholder="Ví dụ: Chemistry Grade 10 Exam" />
+            <Input 
+              placeholder="Ví dụ: Chemistry Grade 10 Exam" 
+              disabled={isBasicInfoDisabled}
+            />
           </Form.Item>
 
           <Form.Item
@@ -502,6 +608,7 @@ const ExamMatrixForm = ({
             <TextArea
               rows={4}
               placeholder="Ví dụ: Random exam matrix for chemistry"
+              disabled={isBasicInfoDisabled}
             />
           </Form.Item>
 
@@ -527,6 +634,7 @@ const ExamMatrixForm = ({
                   style={{ width: '100%' }}
                   placeholder="50"
                   min={0}
+                  disabled={isBasicInfoDisabled}
                 />
               </Form.Item>
             </Col>
@@ -540,15 +648,26 @@ const ExamMatrixForm = ({
                   placeholder="100"
                   min={0}
                   step={0.1}
+                  disabled={isBasicInfoDisabled}
                 />
               </Form.Item>
             </Col>
           </Row>
 
+          {/* Show info message when basic info is disabled */}
+          {isBasicInfoDisabled && (
+            <div style={{ marginBottom: 16, padding: 12, backgroundColor: '#f0f0f0', borderRadius: 4 }}>
+              <Text type="secondary">
+                💡 Thông tin cơ bản đã được lưu. Bạn có thể quản lý items bên dưới. 
+                Nhấn "Cập nhật thông tin" nếu muốn thay đổi thông tin cơ bản.
+              </Text>
+            </div>
+          )}
+
           {/* Items Management - Show if editing existing matrix OR after creating new matrix */}
           {matrixId && (
             <>
-              <Divider>Quản lý Items</Divider>
+              <Divider orientation="left">Quản lý Items</Divider>
               <div style={{ marginBottom: 16 }}>
                 <Button
                   type="primary"
@@ -570,6 +689,15 @@ const ExamMatrixForm = ({
                 }}
               />
             </>
+          )}
+
+          {/* Show message if matrix is not created yet */}
+          {!matrixId && !editingRecord && (
+            <div style={{ marginTop: 16, padding: 12, backgroundColor: '#e6f7ff', borderRadius: 4 }}>
+              <Text type="secondary">
+                💡 Vui lòng tạo ma trận đề trước khi thêm items. Nhấn "Tạo mới" để tạo ma trận đề.
+              </Text>
+            </div>
           )}
         </Form>
       </Modal>
@@ -633,18 +761,18 @@ const ExamMatrixForm = ({
             </Select>
           </Form.Item>
 
+          {/* Domain field - hidden but still exists for auto-fill from difficulty level */}
           <Form.Item
-            label="Domain"
             name="domain"
-            tooltip="Lĩnh vực câu hỏi (tùy chọn)"
+            style={{ display: 'none' }}
           >
-            <Input placeholder="Ví dụ: Organic Chemistry" />
+            <Input type="hidden" />
           </Form.Item>
 
           <Form.Item
             label="Độ khó"
             name="difficultyLevel"
-            tooltip="Chọn độ khó từ danh sách đã tạo. Domain sẽ được tự động điền nếu chưa có."
+            tooltip="Chọn độ khó từ danh sách đã tạo. Domain sẽ được tự động điền từ độ khó đã chọn."
           >
             <Select
               placeholder="Chọn độ khó (tùy chọn)"
@@ -653,7 +781,7 @@ const ExamMatrixForm = ({
               showSearch
               optionLabelProp="label"
               onChange={(value) => {
-                // Auto-fill domain if not already set
+                // Auto-fill domain from selected difficulty level
                 if (value) {
                   const selectedDifficulty = questionDifficulties.find(d => {
                     const id = d.id !== undefined ? d.id : d.Id;
@@ -662,12 +790,14 @@ const ExamMatrixForm = ({
                   
                   if (selectedDifficulty) {
                     const domain = selectedDifficulty.domain || selectedDifficulty.Domain || '';
-                    const currentDomain = itemForm.getFieldValue('domain');
-                    // Only auto-fill if domain is empty
-                    if (domain && !currentDomain) {
+                    // Always set domain when difficulty is selected (field is hidden, so always auto-fill)
+                    if (domain) {
                       itemForm.setFieldsValue({ domain: domain });
                     }
                   }
+                } else {
+                  // Clear domain when difficulty is cleared
+                  itemForm.setFieldsValue({ domain: null });
                 }
                 
                 // Load available question count when difficulty changes

@@ -92,7 +92,8 @@ function StudentTestPage() {
                       questionTypeEnum: fullQuestion.questionTypeEnum !== undefined ? fullQuestion.questionTypeEnum : (fullQuestion.QuestionTypeEnum !== undefined ? fullQuestion.QuestionTypeEnum : examQuestion.questionTypeEnum || examQuestion.QuestionTypeEnum),
                       // Map options/answers
                       options: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || [],
-                      multipleChoiceAnswers: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || []
+                      multipleChoiceAnswers: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || [],
+                      fillBlankAnswers: fullQuestion.fillBlankAnswers || fullQuestion.FillBlankAnswers || []
                     };
                     
                     console.log('Mapped question:', mappedQuestion);
@@ -270,6 +271,7 @@ function StudentTestPage() {
                       questionTypeEnum: fullQuestion.questionTypeEnum !== undefined ? fullQuestion.questionTypeEnum : (fullQuestion.QuestionTypeEnum !== undefined ? fullQuestion.QuestionTypeEnum : 0),
                       options: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || [],
                       multipleChoiceAnswers: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || [],
+                      fillBlankAnswers: fullQuestion.fillBlankAnswers || fullQuestion.FillBlankAnswers || [],
                       question: fullQuestion
                     };
                   } else {
@@ -316,7 +318,8 @@ function StudentTestPage() {
                           content: fullQuestion.content || fullQuestion.Content || examQuestion.questionContent || examQuestion.QuestionContent,
                           questionTypeEnum: fullQuestion.questionTypeEnum !== undefined ? fullQuestion.questionTypeEnum : (fullQuestion.QuestionTypeEnum !== undefined ? fullQuestion.QuestionTypeEnum : examQuestion.questionTypeEnum || examQuestion.QuestionTypeEnum),
                           options: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || [],
-                          multipleChoiceAnswers: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || []
+                          multipleChoiceAnswers: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || [],
+                          fillBlankAnswers: fullQuestion.fillBlankAnswers || fullQuestion.FillBlankAnswers || []
                         };
                       }
                     } catch (error) {
@@ -487,6 +490,7 @@ function StudentTestPage() {
                   questionTypeEnum: fullQuestion.questionTypeEnum !== undefined ? fullQuestion.questionTypeEnum : (fullQuestion.QuestionTypeEnum !== undefined ? fullQuestion.QuestionTypeEnum : 0),
                   options: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || [],
                   multipleChoiceAnswers: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || [],
+                  fillBlankAnswers: fullQuestion.fillBlankAnswers || fullQuestion.FillBlankAnswers || [],
                   question: fullQuestion
                 };
               } else {
@@ -531,18 +535,19 @@ function StudentTestPage() {
                   const questionResponse = await questionService.getQuestionById(questionId);
                   if (questionResponse.success && questionResponse.data) {
                     const fullQuestion = questionResponse.data;
-                    return {
-                      ...examQuestion,
-                      question: fullQuestion,
-                      questionId: questionId,
-                      id: examQuestion.id || examQuestion.Id || examQuestion.examQuestionId || examQuestion.ExamQuestionId,
-                      text: fullQuestion.title || fullQuestion.Title || fullQuestion.content || fullQuestion.Content || examQuestion.questionTitle || examQuestion.QuestionTitle,
-                      title: fullQuestion.title || fullQuestion.Title || examQuestion.questionTitle || examQuestion.QuestionTitle,
-                      content: fullQuestion.content || fullQuestion.Content || examQuestion.questionContent || examQuestion.QuestionContent,
-                      questionTypeEnum: fullQuestion.questionTypeEnum !== undefined ? fullQuestion.questionTypeEnum : (fullQuestion.QuestionTypeEnum !== undefined ? fullQuestion.QuestionTypeEnum : examQuestion.questionTypeEnum || examQuestion.QuestionTypeEnum),
-                      options: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || [],
-                      multipleChoiceAnswers: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || []
-                    };
+                        return {
+                          ...examQuestion,
+                          question: fullQuestion,
+                          questionId: questionId,
+                          id: examQuestion.id || examQuestion.Id || examQuestion.examQuestionId || examQuestion.ExamQuestionId,
+                          text: fullQuestion.title || fullQuestion.Title || fullQuestion.content || fullQuestion.Content || examQuestion.questionTitle || examQuestion.QuestionTitle,
+                          title: fullQuestion.title || fullQuestion.Title || examQuestion.questionTitle || examQuestion.QuestionTitle,
+                          content: fullQuestion.content || fullQuestion.Content || examQuestion.questionContent || examQuestion.QuestionContent,
+                          questionTypeEnum: fullQuestion.questionTypeEnum !== undefined ? fullQuestion.questionTypeEnum : (fullQuestion.QuestionTypeEnum !== undefined ? fullQuestion.QuestionTypeEnum : examQuestion.questionTypeEnum || examQuestion.QuestionTypeEnum),
+                          options: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || [],
+                          multipleChoiceAnswers: fullQuestion.multipleChoiceAnswers || fullQuestion.MultipleChoiceAnswers || [],
+                          fillBlankAnswers: fullQuestion.fillBlankAnswers || fullQuestion.FillBlankAnswers || []
+                        };
                   } else {
                     console.warn('Failed to load question', questionId, ':', questionResponse);
                   }
@@ -602,6 +607,97 @@ function StudentTestPage() {
       return;
     }
     startNewAttempt(password);
+  };
+
+  // Handle text answer change for FillBlank questions
+  const handleTextAnswerChange = async (questionId, textAnswer) => {
+    // Convert to number to ensure it's the correct type
+    const numericQuestionId = typeof questionId === 'number' ? questionId : parseInt(questionId);
+    
+    if (isNaN(numericQuestionId)) {
+      console.error(`[handleTextAnswerChange] Invalid questionId:`, questionId);
+      return;
+    }
+    
+    console.log(`[handleTextAnswerChange] Question ${numericQuestionId}, Text answer:`, textAnswer);
+    console.log(`[handleTextAnswerChange] Current answers state:`, answers);
+    
+    // Update answers state
+    const newAnswers = { ...answers, [numericQuestionId]: textAnswer };
+    console.log(`[handleTextAnswerChange] New answers state:`, newAnswers);
+    setAnswers(newAnswers);
+
+    // Submit answer to API if attemptId exists and not already submitted
+    if (!attemptId) {
+      console.error(`[handleTextAnswerChange] Cannot save answer - attemptId is null or undefined`);
+      message.error('Không tìm thấy thông tin lần làm bài. Vui lòng tải lại trang.');
+      return;
+    }
+    
+    if (!examId) {
+      console.error(`[handleTextAnswerChange] Cannot save answer - examId is null or undefined`);
+      message.error('Không tìm thấy thông tin bài thi. Vui lòng tải lại trang.');
+      return;
+    }
+    
+    if (submitted) {
+      console.warn(`[handleTextAnswerChange] Cannot save answer - attempt already submitted`);
+      return;
+    }
+    
+    try {
+      console.log(`[handleTextAnswerChange] Preparing to save answer:`, {
+        examId: examId,
+        attemptId: attemptId,
+        questionId: numericQuestionId,
+        textAnswer: textAnswer
+      });
+      
+      const result = await examAttemptService.submitAnswer(examId, attemptId, {
+        questionId: numericQuestionId,
+        textAnswer: textAnswer || '', // Send empty string if null/undefined
+      });
+      
+      if (result.success) {
+        console.log(`[handleTextAnswerChange] Answer saved successfully for question ${numericQuestionId}, textAnswer: ${textAnswer}`);
+      } else {
+        console.error(`[handleTextAnswerChange] Failed to save answer for question ${numericQuestionId}:`, result.message, result.error);
+        // If attempt is already submitted, don't try to save again
+        if (result.message && (result.message.includes('submitted') || result.message.includes('SUBMITTED'))) {
+          setSubmitted(true);
+          message.warning('Bài thi đã được nộp, không thể lưu câu trả lời');
+        } else {
+          message.error(`Không thể lưu câu trả lời: ${result.message || 'Lỗi không xác định'}`);
+        }
+      }
+    } catch (err) {
+      console.error(`[handleTextAnswerChange] Error saving answer for question ${numericQuestionId}:`, err);
+      console.error(`[handleTextAnswerChange] Error details:`, {
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        message: err.message,
+        stack: err.stack
+      });
+      // Check if error is due to attempt already submitted
+      if (err.response?.status === 400) {
+        const errorData = err.response?.data;
+        const errorMessage = errorData?.message || errorData?.Message || err.message || '';
+        if (errorMessage.includes('submitted') || errorMessage.includes('SUBMITTED') || errorMessage.includes('CANNOT_SAVE_ANSWER')) {
+          console.warn('Attempt may already be submitted, stopping answer saves');
+          setSubmitted(true);
+          message.warning('Bài thi đã được nộp, không thể lưu câu trả lời');
+        } else {
+          message.error(`Lỗi khi lưu câu trả lời: ${errorMessage}`);
+        }
+      } else if (err.response?.status === 401) {
+        message.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      } else if (err.response?.status === 404) {
+        message.error('Không tìm thấy attempt hoặc exam. Vui lòng tải lại trang.');
+      } else {
+        message.error('Có lỗi xảy ra khi lưu câu trả lời. Vui lòng thử lại.');
+      }
+    }
   };
 
   const handleOptionChange = async (questionId, answerId) => {
@@ -736,6 +832,16 @@ function StudentTestPage() {
       // SubmitQuestionDetail: { QuestionId, PointsPossible, PointsEarned, Correct, Explanation? }
       const submitData = submitResponse.data;
       console.log('[StudentTestPage] Submit response data:', submitData);
+      console.log('[StudentTestPage] Submit response details:', submitData?.details || submitData?.Details);
+      console.log('[StudentTestPage] Current answers state:', answers);
+      console.log('[StudentTestPage] Current exam questions:', exam?.questions);
+      
+      // Save answers and exam data BEFORE clearing state
+      const savedAnswers = { ...answers };
+      const savedQuestions = exam?.questions || [];
+      const savedExamTitle = exam?.title || exam?.Title || 'Kết quả bài thi';
+      const savedTotalQuestions = exam?.totalQuestions || savedQuestions.length || 0;
+      const savedTotalPoints = exam?.totalPoints || exam?.TotalPoints || 10;
       
       // Clear attemptId, answers, and timer to prevent resuming this attempt
       // This ensures that when user comes back, a new attempt will be started
@@ -749,17 +855,19 @@ function StudentTestPage() {
       const resultData = {
         examId,
         attemptId: submitData?.attemptId || submitData?.AttemptId || attemptId,
-        examTitle: exam?.title || exam?.Title || 'Kết quả bài thi',
+        examTitle: savedExamTitle,
         totalScore: submitData?.totalScore !== undefined ? submitData.totalScore : (submitData?.TotalScore !== undefined ? submitData.TotalScore : 0),
         scorePercentage: submitData?.scorePercentage !== undefined ? submitData.scorePercentage : (submitData?.ScorePercentage !== undefined ? submitData.ScorePercentage : 0),
         passed: submitData?.passed !== undefined ? submitData.passed : (submitData?.Passed !== undefined ? submitData.Passed : false),
         details: submitData?.details || submitData?.Details || [],
-        totalQuestions: exam?.totalQuestions || exam?.questions?.length || 0,
-        totalPoints: exam?.totalPoints || exam?.TotalPoints || 10,
-        answers: answers,
-        questions: exam?.questions || [],
+        totalQuestions: savedTotalQuestions,
+        totalPoints: savedTotalPoints,
+        answers: savedAnswers,
+        questions: savedQuestions,
         submitData: submitData
       };
+      
+      console.log('[StudentTestPage] Navigate with resultData:', resultData);
 
       // Navigate to result page - this will clear the page state
       // When user comes back to this page, useEffect will run again and check for latest attempt
@@ -948,20 +1056,114 @@ function StudentTestPage() {
               // Backend returns ExamQuestionResponse with QuestionId, we've loaded full question details
               const questionId = q.questionId || q.QuestionId || q.id || q.Id || q.examQuestionId || q.ExamQuestionId;
               const questionText = q.text || q.title || q.content || q.questionTitle || q.QuestionTitle || q.questionContent || q.QuestionContent || q.question?.title || q.question?.Title || q.question?.content || q.question?.Content || 'Câu hỏi';
-              // Use options from loaded question data
+              const questionContent = q.content || q.Content || q.question?.content || q.question?.Content || questionText;
+              
+              // Get question type: 0 = MultipleChoice, 1 = FillBlank
+              const questionTypeEnum = q.questionTypeEnum !== undefined 
+                ? q.questionTypeEnum 
+                : (q.QuestionTypeEnum !== undefined 
+                  ? q.QuestionTypeEnum 
+                  : (q.question?.questionTypeEnum !== undefined 
+                    ? q.question.questionTypeEnum 
+                    : (q.question?.QuestionTypeEnum !== undefined ? q.question.QuestionTypeEnum : 0)));
+              
+              // Use options from loaded question data (for MultipleChoice)
               const options = q.options || q.multipleChoiceAnswers || q.MultipleChoiceAnswers || q.question?.multipleChoiceAnswers || q.question?.MultipleChoiceAnswers || [];
+              
+              // Get FillBlank answers (for FillBlank questions)
+              const fillBlankAnswers = q.fillBlankAnswers || q.FillBlankAnswers || q.question?.fillBlankAnswers || q.question?.FillBlankAnswers || [];
               
               // Debug logging
               if (idx === 0) {
                 console.log(`[StudentTestPage] First question debug:`, {
                   questionId: questionId,
                   questionText: questionText,
+                  questionTypeEnum: questionTypeEnum,
                   optionsCount: options.length,
+                  fillBlankAnswersCount: fillBlankAnswers.length,
                   options: options,
+                  fillBlankAnswers: fillBlankAnswers,
                   fullQuestion: q
                 });
               }
               
+              // Render FillBlank question
+              if (questionTypeEnum === 1) {
+                // FillBlank question - show input field(s)
+                const savedAnswer = answers[questionId] || answers[parseInt(questionId)] || answers[String(questionId)] || '';
+                const blankCount = fillBlankAnswers.length > 0 ? fillBlankAnswers.length : 1; // Default to 1 if no blanks specified
+                
+                return (
+                  <Card key={questionId} className="chemistry-card">
+                    <Title level={5} style={{ marginBottom: 16, color: 'var(--chem-purple-dark)' }}>
+                      Câu {idx + 1}
+                    </Title>
+                    <div style={{ marginBottom: 16 }}>
+                      <Text style={{ fontSize: 16, lineHeight: 1.8 }}>
+                        {questionContent}
+                      </Text>
+                    </div>
+                    <div style={{ marginTop: 16 }}>
+                      {blankCount === 1 ? (
+                        // Single blank - one input field
+                        <Input
+                          placeholder="Nhập câu trả lời..."
+                          value={typeof savedAnswer === 'string' ? savedAnswer : ''}
+                          onChange={(e) => {
+                            const textValue = e.target.value;
+                            console.log(`[FillBlank onChange] Question ${questionId}, Text answer:`, textValue);
+                            handleTextAnswerChange(questionId, textValue);
+                          }}
+                          disabled={submitted || submitting}
+                          size="large"
+                          style={{ fontSize: 16 }}
+                        />
+                      ) : (
+                        // Multiple blanks - multiple input fields
+                        <Space direction="vertical" style={{ width: '100%' }}>
+                          {Array.from({ length: blankCount }).map((_, blankIndex) => {
+                            // For multiple blanks, we can store as array or join with delimiter
+                            // For now, use comma-separated format: "answer1,answer2,answer3"
+                            const answerArray = typeof savedAnswer === 'string' && savedAnswer.includes(',') 
+                              ? savedAnswer.split(',').map(a => a.trim())
+                              : (savedAnswer ? [savedAnswer] : Array(blankCount).fill(''));
+                            const currentAnswer = answerArray[blankIndex] || '';
+                            
+                            return (
+                              <div key={blankIndex} style={{ marginBottom: 12 }}>
+                                <Text strong style={{ marginRight: 8 }}>Chỗ trống {blankIndex + 1}:</Text>
+                                <Input
+                                  placeholder={`Nhập đáp án cho chỗ trống ${blankIndex + 1}...`}
+                                  value={currentAnswer}
+                                  onChange={(e) => {
+                                    const newValue = e.target.value;
+                                    const newAnswerArray = [...answerArray];
+                                    newAnswerArray[blankIndex] = newValue;
+                                    const joinedAnswer = newAnswerArray.join(',');
+                                    console.log(`[FillBlank onChange] Question ${questionId}, Blank ${blankIndex + 1}, Text answer:`, newValue, 'Joined:', joinedAnswer);
+                                    handleTextAnswerChange(questionId, joinedAnswer);
+                                  }}
+                                  disabled={submitted || submitting}
+                                  size="large"
+                                  style={{ marginTop: 8, fontSize: 16 }}
+                                />
+                              </div>
+                            );
+                          })}
+                        </Space>
+                      )}
+                    </div>
+                    {submitted && (
+                      <div style={{ marginTop: 16, padding: 12, background: 'var(--chem-blue-light)', borderRadius: 8 }}>
+                        <CheckCircleOutlined style={{ color: 'var(--chem-blue-dark)', marginRight: 8 }} />
+                        <Text strong style={{ color: 'var(--chem-blue-dark)' }}>Đáp án đã lưu!</Text>
+                      </div>
+                    )}
+                  </Card>
+                );
+              }
+              
+              // MultipleChoice question - render radio buttons
               return (
                 <Card key={questionId} className="chemistry-card">
                   <Title level={5} style={{ marginBottom: 16, color: 'var(--chem-purple-dark)' }}>

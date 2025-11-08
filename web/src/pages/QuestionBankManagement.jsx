@@ -1,63 +1,50 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Card,
   Table,
   Button,
   Space,
-  Tag,
   Modal,
   message,
   Row,
   Col,
-  Select,
   Input,
   Tooltip,
   Typography,
   Popconfirm,
-  Statistic,
   Empty,
-  Badge,
-  Avatar
+  Badge
 } from 'antd';
 import {
-  PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   EyeOutlined,
-  BookOutlined,
   SearchOutlined,
-  FilterOutlined,
-  BarChartOutlined,
-  QuestionCircleOutlined,
-  CheckCircleOutlined,
-  ClockCircleOutlined,
-  ExclamationCircleOutlined,
-  ExperimentOutlined
+  FilterOutlined
 } from '@ant-design/icons';
 import '../styles/chemistryTheme.css';
 import { questionBankService } from '../services/questionBankService';
-import {
-  CHEMISTRY_GRADES,
-  APPROVAL_STATUS_LABELS,
-  DEFAULT_PAGINATION
-} from '../constants/questionBankConstants';
 import QuestionBankForm from '../components/QuestionBankForm';
 import QuestionManagement from '../components/QuestionManagement';
+import QuestionBankHeader from '../components/QuestionBankHeader';
 
-const { Title, Text } = Typography;
-const { Option } = Select;
+const { Text } = Typography;
 
 const QuestionBankManagement = () => {
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [questionBanks, setQuestionBanks] = useState([]);
-  const [pagination, setPagination] = useState(DEFAULT_PAGINATION);
-  const [filters, setFilters] = useState({
-    gradeLevel: undefined,
-    status: undefined,
-    search: ''
+  const [pagination, setPagination] = useState({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+    showSizeChanger: true,
+    showQuickJumper: true,
+    showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} ngân hàng`
   });
+  
+  // Search state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   // Modal states
   const [isFormModalVisible, setIsFormModalVisible] = useState(false);
@@ -65,31 +52,45 @@ const QuestionBankManagement = () => {
   const [editingRecord, setEditingRecord] = useState(null);
   const [selectedQuestionBank, setSelectedQuestionBank] = useState(null);
 
-  // Statistics
-  const [stats, setStats] = useState({
-    total: 0,
-    approved: 0,
-    pending: 0,
-    rejected: 0
-  });
-
   // Fetch question banks
-  const fetchQuestionBanks = async (params = {}) => {
+  useEffect(() => {
+    fetchQuestionBanks();
+    setInitialLoadDone(true);
+  }, []);
+
+  // Fetch question banks when search term changes (with debounce)
+  useEffect(() => {
+    if (!initialLoadDone) {
+      return;
+    }
+    
+    const timer = setTimeout(() => {
+      fetchQuestionBanks();
+    }, 500); // Debounce search by 500ms
+    
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm]);
+
+  const fetchQuestionBanks = async () => {
     setLoading(true);
     try {
+      const filters = {};
+      if (searchTerm && searchTerm.trim() !== '') {
+        filters.q = searchTerm.trim();
+      }
+      
       const result = await questionBankService.getQuestionBanks({
         page: pagination.current,
         pageSize: pagination.pageSize,
-        ...filters,
-        ...params
+        ...filters
       });
 
       if (result.success) {
         // Map backend response to frontend format
-        const mappedData = result.data.map(item => ({
+        const mappedData = (result.data || []).map(item => ({
           ...item,
-          questionCount: item.totalQuestions || item.questionCount || 0,
-          statusEnum: item.statusEnum !== undefined ? item.statusEnum : item.status
+          questionCount: item.totalQuestions || item.questionCount || 0
         }));
         
         setQuestionBanks(mappedData);
@@ -97,48 +98,22 @@ const QuestionBankManagement = () => {
           ...prev,
           current: result.pagination?.current || pagination.current,
           pageSize: result.pagination?.pageSize || pagination.pageSize,
-          total: result.pagination?.total || result.data?.length || 0
+          total: result.pagination?.total || mappedData.length
         }));
-
-        // Calculate statistics
-        await calculateStats();
       } else {
-        message.error(result.message || 'Không thể tải danh sách ngân hàng câu hỏi');
+        message.error(result.message || 'Có lỗi xảy ra khi tải dữ liệu');
+        setQuestionBanks([]);
+        setPagination(prev => ({ ...prev, total: 0 }));
       }
     } catch (error) {
       console.error('Error fetching question banks:', error);
       message.error('Có lỗi xảy ra khi tải dữ liệu');
+      setQuestionBanks([]);
+      setPagination(prev => ({ ...prev, total: 0 }));
     } finally {
       setLoading(false);
     }
   };
-
-  const calculateStats = async () => {
-    try {
-      // Get all question banks for statistics
-      const result = await questionBankService.getQuestionBanks({
-        page: 1,
-        pageSize: 1000 // Get all
-      });
-
-      if (result.success) {
-        const allBanks = result.data || [];
-        const newStats = {
-          total: allBanks.length,
-          approved: allBanks.filter(bank => bank.statusEnum === 1 || bank.status === 1).length,
-          pending: allBanks.filter(bank => bank.statusEnum === 0 || bank.status === 0).length,
-          rejected: allBanks.filter(bank => bank.statusEnum === 2 || bank.status === 2).length
-        };
-        setStats(newStats);
-      }
-    } catch (error) {
-      console.error('Error calculating stats:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchQuestionBanks();
-  }, []);
 
   // Handle table actions
   const handleCreate = () => {
@@ -192,56 +167,24 @@ const QuestionBankManagement = () => {
     }
   };
 
-  // Handle filter changes
-  const handleFilterChange = (key, value) => {
-    const newFilters = { ...filters, [key]: value };
-    setFilters(newFilters);
+  // Handle search
+  const handleSearch = (value) => {
+    setSearchTerm(value);
     setPagination(prev => ({ ...prev, current: 1 }));
-    fetchQuestionBanks({ ...newFilters, page: 1 });
   };
-
-  // Handle pagination change
-  const handleTableChange = (paginationData) => {
-    setPagination(paginationData);
-    fetchQuestionBanks({
-      page: paginationData.current,
-      pageSize: paginationData.pageSize
-    });
+  
+  const handleSearchSubmit = () => {
+    fetchQuestionBanks();
   };
-
-  // Reset filters
-  const resetFilters = () => {
-    setFilters({
-      gradeLevel: undefined,
-      status: undefined,
-      search: ''
-    });
+  
+  const handleResetFilters = () => {
+    setSearchTerm('');
     setPagination(prev => ({ ...prev, current: 1 }));
-    fetchQuestionBanks({ page: 1 });
+    fetchQuestionBanks();
   };
-
-  // Get status label
-  const getStatusLabel = (status) => {
-    const statusInfo = APPROVAL_STATUS_LABELS.find(s => s.value === status);
-    if (!statusInfo) return null;
-
-    const icons = {
-      0: <ClockCircleOutlined />,
-      1: <CheckCircleOutlined />,
-      2: <ExclamationCircleOutlined />
-    };
-
-    return (
-      <Tag color={statusInfo.color} icon={icons[status]}>
-        {statusInfo.label}
-      </Tag>
-    );
-  };
-
-  // Get grade label
-  const getGradeLabel = (gradeLevel) => {
-    const grade = CHEMISTRY_GRADES.find(g => g.value === gradeLevel);
-    return grade ? grade.label : `Lớp ${gradeLevel}`;
+  
+  const handleTableChange = (newPagination) => {
+    setPagination(prev => ({ ...prev, ...newPagination }));
   };
 
   // Table columns
@@ -250,77 +193,62 @@ const QuestionBankManagement = () => {
       title: 'Ngân hàng câu hỏi',
       dataIndex: 'name',
       key: 'name',
-      ellipsis: true,
-      render: (text, record) => (
+      width: 300,
+      render: (name, record) => (
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
-            <Avatar
-              size="small"
-              icon={<BookOutlined />}
-              style={{ backgroundColor: '#1890ff', marginRight: 8 }}
-            />
-            <Text strong style={{ fontSize: '14px' }}>{text}</Text>
-          </div>
+          <Text strong style={{ color: '#1890ff' }}>{name || 'N/A'}</Text>
+          <br />
           <Text type="secondary" style={{ fontSize: '12px' }}>
-            {record.description?.length > 100
-              ? `${record.description.substring(0, 100)}...`
-              : record.description
-            }
+            {record.description || 'Không có mô tả'}
           </Text>
         </div>
-      )
-    },
-    {
-      title: 'Lớp',
-      dataIndex: 'gradeLevel',
-      key: 'gradeLevel',
-      width: 100,
-      render: (gradeLevel) => (
-        <Tag color="blue" icon={<BookOutlined />}>
-          {getGradeLabel(gradeLevel)}
-        </Tag>
       ),
-      filters: CHEMISTRY_GRADES.map(grade => ({
-        text: grade.label,
-        value: grade.value
-      })),
-      filteredValue: filters.gradeLevel !== undefined ? [filters.gradeLevel] : null
     },
     {
       title: 'Số câu hỏi',
       dataIndex: 'questionCount',
       key: 'questionCount',
       width: 120,
-      render: (count) => (
-        <Badge
-          count={count || 0}
-          style={{ backgroundColor: '#52c41a' }}
-          overflowCount={999}
-        >
-          <QuestionCircleOutlined style={{ fontSize: 16 }} />
-        </Badge>
-      ),
-      sorter: (a, b) => (a.questionCount || 0) - (b.questionCount || 0)
-    },
-    {
-      title: 'Trạng thái',
-      dataIndex: 'statusEnum',
-      key: 'statusEnum',
-      width: 120,
-      render: getStatusLabel,
-      filters: APPROVAL_STATUS_LABELS.map(status => ({
-        text: status.label,
-        value: status.value
-      })),
-      filteredValue: filters.status !== undefined ? [filters.status] : null
+      align: 'center',
+      render: (count) => <Badge count={count || 0} showZero color="#52c41a" />,
     },
     {
       title: 'Ngày tạo',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      width: 120,
-      render: (date) => new Date(date).toLocaleDateString('vi-VN'),
-      sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+      width: 180,
+      render: (date, record) => {
+        const dateValue = date || record.CreatedAt || record.createdAt;
+        
+        if (!dateValue) {
+          return <Text style={{ fontSize: '12px' }}>N/A</Text>;
+        }
+        
+        try {
+          const dateObj = new Date(dateValue);
+          
+          if (isNaN(dateObj.getTime())) {
+            return <Text style={{ fontSize: '12px' }}>{dateValue}</Text>;
+          }
+          
+          const day = String(dateObj.getDate()).padStart(2, '0');
+          const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+          const year = dateObj.getFullYear();
+          const hours = String(dateObj.getHours()).padStart(2, '0');
+          const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+          
+          const formattedDate = `${day}/${month}/${year} ${hours}:${minutes}`;
+          
+          return (
+            <Text style={{ fontSize: '12px' }}>
+              {formattedDate}
+            </Text>
+          );
+        } catch (error) {
+          console.error('Error formatting date:', error);
+          return <Text style={{ fontSize: '12px' }}>{dateValue}</Text>;
+        }
+      },
     },
     {
       title: 'Thao tác',
@@ -368,174 +296,51 @@ const QuestionBankManagement = () => {
     <div className="chemistry-page">
       <div className="chemistry-molecules-bg"></div>
       {/* Header */}
-      <Card className="chemistry-header-card" style={{ marginBottom: 24 }}>
-        <Row justify="space-between" align="middle">
-          <Col>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <ExperimentOutlined style={{ fontSize: 32, marginRight: 16 }} />
-              <div>
-                <Title level={2} className="chemistry-title" style={{ margin: 0 }}>
-                  Quản lý Ngân hàng Câu hỏi Hóa học
-                </Title>
-                <Text className="chemistry-subtitle" style={{ fontSize: '16px' }}>
-                  Tạo và quản lý ngân hàng câu hỏi cho các lớp từ 8 đến 12
-                </Text>
-              </div>
-            </div>
-          </Col>
-          <Col>
-            <Space>
-              <Button
-                onClick={() => navigate('/dashboard')}
-                size="large"
-                style={{ height: 48, fontSize: '16px' }}
-              >
-                Quay lại Dashboard
-              </Button>
-              <Button
-                type="primary"
-                className="chemistry-btn-primary"
-                icon={<PlusOutlined />}
-                onClick={handleCreate}
-                size="large"
-                style={{ height: 48, fontSize: '16px' }}
-              >
-                Tạo ngân hàng mới
-              </Button>
-            </Space>
-          </Col>
-        </Row>
-      </Card>
+      <QuestionBankHeader onCreate={handleCreate} />
 
-      {/* Statistics */}
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col span={6}>
-          <Card className="chemistry-stat-card">
-            <Statistic
-              title="Tổng ngân hàng"
-              value={stats.total}
-              prefix={<BookOutlined />}
-              valueStyle={{ color: '#1890ff' }}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card className="chemistry-stat-card">
-            <Statistic
-              title="Đã duyệt"
-              value={stats.approved}
-              prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card className="chemistry-stat-card">
-            <Statistic
-              title="Chờ duyệt"
-              value={stats.pending}
-              prefix={<ClockCircleOutlined />}
-              valueStyle={{ color: '#faad14' }}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card className="chemistry-stat-card">
-            <Statistic
-              title="Bị từ chối"
-              value={stats.rejected}
-              prefix={<ExclamationCircleOutlined />}
-              valueStyle={{ color: '#f5222d' }}
-            />
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Filters */}
-      <Card className="chemistry-card" style={{ marginBottom: 16 }}>
-        <Row gutter={16} align="middle">
-          <Col span={6}>
-            <Select
-              placeholder="Lọc theo lớp học"
-              allowClear
-              style={{ width: '100%' }}
-              value={filters.gradeLevel}
-              onChange={(value) => handleFilterChange('gradeLevel', value)}
-            >
-              {CHEMISTRY_GRADES.map(grade => (
-                <Option key={grade.value} value={grade.value}>
-                  <BookOutlined style={{ marginRight: 8 }} />
-                  {grade.label}
-                </Option>
-              ))}
-            </Select>
-          </Col>
-          <Col span={6}>
-            <Select
-              placeholder="Lọc theo trạng thái"
-              allowClear
-              style={{ width: '100%' }}
-              value={filters.status}
-              onChange={(value) => handleFilterChange('status', value)}
-            >
-              {APPROVAL_STATUS_LABELS.map(status => (
-                <Option key={status.value} value={status.value}>
-                  <Tag color={status.color}>{status.label}</Tag>
-                </Option>
-              ))}
-            </Select>
-          </Col>
-          <Col span={10}>
+      {/* Main Content Card */}
+      <Card className="chemistry-card">
+        {/* Filters and Actions */}
+        <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
+          <Col xs={24} sm={12} md={8} lg={8}>
             <Input
-              placeholder="Tìm kiếm theo tên ngân hàng hoặc mô tả..."
+              placeholder="Tìm kiếm ngân hàng (tên hoặc mô tả)..."
               prefix={<SearchOutlined />}
               allowClear
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              onPressEnter={handleSearchSubmit}
             />
           </Col>
-          <Col span={2}>
-            <Button
-              icon={<FilterOutlined />}
-              onClick={resetFilters}
-              title="Xóa bộ lọc"
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Button 
+              icon={<FilterOutlined />} 
+              onClick={handleResetFilters}
+              style={{ width: '100%' }}
             >
-              Reset
+              Đặt lại
             </Button>
           </Col>
         </Row>
-      </Card>
 
-      {/* Table */}
-      <Card className="chemistry-card">
+        {/* Table */}
         <div className="chemistry-table">
           <Table
             columns={columns}
             dataSource={questionBanks}
-            rowKey="id"
+            rowKey={(record) => record.id || record.Id}
             loading={loading}
-            pagination={{
-              ...pagination,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total, range) =>
-                `${range[0]}-${range[1]} của ${total} ngân hàng câu hỏi`,
-              pageSizeOptions: ['10', '20', '50']
-            }}
+            pagination={pagination}
             onChange={handleTableChange}
-            scroll={{ x: 1400 }}
+            scroll={{ x: 1200 }}
             locale={{
               emptyText: (
                 <Empty
                   className="chemistry-empty"
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
                   description="Chưa có ngân hàng câu hỏi nào"
-                >
-                  <Button type="primary" className="chemistry-btn-primary" icon={<PlusOutlined />} onClick={handleCreate}>
-                    Tạo ngân hàng đầu tiên
-                  </Button>
-                </Empty>
-              )
+                />
+              ),
             }}
           />
         </div>

@@ -170,6 +170,7 @@ const ExamMatrixManagement = () => {
         teacherId: currentTeacherId
       });
     }
+    // Reset matrixId in ExamMatrixForm by passing a key prop that changes
     setIsFormModalVisible(true);
   };
 
@@ -210,10 +211,8 @@ const ExamMatrixManagement = () => {
   const handleFormSuccess = (createdData) => {
     // After creating/updating, refresh the list
     fetchExamMatrixes();
-    // Close modal after successful create/update
-    setIsFormModalVisible(false);
-    setEditingRecord(null);
-    form.resetFields();
+    // Don't close modal immediately - let user add items
+    // Modal will stay open until user clicks "Đóng"
   };
   
   const handleSearch = (value) => {

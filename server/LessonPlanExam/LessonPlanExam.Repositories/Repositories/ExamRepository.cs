@@ -126,16 +126,44 @@ namespace LessonPlanExam.Repositories.Repositories
                     .Where(q => q.QuestionBankId == item.QuestionBankId && 
                                 (q.IsActive ?? true));
 
-                // Filter by Domain if provided
-                // Note: EF Core may not translate Trim() to SQL, so we'll filter in memory if needed
-                if (!string.IsNullOrEmpty(item.Domain))
+                // IMPORTANT: Filter logic priority:
+                // 1. If DifficultyLevel (QuestionDifficultyId) is specified, use it (Domain is already determined by QuestionDifficulty)
+                // 2. If only Domain is specified (no DifficultyLevel), filter by Domain
+                // 3. Domain in matrix item is mainly for reference/display, not for filtering when DifficultyLevel is present
+                
+                // Filter by DifficultyLevel (which is QuestionDifficultyId in ExamMatrixItem)
+                // This is the primary filter - if present, it determines both difficulty and domain
+                if (item.DifficultyLevel.HasValue)
+                {
+                    qQuery = qQuery.Where(q => q.QuestionDifficultyId == item.DifficultyLevel.Value);
+                    System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Filtered by DifficultyLevel (QuestionDifficultyId): {item.DifficultyLevel.Value}");
+                    
+                    // Debug: Check how many questions have this difficulty
+                    var questionsWithDifficulty = await _db.Questions.AsNoTracking()
+                        .Where(q => q.QuestionBankId == item.QuestionBankId && 
+                                    (q.IsActive ?? true) &&
+                                    q.QuestionDifficultyId == item.DifficultyLevel.Value)
+                        .CountAsync(ct);
+                    System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Questions with DifficultyLevel {item.DifficultyLevel.Value}: {questionsWithDifficulty}");
+                    
+                    // Debug: Show what domain this difficulty has
+                    var difficultyInfo = await _db.QuestionDifficulties.AsNoTracking()
+                        .FirstOrDefaultAsync(d => d.Id == item.DifficultyLevel.Value, ct);
+                    if (difficultyInfo != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: QuestionDifficulty {item.DifficultyLevel.Value} has Domain: '{difficultyInfo.Domain}', Matrix item Domain: '{item.Domain}'");
+                    }
+                }
+                // Only filter by Domain if DifficultyLevel is NOT specified
+                // When DifficultyLevel is present, Domain is already determined by the QuestionDifficulty
+                else if (!string.IsNullOrEmpty(item.Domain))
                 {
                     var domainValue = item.Domain.Trim();
                     // Try exact match first (most efficient)
                     qQuery = qQuery.Where(q => q.QuestionDifficulty != null && 
                         q.QuestionDifficulty.Domain != null && 
                         q.QuestionDifficulty.Domain == domainValue);
-                    System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Filtered by Domain (exact match): '{domainValue}'");
+                    System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Filtered by Domain only (no DifficultyLevel): '{domainValue}'");
                     
                     // Debug: Check how many questions have this domain (before filtering)
                     var questionsWithDomain = await _db.Questions.AsNoTracking()
@@ -156,28 +184,38 @@ namespace LessonPlanExam.Repositories.Repositories
                         System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Questions with matching domain (after Trim): {matchingDomains.Count}");
                     }
                 }
-
-                // Filter by DifficultyLevel (which is QuestionDifficultyId in ExamMatrixItem)
-                if (item.DifficultyLevel.HasValue)
-                {
-                    qQuery = qQuery.Where(q => q.QuestionDifficultyId == item.DifficultyLevel.Value);
-                    System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Filtered by DifficultyLevel (QuestionDifficultyId): {item.DifficultyLevel.Value}");
-                    
-                    // Debug: Check how many questions have this difficulty
-                    var questionsWithDifficulty = await _db.Questions.AsNoTracking()
-                        .Where(q => q.QuestionBankId == item.QuestionBankId && 
-                                    (q.IsActive ?? true) &&
-                                    q.QuestionDifficultyId == item.DifficultyLevel.Value)
-                        .CountAsync(ct);
-                    System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Questions with DifficultyLevel {item.DifficultyLevel.Value}: {questionsWithDifficulty}");
-                }
                 
                 // Debug: Log the query before execution
                 var queryString = qQuery.ToQueryString();
                 System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Query: {queryString}");
 
                 var list = await qQuery.ToListAsync(ct);
-                System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Found {list?.Count ?? 0} questions after filtering");
+                System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Found {list?.Count ?? 0} questions after SQL filtering");
+                
+                // If no questions found and domain filter was applied (but no DifficultyLevel), try filtering in memory
+                // This handles cases where domain has whitespace that SQL comparison might miss
+                // Note: Only do this if DifficultyLevel is NOT specified, because if it is, Domain is already determined
+                if ((list == null || list.Count == 0) && !string.IsNullOrEmpty(item.Domain) && !item.DifficultyLevel.HasValue)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: No questions found with SQL filter, trying in-memory filter with Trim()...");
+                    var domainValue = item.Domain.Trim();
+                    
+                    // Build query without domain filter for in-memory filtering
+                    var inMemoryQuery = _db.Questions.AsNoTracking()
+                        .Include(q => q.QuestionDifficulty)
+                        .Where(q => q.QuestionBankId == item.QuestionBankId && 
+                                    (q.IsActive ?? true) &&
+                                    q.QuestionDifficulty != null &&
+                                    q.QuestionDifficulty.Domain != null);
+                    
+                    var questionsList = await inMemoryQuery.ToListAsync(ct);
+                    list = questionsList.Where(q => 
+                        q.QuestionDifficulty != null && 
+                        q.QuestionDifficulty.Domain != null &&
+                        q.QuestionDifficulty.Domain.Trim() == domainValue).ToList();
+                    
+                    System.Diagnostics.Debug.WriteLine($"[CreateExamFromMatrix] ItemId={item.Id}: Found {list?.Count ?? 0} questions after in-memory filtering");
+                }
                 
                 // Debug: Log details of found questions
                 if (list != null && list.Count > 0)
@@ -310,11 +348,13 @@ namespace LessonPlanExam.Repositories.Repositories
         public async Task<Exam> GetExamWithQuestionsAsync(int id, CancellationToken ct = default)
         {
             // Use Include to load ExamQuestions and Question in one query
-            // AsNoTracking() can cause issues with loading navigation properties, so we'll load without it first
+            // Include QuestionDifficulty to match CreateExamFromMatrixAsync behavior
+            // Place AsNoTracking() before Include() for better compatibility
             var exam = await _db.Exams
+                .AsNoTracking()
                 .Include(e => e.ExamQuestions)
                     .ThenInclude(eq => eq.Question)
-                .AsNoTracking()
+                        .ThenInclude(q => q.QuestionDifficulty)
                 .FirstOrDefaultAsync(x => x.Id == id, ct);
             
             if (exam == null) return null;
@@ -323,12 +363,16 @@ namespace LessonPlanExam.Repositories.Repositories
             var examQuestionsCount = exam.ExamQuestions?.Count ?? 0;
             System.Diagnostics.Debug.WriteLine($"[GetExamWithQuestionsAsync] ExamId: {id}, ExamQuestions count: {examQuestionsCount}");
             
-            if (exam.ExamQuestions != null)
+            if (exam.ExamQuestions != null && exam.ExamQuestions.Any())
             {
-                foreach (var eq in exam.ExamQuestions)
+                foreach (var eq in exam.ExamQuestions.Take(5))
                 {
-                    System.Diagnostics.Debug.WriteLine($"[GetExamWithQuestionsAsync] ExamQuestion: Id={eq.Id}, ExamId={eq.ExamId}, QuestionId={eq.QuestionId}, OrderIndex={eq.OrderIndex}, Points={eq.Points}");
+                    System.Diagnostics.Debug.WriteLine($"[GetExamWithQuestionsAsync] ExamQuestion: Id={eq.Id}, ExamId={eq.ExamId}, QuestionId={eq.QuestionId}, OrderIndex={eq.OrderIndex}, Points={eq.Points}, HasQuestion={eq.Question != null}");
                 }
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"[GetExamWithQuestionsAsync] WARNING: No ExamQuestions found for ExamId: {id}");
             }
             
             return exam;

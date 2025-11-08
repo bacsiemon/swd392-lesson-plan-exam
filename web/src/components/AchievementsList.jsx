@@ -12,27 +12,29 @@ const AchievementsList = ({ achievements }) => {
         <List.Item
           style={{
             background: achievement.earned 
-              ? 'rgba(82, 196, 26, 0.1)' 
-              : 'rgba(255, 255, 255, 0.05)',
+              ? '#f6ffed' 
+              : '#fafafa',
             borderRadius: 12,
             marginBottom: 12,
             padding: '16px',
             border: achievement.earned 
-              ? '1px solid rgba(82, 196, 26, 0.3)' 
-              : '1px solid rgba(255, 255, 255, 0.1)',
+              ? '1px solid #b7eb8f' 
+              : '1px solid #e8e8e8',
             transition: 'all 0.3s ease',
-            opacity: achievement.earned ? 1 : 0.6,
+            opacity: achievement.earned ? 1 : 0.7,
           }}
           onMouseEnter={(e) => {
             if (achievement.earned) {
-              e.currentTarget.style.background = 'rgba(82, 196, 26, 0.2)';
+              e.currentTarget.style.background = '#f0f9ff';
               e.currentTarget.style.transform = 'translateX(4px)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(82, 196, 26, 0.2)';
             }
           }}
           onMouseLeave={(e) => {
             if (achievement.earned) {
-              e.currentTarget.style.background = 'rgba(82, 196, 26, 0.1)';
+              e.currentTarget.style.background = '#f6ffed';
               e.currentTarget.style.transform = 'translateX(0)';
+              e.currentTarget.style.boxShadow = 'none';
             }
           }}
         >
@@ -43,7 +45,7 @@ const AchievementsList = ({ achievements }) => {
                   size={48}
                   style={{
                     backgroundColor: achievement.earned ? '#52c41a' : '#d9d9d9',
-                    border: '2px solid rgba(255, 255, 255, 0.2)',
+                    border: '2px solid #e8e8e8',
                     fontSize: '20px',
                   }}
                 >
@@ -68,8 +70,8 @@ const AchievementsList = ({ achievements }) => {
                 <Text 
                   style={{ 
                     color: achievement.earned 
-                      ? 'rgba(255, 255, 255, 0.95)' 
-                      : 'rgba(255, 255, 255, 0.6)', 
+                      ? '#262626' 
+                      : '#8c8c8c', 
                     fontWeight: 500,
                     fontSize: '16px'
                   }}
@@ -85,8 +87,8 @@ const AchievementsList = ({ achievements }) => {
               <Text 
                 style={{ 
                   color: achievement.earned 
-                    ? 'rgba(255, 255, 255, 0.8)' 
-                    : 'rgba(255, 255, 255, 0.5)',
+                    ? '#595959' 
+                    : '#bfbfbf',
                   fontSize: '14px'
                 }}
               >
