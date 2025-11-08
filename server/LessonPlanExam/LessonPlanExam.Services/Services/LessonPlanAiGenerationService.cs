@@ -113,22 +113,12 @@ namespace LessonPlanExam.Services.Services
                     lessonPlan.SlotPlans.Add(slotPlan);
                 }
 
-                // Save to database
-                _unitOfWork.LessonPlanRepository.Create(lessonPlan);
-                await _unitOfWork.SaveChangesAsync();
-
-                // Reload with navigation properties for response
-                var savedLessonPlan = await _unitOfWork.LessonPlanRepository.GetByIdAsync(
-                    lessonPlan.Id,
-                    lp => lp.SlotPlans,
-                    lp => lp.CreatedByTeacherNavigation
-                );
-
+                // Return the generated lesson plan without saving to database
                 return new BaseResponse<LessonPlan>
                 {
                     StatusCode = 201,
                     Message = "SUCCESS",
-                    Data = savedLessonPlan
+                    Data = lessonPlan
                 };
             }
             catch (Exception ex)
