@@ -25,7 +25,7 @@ namespace LessonPlanExam.Repositories.DTOs.LessonPlanDTOs
 
             RuleFor(x => x.NumberOfSlots)
                 .GreaterThan(0).WithMessage("NUMBER_OF_SLOTS_MUST_BE_GREATER_THAN_ZERO")
-                .LessThanOrEqualTo(10).WithMessage("NUMBER_OF_SLOTS_MAX_10");
+                .LessThanOrEqualTo(60).WithMessage("NUMBER_OF_SLOTS_MAX_60");
 
             RuleFor(x => x.DurationMinutesPerSlot)
                 .GreaterThan(0).WithMessage("DURATION_MINUTES_PER_SLOT_MUST_BE_GREATER_THAN_ZERO")

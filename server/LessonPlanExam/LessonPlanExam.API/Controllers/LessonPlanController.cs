@@ -1,4 +1,4 @@
-using DocumentFormat.OpenXml.Office2010.Excel;
+﻿using DocumentFormat.OpenXml.Office2010.Excel;
 using LessonPlanExam.API.Attributes;
 using LessonPlanExam.Repositories.DTOs.LessonPlanDTOs;
 using LessonPlanExam.Repositories.Enums;
@@ -343,7 +343,7 @@ namespace LessonPlanExam.API.Controllers
         /// <response code="500">Internal server error occurred during document generation. Possible messages:
         /// - DOCUMENT_GENERATION_FAILED (Error occurred while creating the Word document)
         /// </response>
-        [HttpGet("{id}/generate-word-document")]
+        [HttpGet("{id}/generate-doc")]
         [AuthorizeRoles(EUserRole.Teacher)]
         public async Task<IActionResult> GenerateWordDocumentAsync(int id)
         {
@@ -378,9 +378,9 @@ namespace LessonPlanExam.API.Controllers
         /// ```
         /// POST /api/lessonplan/generate-ai
         /// {
-        ///   "prompt": "T?o b�i h?c v? ph�p c?ng v� ph�p tr? trong to�n h?c cho h?c sinh l?p 2",
-        ///   "gradeLevel": 2,
-        ///   "numberOfSlots": 3,
+        ///   "prompt": "Giáo trình Hoá Học 8 chuẩn Bộ Giáo Dục và Đào Tạo",
+        ///   "gradeLevel": 8,
+        ///   "numberOfSlots": 30,
         ///   "durationMinutesPerSlot": 45
         /// }
         /// ```
@@ -394,7 +394,7 @@ namespace LessonPlanExam.API.Controllers
         /// - GRADE_LEVEL_MUST_BE_GREATER_THAN_ZERO
         /// - GRADE_LEVEL_MAX_12
         /// - NUMBER_OF_SLOTS_MUST_BE_GREATER_THAN_ZERO
-        /// - NUMBER_OF_SLOTS_MAX_10
+        /// - NUMBER_OF_SLOTS_MAX_60
         /// - DURATION_MINUTES_PER_SLOT_MUST_BE_GREATER_THAN_ZERO
         /// - DURATION_MINUTES_PER_SLOT_MAX_240
         /// </response>
