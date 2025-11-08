@@ -4,21 +4,21 @@
    ======================================== */
 
 :root {
-  /* Chemistry color palette */
-  --chem-purple-light: #e8d5f2;
-  --chem-purple: #b19cd9;
-  --chem-purple-dark: #8a6db8;
-  --chem-blue-light: #d5e8f7;
-  --chem-blue: #7eb8dd;
-  --chem-blue-dark: #4a90c4;
-  --chem-gradient: linear-gradient(135deg, #e8d5f2 0%, #d5e8f7 100%);
-  --chem-gradient-reverse: linear-gradient(135deg, #d5e8f7 0%, #e8d5f2 100%);
+  /* Chemistry color palette - Matching loading page gradient intensity */
+  --chem-purple-light: #a78bf0;
+  --chem-purple: #764ba2;
+  --chem-purple-dark: #5a3a7a;
+  --chem-blue-light: #8b9df5;
+  --chem-blue: #667eea;
+  --chem-blue-dark: #4f63d2;
+  --chem-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #a78bf0 100%);
+  --chem-gradient-reverse: linear-gradient(135deg, #a78bf0 0%, #764ba2 50%, #667eea 100%);
   
   /* Glass effect colors */
   --glass-bg: rgba(255, 255, 255, 0.75);
-  --glass-border: rgba(232, 213, 242, 0.5);
+  --glass-border: rgba(167, 139, 240, 0.6);
   
-  /* Background and borders */
+  /* Background and borders - Keep light for page backgrounds */
   --chem-bg: #f5f0fa;
   --chem-border: #d4c5e3;
   --chem-workspace-bg: linear-gradient(135deg, #f5f0fa 0%, #e8f3fa 100%);
@@ -65,12 +65,26 @@
   transform: translateY(-2px);
 }
 
-/* Header card with gradient */
+/* Header card with gradient - Dark like loading page */
 .chemistry-header-card {
-  background: var(--chem-gradient) !important;
-  border: 1px solid var(--chem-purple-light) !important;
-  box-shadow: 0 8px 32px rgba(177, 156, 217, 0.2) !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #a78bf0 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3) !important;
   border-radius: 12px !important;
+}
+
+/* Title and subtitle in header card - White text for readability */
+.chemistry-header-card .chemistry-title {
+  color: #ffffff !important;
+}
+
+.chemistry-header-card .chemistry-subtitle {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Icons in header card - White */
+.chemistry-header-card .anticon {
+  color: #ffffff !important;
 }
 
 /* Statistics cards */
@@ -98,6 +112,34 @@
   transition: all 0.3s ease !important;
   position: relative;
   overflow: hidden;
+}
+
+/* Buttons in header card - Light background for contrast */
+.chemistry-header-card .chemistry-btn-primary {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: var(--chem-text) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+.chemistry-header-card .chemistry-btn-primary:hover {
+  background: #ffffff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
+  color: var(--chem-text) !important;
+}
+
+/* Regular buttons in header card - Light background for contrast */
+.chemistry-header-card .ant-btn:not(.chemistry-btn-primary):not(.ant-btn-primary) {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: var(--chem-text) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+}
+
+.chemistry-header-card .ant-btn:not(.chemistry-btn-primary):not(.ant-btn-primary):hover {
+  background: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.6) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
 .chemistry-btn-primary::before {
@@ -136,7 +178,7 @@
   box-shadow: 0 4px 12px rgba(126, 184, 221, 0.2) !important;
 }
 
-/* Page title with icon */
+/* Page title with icon - Only apply dark text when NOT in header card */
 .chemistry-title {
   color: var(--chem-text) !important;
   display: flex;
@@ -147,6 +189,11 @@
 .chemistry-title .anticon {
   color: var(--chem-purple) !important;
   font-size: 1.2em;
+}
+
+/* Override for titles outside header cards to keep dark text */
+.chemistry-page > .chemistry-title:not(.chemistry-header-card .chemistry-title) {
+  color: var(--chem-text) !important;
 }
 
 /* Subtitle text */

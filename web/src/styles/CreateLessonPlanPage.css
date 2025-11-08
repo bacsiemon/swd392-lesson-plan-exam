@@ -63,10 +63,15 @@
   align-items: center; 
   gap: 8px; 
   font-weight: 600; 
-  color: var(--alt-text); 
-  background: var(--chem-purple-light); 
-  padding: 8px; 
+  color: #ffffff !important; 
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #a78bf0 100%) !important; 
+  padding: 8px 16px; 
   border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.panel-title-alt .anticon {
+  color: #ffffff !important;
 }
 .alt-button { 
   margin-top: 16px !important; 
@@ -131,19 +136,7 @@
   pointer-events: none;
 }
 
-/* Chemistry-themed titles with gradient */
-.chemistry-title {
-  background: var(--chem-gradient) !important;
-  color: var(--alt-text) !important;
-  transition: all 0.3s ease;
-  position: relative;
-  z-index: 1;
-}
-
-.chemistry-title:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(177, 156, 217, 0.3);
-}
+/* Chemistry-themed titles in panels - Already handled by .panel-title-alt */
 
 /* Chemistry button with gradient */
 .chemistry-button {
