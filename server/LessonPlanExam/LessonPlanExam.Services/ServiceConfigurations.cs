@@ -18,7 +18,12 @@ namespace LessonPlanExam.Services
             services.Configure<FileUploadConfiguration>(configuration.GetSection(FileUploadConfiguration.SectionName));
             services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
             services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
+            services.Configure<GeminiApiSettings>(configuration.GetSection(GeminiApiSettings.SectionName));
             services.AddHttpContextAccessor(); // Required for AccountService JWT functionality
+            
+            // Add HttpClient for AI service
+            services.AddHttpClient();
+            
             services.AddDependencyInjection();
             return services;
         }
@@ -37,6 +42,7 @@ namespace LessonPlanExam.Services
             services.AddScoped<IExamService, ExamService>();
             services.AddScoped<IAttemptService, AttemptService>();
             services.AddScoped<ILessonPlanFileGenerationService, LessonPlanFileGenerationService>();
+            services.AddScoped<ILessonPlanAiGenerationService, LessonPlanAiGenerationService>();
             // Removed IUserService registration as functionality moved to AccountService
         }
     }
