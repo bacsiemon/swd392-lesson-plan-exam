@@ -14,7 +14,11 @@ namespace LessonPlanExam.Services.Mapping
                 SlotNumber = request.SlotNumber,
                 Title = request.Title,
                 DurationMinutes = request.DurationMinutes,
-                Content = request.Content,
+                Objectives = request.Objectives,
+                EquipmentNeeded = request.EquipmentNeeded,
+                Preparations = request.Preparations,
+                Activities = request.Activities,
+                ReviseQuestions = request.ReviseQuestions,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -24,7 +28,11 @@ namespace LessonPlanExam.Services.Mapping
         {
             entity.Title = request.Title;
             entity.DurationMinutes = request.DurationMinutes;
-            entity.Content = request.Content;
+            entity.Objectives = request.Objectives;
+            entity.EquipmentNeeded = request.EquipmentNeeded;
+            entity.Preparations = request.Preparations;
+            entity.Activities = request.Activities;
+            entity.ReviseQuestions = request.ReviseQuestions;
             entity.UpdatedAt = DateTime.UtcNow;
         }
         #endregion
@@ -39,7 +47,11 @@ namespace LessonPlanExam.Services.Mapping
                 SlotNumber = entity.SlotNumber,
                 Title = entity.Title,
                 DurationMinutes = entity.DurationMinutes,
-                Content = entity.Content,
+                Objectives = entity.Objectives,
+                EquipmentNeeded = entity.EquipmentNeeded,
+                Preparations = entity.Preparations,
+                Activities = entity.Activities,
+                ReviseQuestions = entity.ReviseQuestions,
                 CreatedAt = entity.CreatedAt,
                 UpdatedAt = entity.UpdatedAt,
                 LessonPlanTitle = entity.LessonPlan?.Title ?? string.Empty

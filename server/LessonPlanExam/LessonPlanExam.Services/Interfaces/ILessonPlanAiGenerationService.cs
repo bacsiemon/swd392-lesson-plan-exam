@@ -1,5 +1,6 @@
 using App.Infrastructure.BaseClasses;
 using LessonPlanExam.Repositories.DTOs.LessonPlanDTOs;
+using LessonPlanExam.Repositories.Models;
 
 namespace LessonPlanExam.Services.Interfaces
 {
@@ -40,6 +41,6 @@ namespace LessonPlanExam.Services.Interfaces
         /// </response>
         /// <response code="401">Unauthorized access</response>
         /// <response code="500">AI_GENERATION_FAILED</response>
-        Task<BaseResponse> GenerateLessonPlanAsync(GenerateLessonPlanAiRequest request);
+        Task<BaseResponse<LessonPlan>> GenerateLessonPlanAsync(GenerateLessonPlanAiRequest request);
     }
 }

@@ -34,7 +34,7 @@ namespace LessonPlanExam.Services.Services
                 var body = mainDocumentPart.Document.AppendChild(new Body());
 
                 // Add document title
-                AddTitle(body, lessonPlan.Title ?? "Untitled Lesson Plan");
+                AddTitle(body, lessonPlan.Title ?? "Giáo án chưa có tiêu đề");
 
                 // Add lesson plan details section
                 AddLessonPlanDetails(body, lessonPlan);
@@ -46,7 +46,7 @@ namespace LessonPlanExam.Services.Services
                 }
                 else
                 {
-                    AddParagraph(body, "No slot plans available for this lesson.", true);
+                    AddParagraph(body, "Không có tiết học nào cho Giáo án này.", true);
                 }
 
                 // Add footer
@@ -90,7 +90,7 @@ namespace LessonPlanExam.Services.Services
         private static void AddLessonPlanDetails(Body body, LessonPlan lessonPlan)
         {
             // Section header
-            AddSectionHeader(body, "Lesson Plan Details");
+            AddSectionHeader(body, "Chi tiết Giáo án");
 
             // Create a table for lesson plan details
             var table = new Table();
@@ -109,11 +109,11 @@ namespace LessonPlanExam.Services.Services
             table.AppendChild(tableProperties);
 
             // Add rows with lesson plan information
-            AddTableRow(table, "Grade Level", lessonPlan.GradeLevel.ToString());
-            AddTableRow(table, "Created By", lessonPlan.CreatedByTeacherNavigation?.Account?.FullName ?? "Unknown");
-            AddTableRow(table, "School", lessonPlan.CreatedByTeacherNavigation?.SchoolName ?? "Not specified");
-            AddTableRow(table, "Created Date", lessonPlan.CreatedAt?.ToString("MMM dd, yyyy") ?? "Not specified");
-            AddTableRow(table, "Last Updated", lessonPlan.UpdatedAt?.ToString("MMM dd, yyyy") ?? "Not specified");
+            AddTableRow(table, "Lớp", lessonPlan.GradeLevel.ToString());
+            AddTableRow(table, "Được tạo bởi", lessonPlan.CreatedByTeacherNavigation?.Account?.FullName ?? "Không xác định");
+            AddTableRow(table, "Trường", lessonPlan.CreatedByTeacherNavigation?.SchoolName ?? "Không xác định");
+            AddTableRow(table, "Ngày tạo", lessonPlan.CreatedAt?.ToString("dd/MM/yyyy") ?? "Không xác định");
+            AddTableRow(table, "Cập nhật lần cuối", lessonPlan.UpdatedAt?.ToString("dd/MM/yyyy") ?? "Không xác định");
 
             body.AppendChild(table);
             AddEmptyParagraph(body);
@@ -121,7 +121,7 @@ namespace LessonPlanExam.Services.Services
             // Objectives section
             if (!string.IsNullOrWhiteSpace(lessonPlan.Objectives))
             {
-                AddSubsectionHeader(body, "Objectives");
+                AddSubsectionHeader(body, "Mục tiêu");
                 AddParagraph(body, lessonPlan.Objectives);
                 AddEmptyParagraph(body);
             }
@@ -129,7 +129,7 @@ namespace LessonPlanExam.Services.Services
             // Description section
             if (!string.IsNullOrWhiteSpace(lessonPlan.Description))
             {
-                AddSubsectionHeader(body, "Description");
+                AddSubsectionHeader(body, "Mô tả");
                 AddParagraph(body, lessonPlan.Description);
                 AddEmptyParagraph(body);
             }
@@ -140,7 +140,7 @@ namespace LessonPlanExam.Services.Services
         /// </summary>
         private static void AddSlotPlansSection(Body body, IEnumerable<SlotPlan> slotPlans)
         {
-            AddSectionHeader(body, "Danh sách tiết học.");
+            AddSectionHeader(body, "Danh sách tiết học");
             
             foreach (var slotPlan in slotPlans)
             {
@@ -155,12 +155,47 @@ namespace LessonPlanExam.Services.Services
                     AddParagraph(body, durationText, true);
                 }
 
-                // Content
-                if (!string.IsNullOrWhiteSpace(slotPlan.Content))
+                // Objectives
+                if (!string.IsNullOrWhiteSpace(slotPlan.Objectives))
                 {
-                    AddParagraph(body, slotPlan.Content);
+                    AddParagraph(body, "Mục tiêu:", true);
+                    AddParagraph(body, slotPlan.Objectives);
                 }
-                else
+
+                // Equipment needed
+                if (!string.IsNullOrWhiteSpace(slotPlan.EquipmentNeeded))
+                {
+                    AddParagraph(body, "Thiết bị cần thiết:", true);
+                    AddParagraph(body, slotPlan.EquipmentNeeded);
+                }
+
+                // Preparations
+                if (!string.IsNullOrWhiteSpace(slotPlan.Preparations))
+                {
+                    AddParagraph(body, "Chuẩn bị:", true);
+                    AddParagraph(body, slotPlan.Preparations);
+                }
+
+                // Activities
+                if (!string.IsNullOrWhiteSpace(slotPlan.Activities))
+                {
+                    AddParagraph(body, "Hoạt động:", true);
+                    AddParagraph(body, slotPlan.Activities);
+                }
+
+                // Revise questions
+                if (!string.IsNullOrWhiteSpace(slotPlan.ReviseQuestions))
+                {
+                    AddParagraph(body, "Câu hỏi ôn tập:", true);
+                    AddParagraph(body, slotPlan.ReviseQuestions);
+                }
+
+                // If no content is available
+                if (string.IsNullOrWhiteSpace(slotPlan.Objectives) && 
+                    string.IsNullOrWhiteSpace(slotPlan.EquipmentNeeded) &&
+                    string.IsNullOrWhiteSpace(slotPlan.Preparations) &&
+                    string.IsNullOrWhiteSpace(slotPlan.Activities) &&
+                    string.IsNullOrWhiteSpace(slotPlan.ReviseQuestions))
                 {
                     AddParagraph(body, "Không có nội dung.", true);
                 }
@@ -268,7 +303,7 @@ namespace LessonPlanExam.Services.Services
             
             var valueParagraph = new Paragraph();
             var valueRun = new Run();
-            valueRun.AppendChild(new Text(value ?? "Not specified"));
+            valueRun.AppendChild(new Text(value ?? "Không xác định"));
             valueParagraph.AppendChild(valueRun);
             valueCell.AppendChild(valueParagraph);
             
@@ -298,7 +333,7 @@ namespace LessonPlanExam.Services.Services
             body.AppendChild(separatorParagraph);
             
             // Footer text
-            var footerText = $"Generated on {DateTime.Now:MMM dd, yyyy 'at' HH:mm}";
+            var footerText = $"Được tạo vào ngày {DateTime.Now:dd/MM/yyyy 'lúc' HH:mm}";
             var footerParagraph = new Paragraph();
             var footerRun = new Run();
             var footerRunProperties = new RunProperties();

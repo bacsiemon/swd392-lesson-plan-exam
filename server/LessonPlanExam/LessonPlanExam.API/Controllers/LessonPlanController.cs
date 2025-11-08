@@ -1,3 +1,4 @@
+using DocumentFormat.OpenXml.Office2010.Excel;
 using LessonPlanExam.API.Attributes;
 using LessonPlanExam.Repositories.DTOs.LessonPlanDTOs;
 using LessonPlanExam.Repositories.Enums;
@@ -403,8 +404,19 @@ namespace LessonPlanExam.API.Controllers
         [AuthorizeRoles(EUserRole.Teacher)]
         public async Task<IActionResult> GenerateLessonPlanWithAiAsync([FromBody] GenerateLessonPlanAiRequest request)
         {
-            var response = await _lessonPlanAiGenerationService.GenerateLessonPlanAsync(request);
-            return StatusCode(response.StatusCode, response);
+            var response = await _lessonPlanService.GenerateLessonPlanWithAiAsync(request);
+            if (response.StatusCode != 200)
+            {
+                return StatusCode(response.StatusCode, response);
+            }
+
+            // Return the Word document as a file download
+            var fileName = $"giaoan_{DateTime.Now:yyyyMMdd_HHmmss}.docx";
+            return File(
+                response.Data,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                fileName
+            );
         }
     }
 }

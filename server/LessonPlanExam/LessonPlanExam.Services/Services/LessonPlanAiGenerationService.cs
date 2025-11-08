@@ -31,13 +31,13 @@ namespace LessonPlanExam.Services.Services
             _httpClient = httpClient;
         }
 
-        public async Task<BaseResponse> GenerateLessonPlanAsync(GenerateLessonPlanAiRequest request)
+        public async Task<BaseResponse<LessonPlan>> GenerateLessonPlanAsync(GenerateLessonPlanAiRequest request)
         {
             // Validate user role
             var currentRole = _accountService.GetCurrentUserRole();
             if (currentRole != Repositories.Enums.EUserRole.Teacher)
             {
-                return new BaseResponse
+                return new BaseResponse<LessonPlan>
                 {
                     StatusCode = 401,
                     Errors = "TEACHER_ONLY"
@@ -53,7 +53,7 @@ namespace LessonPlanExam.Services.Services
                 
                 if (aiResponse == null)
                 {
-                    return new BaseResponse
+                    return new BaseResponse<LessonPlan>
                     {
                         StatusCode = 500,
                         Errors = "AI_GENERATION_FAILED"
@@ -82,7 +82,11 @@ namespace LessonPlanExam.Services.Services
                     {
                         SlotNumber = i + 1,
                         Title = slotPlanData.Title ?? $"Tiết {i + 1}",
-                        Content = slotPlanData.Content ?? "Nội dung sẽ được cập nhật",
+                        Objectives = slotPlanData.Objectives,
+                        EquipmentNeeded = slotPlanData.EquipmentNeeded,
+                        Preparations = slotPlanData.Preparations,
+                        Activities = slotPlanData.Activities ?? slotPlanData.Content ?? "Nội dung sẽ được cập nhật",
+                        ReviseQuestions = slotPlanData.ReviseQuestions,
                         DurationMinutes = request.DurationMinutesPerSlot,
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
@@ -97,7 +101,11 @@ namespace LessonPlanExam.Services.Services
                     {
                         SlotNumber = i + 1,
                         Title = $"Tiết {i + 1}",
-                        Content = "Nội dung sẽ được cập nhật",
+                        Objectives = "Mục tiêu sẽ được cập nhật",
+                        EquipmentNeeded = "Thiết bị sẽ được cập nhật",
+                        Preparations = "Chuẩn bị sẽ được cập nhật",
+                        Activities = "Hoạt động sẽ được cập nhật",
+                        ReviseQuestions = "Câu hỏi sẽ được cập nhật",
                         DurationMinutes = request.DurationMinutesPerSlot,
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
@@ -116,16 +124,16 @@ namespace LessonPlanExam.Services.Services
                     lp => lp.CreatedByTeacherNavigation
                 );
 
-                return new BaseResponse
+                return new BaseResponse<LessonPlan>
                 {
                     StatusCode = 201,
                     Message = "SUCCESS",
-                    Data = savedLessonPlan.ToResponse()
+                    Data = savedLessonPlan
                 };
             }
             catch (Exception ex)
             {
-                return new BaseResponse
+                return new BaseResponse<LessonPlan>
                 {
                     StatusCode = 500,
                     Errors = "AI_GENERATION_FAILED",
@@ -341,7 +349,11 @@ namespace LessonPlanExam.Services.Services
                 response.SlotPlans.Add(new GeminiSlotPlan
                 {
                     Title = $"Tiết {i + 1}",
-                    Content = $"Nội dung cho tiết {i + 1} sẽ được cập nhật"
+                    Objectives = $"Mục tiêu cho tiết {i + 1}",
+                    EquipmentNeeded = "Thiết bị cơ bản",
+                    Preparations = "Chuẩn bị tài liệu",
+                    Activities = $"Hoạt động cho tiết {i + 1} sẽ được cập nhật",
+                    ReviseQuestions = "Câu hỏi ôn tập sẽ được bổ sung"
                 });
             }
 
@@ -386,11 +398,19 @@ Hãy trả về kết quả CHÍNH XÁC theo định dạng JSON sau, không có
   ""slotPlans"": [
     {{
       ""title"": ""Tên tiết học 1"",
-      ""content"": ""Nội dung chi tiết của tiết học 1""
+      ""objectives"": ""Mục tiêu tiết học 1"",
+      ""equipmentNeeded"": ""Thiết bị cần thiết cho tiết 1"",
+      ""preparations"": ""Chuẩn bị cho tiết 1"",
+      ""activities"": ""Các hoạt động trong tiết 1"",
+      ""reviseQuestions"": ""Các câu hỏi ôn tập tiết 1""
     }},
     {{
       ""title"": ""Tên tiết học 2"",
-      ""content"": ""Nội dung chi tiết của tiết học 2""
+      ""objectives"": ""Mục tiêu tiết học 2"",
+      ""equipmentNeeded"": ""Thiết bị cần thiết cho tiết 2"",
+      ""preparations"": ""Chuẩn bị cho tiết 2"",
+      ""activities"": ""Các hoạt động trong tiết 2"",
+      ""reviseQuestions"": ""Các câu hỏi ôn tập tiết 2""
     }}
   ]
 }}
@@ -399,8 +419,9 @@ YÊU CẦU QUAN TRỌNG:
 - Tạo đúng {request.NumberOfSlots} tiết học trong mảng slotPlans
 - Đảm bảo JSON hoàn chỉnh và đúng cú pháp
 - Không thêm text hay markdown nào bên ngoài JSON
-- Mỗi slotPlan phải có đầy đủ title và content
+- Mỗi slotPlan phải có đầy đủ các trường: title, objectives, equipmentNeeded, preparations, activities, reviseQuestions
 - Nội dung phù hợp với lứa tuổi lớp {request.GradeLevel}
+- Các hoạt động phải cụ thể và có thể thực hiện được
 ";
         }
 
@@ -448,8 +469,24 @@ YÊU CẦU QUAN TRỌNG:
             [JsonProperty("title")]
             public string Title { get; set; } = null!;
 
+            [JsonProperty("objectives")]
+            public string? Objectives { get; set; }
+
+            [JsonProperty("equipmentNeeded")]
+            public string? EquipmentNeeded { get; set; }
+
+            [JsonProperty("preparations")]
+            public string? Preparations { get; set; }
+
+            [JsonProperty("activities")]
+            public string? Activities { get; set; }
+
+            [JsonProperty("reviseQuestions")]
+            public string? ReviseQuestions { get; set; }
+
+            // Keep content for backward compatibility
             [JsonProperty("content")]
-            public string Content { get; set; } = null!;
+            public string? Content { get; set; }
         }
     }
 }
