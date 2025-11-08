@@ -16,6 +16,6 @@ namespace LessonPlanExam.Services.Interfaces
         Task<BaseResponse> DeleteLessonPlanFileAsync(int fileId);
         Task<BaseResponse> SearchAsync(string? title, string? teacherName, int? gradeLevel, int page = 1, int size = 10);
         Task<BaseResponse<byte[]>> GenerateWordDocumentAsync(int lessonPlanId);
-        Task<BaseResponse<byte[]>> GenerateLessonPlanWithAiAsync(GenerateLessonPlanAiRequest request);
+        Task<BaseResponse<byte[]>> GenerateWordDocWithAiAsync(GenerateLessonPlanAiRequest request);
     }
 }

@@ -366,12 +366,12 @@ namespace LessonPlanExam.API.Controllers
         /// <summary>Teacher</summary>
         /// <remarks>
         /// 
-        /// Generate a lesson plan with multiple slot plans using AI (Gemini 2.5 Pro).
+        /// Generate a lesson plan Word Document with multiple slot plans using AI (Gemini 2.5 Pro).
         /// 
         /// Parameters:
         /// prompt: Required, Vietnamese prompt describing the lesson content, minimum 10 characters, maximum 2000 characters.
-        /// gradeLevel: Required, grade level from 1 to 12.
-        /// numberOfSlots: Optional, number of slots to generate (default: 3, max: 10).
+        /// gradeLevel: Required, grade level from 8 to 12.
+        /// numberOfSlots: Optional, number of slots to generate (default: 3, max: 60).
         /// durationMinutesPerSlot: Optional, duration in minutes for each slot (default: 45, max: 240).
         /// 
         /// Sample request:
@@ -391,8 +391,7 @@ namespace LessonPlanExam.API.Controllers
         /// - PROMPT_REQUIRED
         /// - PROMPT_MIN_10_CHARACTERS
         /// - PROMPT_MAX_2000_CHARACTERS
-        /// - GRADE_LEVEL_MUST_BE_GREATER_THAN_ZERO
-        /// - GRADE_LEVEL_MAX_12
+        /// - GRADE_LEVEL_BETWEEN_8_AND_12
         /// - NUMBER_OF_SLOTS_MUST_BE_GREATER_THAN_ZERO
         /// - NUMBER_OF_SLOTS_MAX_60
         /// - DURATION_MINUTES_PER_SLOT_MUST_BE_GREATER_THAN_ZERO
@@ -400,11 +399,11 @@ namespace LessonPlanExam.API.Controllers
         /// </response>
         /// <response code="401">Unauthorized access</response>
         /// <response code="500">AI_GENERATION_FAILED</response>
-        [HttpPost("generate-ai")]
+        [HttpPost("generate-doc-ai")]
         [AuthorizeRoles(EUserRole.Teacher)]
-        public async Task<IActionResult> GenerateLessonPlanWithAiAsync([FromBody] GenerateLessonPlanAiRequest request)
+        public async Task<IActionResult> GenerateWordDocWithAiAsync([FromBody] GenerateLessonPlanAiRequest request)
         {
-            var response = await _lessonPlanService.GenerateLessonPlanWithAiAsync(request);
+            var response = await _lessonPlanService.GenerateWordDocWithAiAsync(request);
             if (response.StatusCode != 200)
             {
                 return StatusCode(response.StatusCode, response);

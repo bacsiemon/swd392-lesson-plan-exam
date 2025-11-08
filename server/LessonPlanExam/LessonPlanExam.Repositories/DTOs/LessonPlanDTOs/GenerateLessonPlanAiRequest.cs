@@ -20,8 +20,8 @@ namespace LessonPlanExam.Repositories.DTOs.LessonPlanDTOs
                 .MaximumLength(2000).WithMessage("PROMPT_MAX_2000_CHARACTERS");
 
             RuleFor(x => x.GradeLevel)
-                .GreaterThan(0).WithMessage("GRADE_LEVEL_MUST_BE_GREATER_THAN_ZERO")
-                .LessThanOrEqualTo(12).WithMessage("GRADE_LEVEL_MAX_12");
+                .GreaterThanOrEqualTo(8).WithMessage("GRADE_LEVEL_BETWEEN_8_AND_12")
+                .LessThanOrEqualTo(12).WithMessage("GRADE_LEVEL_BETWEEN_8_AND_12");
 
             RuleFor(x => x.NumberOfSlots)
                 .GreaterThan(0).WithMessage("NUMBER_OF_SLOTS_MUST_BE_GREATER_THAN_ZERO")

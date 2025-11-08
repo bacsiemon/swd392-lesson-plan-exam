@@ -323,7 +323,7 @@ namespace LessonPlanExam.Services.Services
             }
         }
 
-        public async Task<BaseResponse<byte[]>> GenerateLessonPlanWithAiAsync(GenerateLessonPlanAiRequest request)
+        public async Task<BaseResponse<byte[]>> GenerateWordDocWithAiAsync(GenerateLessonPlanAiRequest request)
         {
             // Generate the lesson plan using AI service
             var aiResponse = await _lessonPlanAiGenerationService.GenerateLessonPlanAsync(request);
