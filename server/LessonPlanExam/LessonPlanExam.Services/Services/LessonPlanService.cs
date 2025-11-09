@@ -17,7 +17,7 @@ namespace LessonPlanExam.Services.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IAccountService _accountService;
         private readonly IFileUploadService _fileUploadService;
-        private readonly ILessonPlanFileGenerationService _documentGenerationService;
+        private readonly ILessonPlanFileGenerationService _lessonPlanFileGenerationService;
         private readonly ILessonPlanAiGenerationService _lessonPlanAiGenerationService;
 
         public LessonPlanService(IUnitOfWork unitOfWork, IAccountService accountService, IFileUploadService fileUploadService, ILessonPlanFileGenerationService documentGenerationService, ILessonPlanAiGenerationService lessonPlanAiGenerationService)
@@ -25,7 +25,7 @@ namespace LessonPlanExam.Services.Services
             _unitOfWork = unitOfWork;
             _accountService = accountService;
             _fileUploadService = fileUploadService;
-            _documentGenerationService = documentGenerationService;
+            _lessonPlanFileGenerationService = documentGenerationService;
             _lessonPlanAiGenerationService = lessonPlanAiGenerationService;
         }
 
@@ -303,7 +303,7 @@ namespace LessonPlanExam.Services.Services
             try
             {
                 // Generate the Word document
-                var documentBytes = await _documentGenerationService.GenerateWordDocumentAsync(lessonPlan);
+                var documentBytes = await _lessonPlanFileGenerationService.GenerateWordDocumentAsync(lessonPlan);
 
                 return new BaseResponse<byte[]>
                 {
@@ -339,7 +339,7 @@ namespace LessonPlanExam.Services.Services
                 };
             }
             // Generate Word document from the AI-generated lesson plan
-            var documentBytes = await _documentGenerationService.GenerateWordDocumentAsync(aiResponse.Data);
+            var documentBytes = await _lessonPlanFileGenerationService.GenerateWordDocumentAsync(aiResponse.Data);
 
             return new BaseResponse<byte[]>
             {
