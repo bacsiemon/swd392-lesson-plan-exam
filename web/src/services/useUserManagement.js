@@ -109,21 +109,81 @@ export const useUserManagement = () => {
   // CRUD operations
   const handleAddUser = async (values) => {
     try {
-      // TODO: Implement add user API call when available
-      // For now, just add to local state
-      const newUser = {
-        id: Date.now(),
-        ...values,
-        createdAt: new Date().toISOString().split('T')[0],
+      // Map role string to enum number
+      let roleEnum = 2; // Default to Student
+      if (values.role === 'teacher' || values.role === 1) {
+        roleEnum = 1; // Teacher
+      } else if (values.role === 'student' || values.role === 2) {
+        roleEnum = 2; // Student
+      }
+
+      // Validate password is provided
+      if (!values.password) {
+        message.error('Vui lòng nhập mật khẩu cho tài khoản mới');
+        return;
+      }
+
+      // Prepare data for API
+      const registerData = {
+        email: values.email,
+        password: values.password,
+        confirmPassword: values.password, // Same as password for admin creation
+        fullName: values.name || values.fullName,
+        role: roleEnum,
+        phoneNumber: values.phone || null,
+        dateOfBirth: values.dateOfBirth || null,
+        bio: values.bio || null
       };
-      const newUsers = [newUser, ...users];
-      setUsers(newUsers);
-      applyFilters(newUsers, filters);
-      setIsAddModalVisible(false);
-      message.success('Đã thêm tài khoản mới thành công!');
+
+      console.log('Adding new user with data:', registerData);
+
+      // Call API to register new account
+      const result = await accountService.register(registerData);
+
+      if (result.success) {
+        message.success(result.message || 'Đã thêm tài khoản mới thành công!');
+        setIsAddModalVisible(false);
+        
+        // Reload all accounts to get updated list from server
+        const reloadResult = await accountService.getAllAccounts();
+        if (reloadResult.success && reloadResult.data) {
+          const teachers = (reloadResult.data.teachers || reloadResult.data.Teachers || []).map(account => ({
+            id: account.id || account.Id,
+            name: account.fullName || account.FullName || '',
+            email: account.email || account.Email || '',
+            phone: account.phone || account.Phone || '',
+            role: 'teacher',
+            roleEnum: account.role || account.Role || 1,
+            isActive: account.isActive !== undefined ? account.isActive : (account.IsActive !== undefined ? account.IsActive : true),
+            emailVerified: account.emailVerified !== undefined ? account.emailVerified : (account.EmailVerified !== undefined ? account.EmailVerified : false),
+            createdAt: account.createdAt || account.CreatedAt || new Date().toISOString(),
+            updatedAt: account.updatedAt || account.UpdatedAt
+          }));
+
+          const students = (reloadResult.data.students || reloadResult.data.Students || []).map(account => ({
+            id: account.id || account.Id,
+            name: account.fullName || account.FullName || '',
+            email: account.email || account.Email || '',
+            phone: account.phone || account.Phone || '',
+            role: 'student',
+            roleEnum: account.role || account.Role || 2,
+            isActive: account.isActive !== undefined ? account.isActive : (account.IsActive !== undefined ? account.IsActive : true),
+            emailVerified: account.emailVerified !== undefined ? account.emailVerified : (account.EmailVerified !== undefined ? account.EmailVerified : false),
+            createdAt: account.createdAt || account.CreatedAt || new Date().toISOString(),
+            updatedAt: account.updatedAt || account.UpdatedAt
+          }));
+
+          const allAccounts = [...teachers, ...students];
+          setUsers(allAccounts);
+          applyFilters(allAccounts, filters);
+        }
+      } else {
+        console.error('Failed to add user:', result);
+        message.error(result.message || 'Có lỗi xảy ra khi thêm tài khoản');
+      }
     } catch (err) {
       console.error('Error adding user:', err);
-      message.error('Có lỗi xảy ra khi thêm tài khoản');
+      message.error(err.message || 'Có lỗi xảy ra khi thêm tài khoản');
     }
   };
 

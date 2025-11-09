@@ -30,6 +30,20 @@ const AddUserModal = ({ visible, onAdd, onCancel }) => {
         <Form.Item name="email" label="Email" rules={[{ required: true, message: 'Vui lòng nhập email!' }, { type: 'email', message: 'Email không hợp lệ!' }]}>
           <Input />
         </Form.Item>
+        <Form.Item 
+          name="password" 
+          label="Mật khẩu" 
+          rules={[
+            { required: true, message: 'Vui lòng nhập mật khẩu!' },
+            { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự!' }
+          ]}
+          extra="Mật khẩu tạm thời để người dùng đăng nhập lần đầu"
+        >
+          <Input.Password placeholder="Nhập mật khẩu tạm thời" />
+        </Form.Item>
+        <Form.Item name="phone" label="Số điện thoại (Tùy chọn)">
+          <Input placeholder="Nhập số điện thoại" />
+        </Form.Item>
         <Form.Item name="role" label="Vai trò" rules={[{ required: true, message: 'Vui lòng chọn vai trò!' }]}>
           <Select>
             <Option value="teacher">Giáo viên</Option>
