@@ -180,7 +180,14 @@ const QuestionPreview = ({ question }) => {
 
         {/* Question Type Specific Content */}
         {question.questionTypeEnum === 0 && renderMultipleChoice()}
-        {question.questionTypeEnum === 1 && renderFillBlank()}
+        {question.questionTypeEnum === 1 && (
+          <Alert
+            message="Loại câu hỏi không được hỗ trợ"
+            description="Câu hỏi điền vào chỗ trống hiện không được hiển thị."
+            type="info"
+            style={{ marginTop: 16 }}
+          />
+        )}
 
         {/* Explanation */}
         {additionalData.explanation && (

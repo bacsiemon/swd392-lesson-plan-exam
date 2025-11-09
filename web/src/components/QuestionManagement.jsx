@@ -331,7 +331,7 @@ const QuestionManagement = ({ questionBank }) => {
       key: 'questionTypeEnum',
       width: 120,
       render: (value, record) => getQuestionTypeLabel(value || record.QuestionTypeEnum),
-      filters: QUESTION_TYPES.map(type => ({
+      filters: QUESTION_TYPES.filter(type => type.value === 0).map(type => ({
         text: type.label,
         value: type.value
       })),
@@ -439,7 +439,7 @@ const QuestionManagement = ({ questionBank }) => {
 
       {/* Statistics */}
       <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col span={6}>
+        <Col span={8}>
           <Card>
             <Statistic
               title="Tổng câu hỏi"
@@ -449,7 +449,7 @@ const QuestionManagement = ({ questionBank }) => {
             />
           </Card>
         </Col>
-        <Col span={6}>
+        <Col span={8}>
           <Card>
             <Statistic
               title="Trắc nghiệm"
@@ -459,17 +459,7 @@ const QuestionManagement = ({ questionBank }) => {
             />
           </Card>
         </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="Điền chỗ trống"
-              value={stats.fillBlank}
-              prefix={<EditOutlined />}
-              valueStyle={{ color: '#722ed1' }}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
+        <Col span={8}>
           <Card>
             <Statistic
               title="Câu khó"

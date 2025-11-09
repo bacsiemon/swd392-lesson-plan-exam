@@ -1051,117 +1051,27 @@ function StudentTestPage() {
               />
             </Card>
           ) : (
-            questions.map((q, idx) => {
+            questions
+              .filter((q) => {
+                // Only show Multiple Choice questions (questionTypeEnum === 0)
+                const questionTypeEnum = q.questionTypeEnum !== undefined 
+                  ? q.questionTypeEnum 
+                  : (q.QuestionTypeEnum !== undefined 
+                    ? q.QuestionTypeEnum 
+                    : (q.question?.questionTypeEnum !== undefined 
+                      ? q.question.questionTypeEnum 
+                      : (q.question?.QuestionTypeEnum !== undefined ? q.question.QuestionTypeEnum : 0)));
+                return questionTypeEnum === 0;
+              })
+              .map((q, idx) => {
               // Handle different question formats
               // Backend returns ExamQuestionResponse with QuestionId, we've loaded full question details
               const questionId = q.questionId || q.QuestionId || q.id || q.Id || q.examQuestionId || q.ExamQuestionId;
               const questionText = q.text || q.title || q.content || q.questionTitle || q.QuestionTitle || q.questionContent || q.QuestionContent || q.question?.title || q.question?.Title || q.question?.content || q.question?.Content || 'Câu hỏi';
               const questionContent = q.content || q.Content || q.question?.content || q.question?.Content || questionText;
               
-              // Get question type: 0 = MultipleChoice, 1 = FillBlank
-              const questionTypeEnum = q.questionTypeEnum !== undefined 
-                ? q.questionTypeEnum 
-                : (q.QuestionTypeEnum !== undefined 
-                  ? q.QuestionTypeEnum 
-                  : (q.question?.questionTypeEnum !== undefined 
-                    ? q.question.questionTypeEnum 
-                    : (q.question?.QuestionTypeEnum !== undefined ? q.question.QuestionTypeEnum : 0)));
-              
               // Use options from loaded question data (for MultipleChoice)
               const options = q.options || q.multipleChoiceAnswers || q.MultipleChoiceAnswers || q.question?.multipleChoiceAnswers || q.question?.MultipleChoiceAnswers || [];
-              
-              // Get FillBlank answers (for FillBlank questions)
-              const fillBlankAnswers = q.fillBlankAnswers || q.FillBlankAnswers || q.question?.fillBlankAnswers || q.question?.FillBlankAnswers || [];
-              
-              // Debug logging
-              if (idx === 0) {
-                console.log(`[StudentTestPage] First question debug:`, {
-                  questionId: questionId,
-                  questionText: questionText,
-                  questionTypeEnum: questionTypeEnum,
-                  optionsCount: options.length,
-                  fillBlankAnswersCount: fillBlankAnswers.length,
-                  options: options,
-                  fillBlankAnswers: fillBlankAnswers,
-                  fullQuestion: q
-                });
-              }
-              
-              // Render FillBlank question
-              if (questionTypeEnum === 1) {
-                // FillBlank question - show input field(s)
-                const savedAnswer = answers[questionId] || answers[parseInt(questionId)] || answers[String(questionId)] || '';
-                const blankCount = fillBlankAnswers.length > 0 ? fillBlankAnswers.length : 1; // Default to 1 if no blanks specified
-                
-                return (
-                  <Card key={questionId} className="chemistry-card">
-                    <Title level={5} style={{ marginBottom: 16, color: 'var(--chem-purple-dark)' }}>
-                      Câu {idx + 1}
-                    </Title>
-                    <div style={{ marginBottom: 16 }}>
-                      <Text style={{ fontSize: 16, lineHeight: 1.8 }}>
-                        {questionContent}
-                      </Text>
-                    </div>
-                    <div style={{ marginTop: 16 }}>
-                      {blankCount === 1 ? (
-                        // Single blank - one input field
-                        <Input
-                          placeholder="Nhập câu trả lời..."
-                          value={typeof savedAnswer === 'string' ? savedAnswer : ''}
-                          onChange={(e) => {
-                            const textValue = e.target.value;
-                            console.log(`[FillBlank onChange] Question ${questionId}, Text answer:`, textValue);
-                            handleTextAnswerChange(questionId, textValue);
-                          }}
-                          disabled={submitted || submitting}
-                          size="large"
-                          style={{ fontSize: 16 }}
-                        />
-                      ) : (
-                        // Multiple blanks - multiple input fields
-                        <Space direction="vertical" style={{ width: '100%' }}>
-                          {Array.from({ length: blankCount }).map((_, blankIndex) => {
-                            // For multiple blanks, we can store as array or join with delimiter
-                            // For now, use comma-separated format: "answer1,answer2,answer3"
-                            const answerArray = typeof savedAnswer === 'string' && savedAnswer.includes(',') 
-                              ? savedAnswer.split(',').map(a => a.trim())
-                              : (savedAnswer ? [savedAnswer] : Array(blankCount).fill(''));
-                            const currentAnswer = answerArray[blankIndex] || '';
-                            
-                            return (
-                              <div key={blankIndex} style={{ marginBottom: 12 }}>
-                                <Text strong style={{ marginRight: 8 }}>Chỗ trống {blankIndex + 1}:</Text>
-                                <Input
-                                  placeholder={`Nhập đáp án cho chỗ trống ${blankIndex + 1}...`}
-                                  value={currentAnswer}
-                                  onChange={(e) => {
-                                    const newValue = e.target.value;
-                                    const newAnswerArray = [...answerArray];
-                                    newAnswerArray[blankIndex] = newValue;
-                                    const joinedAnswer = newAnswerArray.join(',');
-                                    console.log(`[FillBlank onChange] Question ${questionId}, Blank ${blankIndex + 1}, Text answer:`, newValue, 'Joined:', joinedAnswer);
-                                    handleTextAnswerChange(questionId, joinedAnswer);
-                                  }}
-                                  disabled={submitted || submitting}
-                                  size="large"
-                                  style={{ marginTop: 8, fontSize: 16 }}
-                                />
-                              </div>
-                            );
-                          })}
-                        </Space>
-                      )}
-                    </div>
-                    {submitted && (
-                      <div style={{ marginTop: 16, padding: 12, background: 'var(--chem-blue-light)', borderRadius: 8 }}>
-                        <CheckCircleOutlined style={{ color: 'var(--chem-blue-dark)', marginRight: 8 }} />
-                        <Text strong style={{ color: 'var(--chem-blue-dark)' }}>Đáp án đã lưu!</Text>
-                      </div>
-                    )}
-                  </Card>
-                );
-              }
               
               // MultipleChoice question - render radio buttons
               return (

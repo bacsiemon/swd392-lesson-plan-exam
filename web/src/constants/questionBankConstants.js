@@ -52,7 +52,7 @@ export const CHEMISTRY_TOPICS = {
 // Loại câu hỏi dựa trên backend EQuestionType enum
 export const QUESTION_TYPES = [
   { value: 0, label: 'Trắc nghiệm', key: 'MultipleChoice' },
-  { value: 1, label: 'Điền vào chỗ trống', key: 'FillBlank' }
+ 
 ];
 
 // Độ khó câu hỏi

@@ -430,7 +430,7 @@ const QuestionForm = ({ initialValues, onSubmit, onCancel, loading = false, ques
                     onChange={handleQuestionTypeChange}
                     disabled={isEditMode} // Không cho phép thay đổi loại khi edit
                   >
-                    {QUESTION_TYPES.map(type => (
+                    {QUESTION_TYPES.filter(type => type.value === 0).map(type => (
                       <Option key={type.value} value={type.value}>
                         <Tag color={type.value === 0 ? 'blue' : 'green'}>
                           {type.label}
