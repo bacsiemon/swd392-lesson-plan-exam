@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, Card, Typography, Row, Col, Layout, notification, Divider, Checkbox } from 'antd';
-import { GoogleOutlined, UserOutlined, LockOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { Form, Input, Button, Card, Typography, Layout, notification, Checkbox } from 'antd';
+import { UserOutlined, LockOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
 import Logo from '../Assets/Logo.png';
@@ -137,14 +137,6 @@ const LoginPage = () => {
         }
     };
 
-    const handleGoogleLogin = () => {
-        openNotification(
-            'info',
-            'Tích hợp Google',
-            'Chức năng Đăng nhập bằng Google đang được triển khai.'
-        );
-    };
-
     const handleForgotPassword = () => {
         navigate('/forgot-password');
     };
@@ -187,7 +179,7 @@ const LoginPage = () => {
 
                 <Card
                     className="login-card"
-                    style={{ maxWidth: 960, width: '100%', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                    style={{ maxWidth: 480, width: '100%', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                 >
                     {/* Nút quay lại */}
                     <Button
@@ -226,113 +218,84 @@ const LoginPage = () => {
                         </Title>
                     </div>
 
-                    <Row gutter={48} justify="center" align="middle">
+                    <div style={{ padding: '0 24px' }}>
+                        <Title level={4}>Đăng nhập</Title>
 
-                        <Col xs={24} lg={12} style={{ borderRight: window.innerWidth >= 992 ? '1px solid #f0f0f0' : 'none', paddingRight: window.innerWidth >= 992 ? '24px' : '0' }}>
-                            <Title level={4}>Đăng nhập</Title>
-
-                            <Form
-                                form={form}
-                                name="login_form"
-                                initialValues={{ remember: true }}
-                                onFinish={onFinish}
-                                layout="vertical"
+                        <Form
+                            form={form}
+                            name="login_form"
+                            initialValues={{ remember: true }}
+                            onFinish={onFinish}
+                            layout="vertical"
+                        >
+                            <Form.Item
+                                name="username"
+                                rules={[{ required: true, message: 'Vui lòng nhập Tên người dùng!' }]}
+                                label="Tên người dùng (hoặc Email)"
                             >
-                                <Form.Item
-                                    name="username"
-                                    rules={[{ required: true, message: 'Vui lòng nhập Tên người dùng!' }]}
-                                    label="Tên người dùng (hoặc Email)"
-                                >
-                                    <Input
-                                        prefix={<UserOutlined className="site-form-item-icon" />}
-                                        placeholder="user@chemistry.edu.vn"
-                                        size="large"
-                                    />
-                                </Form.Item>
+                                <Input
+                                    prefix={<UserOutlined className="site-form-item-icon" />}
+                                    placeholder="user@chemistry.edu.vn"
+                                    size="large"
+                                />
+                            </Form.Item>
 
 
-                                <Form.Item
-                                    name="password"
-                                    rules={[{ required: true, message: 'Vui lòng nhập Mật khẩu!' }]}
-                                    label="Mật khẩu"
-                                >
-                                    <Input.Password
-                                        prefix={<LockOutlined className="site-form-item-icon" />}
-                                        placeholder="Mật khẩu"
-                                        size="large"
-                                    />
-                                </Form.Item>
+                            <Form.Item
+                                name="password"
+                                rules={[{ required: true, message: 'Vui lòng nhập Mật khẩu!' }]}
+                                label="Mật khẩu"
+                            >
+                                <Input.Password
+                                    prefix={<LockOutlined className="site-form-item-icon" />}
+                                    placeholder="Mật khẩu"
+                                    size="large"
+                                />
+                            </Form.Item>
 
-                                {/* Remember Password Checkbox */}
-                                <Form.Item name="remember" valuePropName="checked" style={{ marginBottom: '16px' }}>
-                                    <Checkbox>Ghi nhớ mật khẩu</Checkbox>
-                                </Form.Item>
+                            {/* Remember Password Checkbox */}
+                            <Form.Item name="remember" valuePropName="checked" style={{ marginBottom: '16px' }}>
+                                <Checkbox>Ghi nhớ mật khẩu</Checkbox>
+                            </Form.Item>
 
-                                {/* Nút Đăng nhập */}
-                                <Form.Item style={{ marginBottom: 0 }}>
-                                    <Button
-                                        type="primary"
-                                        htmlType="submit"
-                                        size="large"
-                                        loading={loading}
-                                        style={{ width: '100%', marginTop: '16px' }}
-                                    >
-                                        Đăng nhập
-                                    </Button>
-                                </Form.Item>
-                            </Form>
-
-                            {/* Link Quên mật khẩu và Clear Saved Credentials */}
-                            <div style={{ textAlign: 'center', marginTop: '16px' }}>
-                                <Link onClick={handleForgotPassword} style={{ color: '#595959', marginRight: '16px' }}>
-                                    Quên mật khẩu?
-                                </Link>
-                                {hasSavedCredentials && (
-                                    <Link onClick={handleClearSavedCredentials} style={{ color: '#ff4d4f' }}>
-                                        Xóa thông tin đã lưu
-                                    </Link>
-                                )}
-                            </div>
-
-                            {/* Nút Đăng ký tài khoản */}
-                            <div style={{ textAlign: 'center', marginTop: '12px' }}>
-                                <Text type="secondary">Chưa có tài khoản? </Text>
+                            {/* Nút Đăng nhập */}
+                            <Form.Item style={{ marginBottom: 0 }}>
                                 <Button
-                                    type="link"
-                                    onClick={handleRegisterRedirect}
-                                    style={{ padding: 0, height: 'auto', color: '#1890ff' }}
+                                    type="primary"
+                                    htmlType="submit"
+                                    size="large"
+                                    loading={loading}
+                                    style={{ width: '100%', marginTop: '16px' }}
                                 >
-                                    Đăng ký ngay
+                                    Đăng nhập
                                 </Button>
-                            </div>
-                        </Col>
+                            </Form.Item>
+                        </Form>
 
-                        {/* Cột 2: Đăng nhập bằng Google */}
-                        <Col xs={24} lg={12} style={{ paddingTop: window.innerWidth < 992 ? '24px' : '0' }}>
-                            <Title level={4}>Hoặc đăng nhập bằng</Title>
-
-                            <Button
-                                icon={<GoogleOutlined />}
-                                size="large"
-                                onClick={handleGoogleLogin}
-                                style={{ width: '100%', marginBottom: '8px' }}
-                            >
-                                Đăng nhập bằng Google
-                            </Button>
-
-                            <Text type="secondary" style={{ display: 'block', textAlign: 'center', marginTop: '8px' }}>
-                                Sử dụng tài khoản Google để truy cập nhanh chóng.
-                            </Text>
-
-                            {/* Thông báo bổ sung */}
-                            <Divider style={{ margin: '32px 0 16px 0' }} />
-                            <div style={{ textAlign: 'center' }}>
-                                <Link style={{ color: '#faad14' }}>
-                                    Thông báo về Cookie và Chính sách bảo mật
+                        {/* Link Quên mật khẩu và Clear Saved Credentials */}
+                        <div style={{ textAlign: 'center', marginTop: '16px' }}>
+                            <Link onClick={handleForgotPassword} style={{ color: '#595959', marginRight: '16px' }}>
+                                Quên mật khẩu?
+                            </Link>
+                            {hasSavedCredentials && (
+                                <Link onClick={handleClearSavedCredentials} style={{ color: '#ff4d4f' }}>
+                                    Xóa thông tin đã lưu
                                 </Link>
-                            </div>
-                        </Col>
-                    </Row>
+                            )}
+                        </div>
+
+                        {/* Nút Đăng ký tài khoản */}
+                        <div style={{ textAlign: 'center', marginTop: '12px', marginBottom: '24px' }}>
+                            <Text type="secondary">Chưa có tài khoản? </Text>
+                            <Button
+                                type="link"
+                                onClick={handleRegisterRedirect}
+                                style={{ padding: 0, height: 'auto', color: '#1890ff' }}
+                            >
+                                Đăng ký ngay
+                            </Button>
+                        </div>
+                    </div>
                 </Card>
             </Content>
         </Layout>
