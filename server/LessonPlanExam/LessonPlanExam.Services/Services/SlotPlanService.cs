@@ -269,5 +269,60 @@ namespace LessonPlanExam.Services.Services
                 AdditionalData = response.AdditionalData
             };
         }
+
+        public async Task<BaseResponse> GetLessonPlanWithSlotPlansAsync(int lessonPlanId)
+        {
+            // Check if user is a teacher
+            var currentRole = _accountService.GetCurrentUserRole();
+            if (currentRole != EUserRole.Teacher)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 403,
+                    Errors = "TEACHER_ONLY"
+                };
+            }
+
+            var currentUserId = _accountService.GetCurrentUserId();
+
+            // Get the lesson plan with slot plans and teacher information
+            var lessonPlan = await _unitOfWork.LessonPlanRepository.GetByIdAsync(
+                lessonPlanId,
+                lp => lp.SlotPlans,
+                lp => lp.CreatedByTeacherNavigation,
+                lp => lp.CreatedByTeacherNavigation.Account
+            );
+
+            if (lessonPlan == null || lessonPlan.DeletedAt != null)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 404,
+                    Errors = "LESSON_PLAN_NOT_FOUND"
+                };
+            }
+
+            if (lessonPlan.CreatedByTeacher != currentUserId)
+            {
+                return new BaseResponse
+                {
+                    StatusCode = 403,
+                    Errors = "LESSON_PLAN_NOT_OWNED_BY_TEACHER"
+                };
+            }
+
+            var slotPlansResponse = lessonPlan.SlotPlans?.OrderBy(sp => sp.SlotNumber).Select(sp => sp.ToResponse()).ToList() ?? new List<SlotPlanResponse>();
+
+            return new BaseResponse
+            {
+                StatusCode = 200,
+                Message = "SUCCESS",
+                Data = new
+                {
+                    LessonPlan = lessonPlan.ToResponse(),
+                    SlotPlans = slotPlansResponse
+                }
+            };
+        }
     }
 }

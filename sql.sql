@@ -90,7 +90,11 @@ CREATE TABLE slot_plans (
     slot_number INTEGER NOT NULL,
     title VARCHAR(255) NOT NULL,
     duration_minutes INTEGER DEFAULT 45,
-    content TEXT NOT NULL, -- nội dung tiết học
+    objectives TEXT, -- mục tiêu tiết học
+    equipment_needed TEXT,
+    preparations TEXT,
+    activities TEXT,
+    revise_questions TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(lesson_plan_id, slot_number)
@@ -315,3 +319,4 @@ CREATE TABLE file_uploads (
     mime_type VARCHAR(100) NOT NULL,
     uploaded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
